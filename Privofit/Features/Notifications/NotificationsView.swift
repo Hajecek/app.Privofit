@@ -14,7 +14,7 @@ struct NotificationsView: View {
                 VStack(alignment: .leading, spacing: 10) { Text(item.title).font(.headline); Text(item.body); Text(item.date, style: .date).font(.caption).foregroundStyle(.secondary) }.padding(.vertical, 8)
             }
         }.scrollContentBackground(.hidden).brandBackground().listSectionSpacing(20).navigationTitle(L10n.tr("notifications.title")).mainToolbar().toolbar { Button(L10n.tr("common.close")) { dismiss() } }
-            .task { await load() }.refreshable { await load() }
+            .task { await load(); AppIconBadgeSync.clear() }.refreshable { await load() }
     }
     private func load() async {
         guard app.phase == .authenticated, !loading else { return }; loading = true; defer { loading = false }

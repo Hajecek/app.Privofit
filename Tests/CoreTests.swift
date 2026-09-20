@@ -74,6 +74,16 @@ struct ValidationTests {
         let reopened = DoorModel(app: model, isActive: { true }); await reopened.restorePending(); await reopened.open()
         #expect(service.openCount == 1)
     }
+    @Test func pushPreferencesPayload() {
+        let defaults = UserDefaults(suiteName: "tests.push.\(UUID().uuidString)")!
+        let store = NotificationPreferencesStore(defaults: defaults)
+        store.masterEnabled = false
+        store.setEnabled(.door, false)
+        let payload = store.apiPayload()
+        #expect(payload.enabled == false)
+        #expect(payload.channels["door"] == false)
+        #expect(payload.channels["reservations"] == true)
+    }
     @Test func acceptedIsNotPhysicalSuccess() async {
         let service = MockGymService(); service.doorOutcome = .accepted
         let model = app(service); await model.login(identifier: "alex", password: "sample"); model.finishOnboarding()

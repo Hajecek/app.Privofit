@@ -55,9 +55,11 @@ enum AppTab: Hashable { case dashboard, reservations, door, membership, profile 
         if isDemo {
             preferences.completeOnboarding(for: user.id)
             phase = .authenticated
+            AppDelegate.shared?.updateAuthentication(isLoggedIn: true)
             return
         }
         phase = preferences.completedOnboarding(for: user.id) ? .authenticated : .onboarding
+        if phase == .authenticated { AppDelegate.shared?.updateAuthentication(isLoggedIn: true) }
     }
     func login(identifier: String, password: String) async {
         await authenticate { try await self.service.login(.init(identifier: identifier.trimmingCharacters(in: .whitespacesAndNewlines), password: password)) }
@@ -89,12 +91,14 @@ enum AppTab: Hashable { case dashboard, reservations, door, membership, profile 
         guard phase == .onboarding, member == nil || member?.status == .active else { return }
         preferences.completeOnboarding(for: member?.id ?? "guest")
         phase = member == nil ? .guest : .authenticated
+        if phase == .authenticated { AppDelegate.shared?.updateAuthentication(isLoggedIn: true) }
     }
     func requireLogin() { epoch += 1; phase = .signedOut; tab = .dashboard; error = nil }
     func logout() async {
         guard !busy else { return }; busy = true; epoch += 1
         showDoor = false; showInbox = false
         phase = .signedOut; member = nil; membership = nil; reservations = []; inbox = []; locked = false; tab = .dashboard
+        AppDelegate.shared?.updateAuthentication(isLoggedIn: false)
         await service.logout(); busy = false
     }
     func loadDashboard() async {
@@ -118,6 +122,7 @@ enum AppTab: Hashable { case dashboard, reservations, door, membership, profile 
             busy = true
             Task { await service.logout(); busy = false }
             epoch += 1; member = nil; membership = nil; reservations = []; inbox = []; locked = false; phase = .sessionExpired
+            AppDelegate.shared?.updateAuthentication(isLoggedIn: false)
         }
         error = FriendlyError.message(failure)
     }
@@ -126,10 +131,34 @@ enum AppTab: Hashable { case dashboard, reservations, door, membership, profile 
         do { try await biometrics.authenticate(reason: L10n.tr("biometry.reason")); locked = false }
         catch { self.error = FriendlyError.message(error) }
     }
-    func uploadPushToken(_ token: String) async {
-        notifications.deviceToken = token
-        guard phase == .authenticated, !isDemo else { return }
-        do { try await service.registerPush(token: token); notifications.registrationError = nil }
-        catch { notifications.registrationError = L10n.tr("notifications.registration.failed") }
+    func refreshInbox() async {
+        guard phase == .authenticated, !locked else { return }
+        do { inbox = try await service.inbox() }
+        catch { handle(error) }
+    }
+    func uploadPushToken(_ token: String, kind: String? = nil) async {
+        if kind == "fcm" {
+            notifications.fcmToken = token
+            notifications.deviceToken = token
+        } else if kind == "apns" {
+            notifications.apnsToken = token
+            if notifications.fcmToken == nil { notifications.deviceToken = token }
+        } else {
+            notifications.deviceToken = token
+        }
+        await sendPushRegistration()
+    }
+    func syncPushPreferences() async {
+        AppDelegate.shared?.syncNotificationPreferences()
+        await sendPushRegistration()
+    }
+    private func sendPushRegistration() async {
+        guard phase == .authenticated, !isDemo, let token = notifications.deliveryToken else { return }
+        do {
+            try await service.registerPush(token: token, preferences: NotificationPreferencesStore.shared.apiPayload())
+            notifications.registrationError = nil
+        } catch {
+            notifications.registrationError = L10n.tr("notifications.registration.failed")
+        }
     }
 }

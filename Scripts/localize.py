@@ -178,10 +178,21 @@ appearance.dark|Tmavý|Dark
 appearance.light|Světlý|Light
 notifications.title|Oznámení|Notifications
 notifications.allowed|Oznámení jsou povolená.|Notifications are allowed.
-notifications.denied|Oznámení jsou vypnutá. Změň oprávnění v nastavení iOS.|Notifications are off. Change permission in iOS Settings.
-notifications.notSet|Oznámení zatím nejsou nastavená.|Notifications have not been configured yet.
+notifications.denied|Oznámení jsou vypnutá v iOS. Zapni je v Nastavení systému, aby ti mohla chodit.|Notifications are off in iOS. Turn them on in system Settings to receive them.
+notifications.notSet|Povol oznámení, abys mohl vybrat, které typy ti mají chodit.|Allow notifications so you can choose which types you receive.
+notifications.enable|Povolit oznámení|Allow notifications
+notifications.push|Push oznámení|Push notifications
+notifications.footer|Token se po přihlášení odešle na backend. Typy oznámení můžeš kdykoli změnit.|The token is sent to the backend after sign-in. You can change notification types anytime.
 notifications.registration.failed|Oznámení zatím nebyla připojena k účtu.|Notifications have not been linked to your account yet.
 notifications.empty|Zatím žádná oznámení|No notifications yet
+notifications.channel.reservations|Rezervace|Reservations
+notifications.channel.reservations.body|Připomínky a změny tréninků|Reminders and changes to workouts
+notifications.channel.door|Vstup|Entry
+notifications.channel.door.body|Potvrzení a stav otevření dveří|Door confirmation and status
+notifications.channel.membership|Členství|Membership
+notifications.channel.membership.body|Platnost členství a zbývající vstupy|Membership validity and remaining visits
+notifications.channel.gym|Novinky z fitka|Gym news
+notifications.channel.gym.body|Oznámení provozovatele a systémové zprávy|Operator announcements and system messages
 link.unavailable|Odkaz zatím není dostupný.|Link not available yet.
 link.unavailable.body|Tuto část ještě připojujeme. Zkus to prosím později.|This section is not connected yet. Please try again later.
 skeleton.membership|Tvoje členství|Your membership

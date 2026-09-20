@@ -57,6 +57,6 @@ import Foundation
     func doorStatus(requestID: UUID, operationID: String?) async throws -> DoorReceipt {
         try check(); guard let result = operations[requestID] else { throw AppFailure.unavailable }; return result
     }
-    func registerPush(token: String) async throws { try check() }
+    func registerPush(token: String, preferences: PushNotificationPreferences) async throws { try check() }
 }
 #endif

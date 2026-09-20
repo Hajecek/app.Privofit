@@ -25,13 +25,19 @@ struct RootView: View {
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: app.phase)
         .task { await app.boot() }
         .task(id: app.phase) {
-            if app.phase == .authenticated, let token = app.notifications.deviceToken { await app.uploadPushToken(token) }
+            if app.phase == .authenticated, let token = app.notifications.deliveryToken { await app.uploadPushToken(token) }
         }
         .onChange(of: scenePhase) { _, phase in if phase == .background { app.backgrounded() } }
         .onReceive(NotificationCenter.default.publisher(for: .privofitPushToken)) { notification in
-            if let token = notification.object as? String { Task { await app.uploadPushToken(token) } }
+            if let token = notification.object as? String {
+                let kind = notification.userInfo?["kind"] as? String
+                Task { await app.uploadPushToken(token, kind: kind) }
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .privofitPushFailure)) { _ in app.notifications.registrationError = L10n.tr("notifications.registration.failed") }
+        .onReceive(NotificationCenter.default.publisher(for: .privofitPushReceived)) { _ in
+            if app.phase == .authenticated { Task { await app.refreshInbox() } }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .privofitShowInbox)) { _ in
             if app.phase == .authenticated { app.showInbox = true }
         }

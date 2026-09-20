@@ -1923,19 +1923,155 @@
         }
       }
     },
+    "notifications.channel.door" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vstup"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entry"
+          }
+        }
+      }
+    },
+    "notifications.channel.door.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potvrzení a stav otevření dveří"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Door confirmation and status"
+          }
+        }
+      }
+    },
+    "notifications.channel.gym" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novinky z fitka"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gym news"
+          }
+        }
+      }
+    },
+    "notifications.channel.gym.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oznámení provozovatele a systémové zprávy"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Operator announcements and system messages"
+          }
+        }
+      }
+    },
+    "notifications.channel.membership" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Členství"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Membership"
+          }
+        }
+      }
+    },
+    "notifications.channel.membership.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platnost členství a zbývající vstupy"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Membership validity and remaining visits"
+          }
+        }
+      }
+    },
+    "notifications.channel.reservations" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezervace"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reservations"
+          }
+        }
+      }
+    },
+    "notifications.channel.reservations.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Připomínky a změny tréninků"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminders and changes to workouts"
+          }
+        }
+      }
+    },
     "notifications.denied" : {
       "extractionState" : "manual",
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Oznámení jsou vypnutá. Změň oprávnění v nastavení iOS."
+            "value" : "Oznámení jsou vypnutá v iOS. Zapni je v Nastavení systému, aby ti mohla chodit."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Notifications are off. Change permission in iOS Settings."
+            "value" : "Notifications are off in iOS. Turn them on in system Settings to receive them."
           }
         }
       }
@@ -1957,19 +2093,70 @@
         }
       }
     },
+    "notifications.enable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Povolit oznámení"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow notifications"
+          }
+        }
+      }
+    },
+    "notifications.footer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token se po přihlášení odešle na backend. Typy oznámení můžeš kdykoli změnit."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The token is sent to the backend after sign-in. You can change notification types anytime."
+          }
+        }
+      }
+    },
     "notifications.notSet" : {
       "extractionState" : "manual",
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Oznámení zatím nejsou nastavená."
+            "value" : "Povol oznámení, abys mohl vybrat, které typy ti mají chodit."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Notifications have not been configured yet."
+            "value" : "Allow notifications so you can choose which types you receive."
+          }
+        }
+      }
+    },
+    "notifications.push" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Push oznámení"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Push notifications"
           }
         }
       }
@@ -2280,9 +2467,6 @@
         }
       }
     },
-    "P" : {
-
-    },
     "pass.headline" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2418,9 +2602,6 @@
           }
         }
       }
-    },
-    "privofit" : {
-
     },
     "Privofit" : {
 

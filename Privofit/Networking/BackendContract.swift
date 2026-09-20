@@ -31,6 +31,8 @@ struct BackendContract: Sendable {
     func eligibility() throws -> Endpoint<DoorEligibility> { throw missing("door eligibility") }
     func openDoor(_ door: String, requestID: UUID) throws -> Endpoint<DoorReceipt> { throw missing("door command + idempotency") }
     func doorStatus(_ requestID: UUID, operationID: String?) throws -> Endpoint<DoorReceipt> { throw missing("door command reconciliation") }
-    func push(_ token: String) throws -> Endpoint<EmptyResponse> { throw missing("APNs device registration") }
+    func push(_ token: String, preferences: PushNotificationPreferences) throws -> Endpoint<EmptyResponse> {
+        throw missing("FCM/APNs device registration")
+    }
     private func missing(_ name: String) -> AppFailure { .notConfigured("BackendContract / \(name)") }
 }

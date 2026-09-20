@@ -5,7 +5,7 @@ struct PrivacyShield: ViewModifier {
     func body(content: Content) -> some View {
         content.overlay {
             if scenePhase != .active {
-                Brand.night.ignoresSafeArea().overlay { BrandMark().foregroundStyle(Brand.fog) }.accessibilityHidden(true)
+                Brand.night.ignoresSafeArea().overlay { BrandMark(size: 36) }.accessibilityHidden(true)
             }
         }
     }

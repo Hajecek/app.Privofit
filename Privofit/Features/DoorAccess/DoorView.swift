@@ -115,7 +115,7 @@ struct DoorView: View {
                 Button(L10n.tr("door.open")) { Task { await model.open() } }.accessibilityIdentifier("door.confirm")
                 Button(L10n.tr("common.cancel"), role: .cancel) { }
             } message: { Text(L10n.tr("door.confirmBody")) }
-            .overlay { if phase != .active { Brand.night.ignoresSafeArea().overlay { BrandMark().foregroundStyle(Brand.fog) } } }
+            .overlay { if phase != .active { Brand.night.ignoresSafeArea().overlay { BrandMark(size: 36) } } }
     }
     private var footer: some View {
         VStack(spacing: 8) {

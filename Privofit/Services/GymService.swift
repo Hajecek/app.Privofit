@@ -30,7 +30,7 @@ import Foundation
 }
 @MainActor protocol RemoteNotificationsServicing {
     func inbox() async throws -> [InboxItem]
-    func registerPush(token: String) async throws
+    func registerPush(token: String, preferences: PushNotificationPreferences) async throws
 }
 @MainActor protocol UserServicing {
     func gymInfo() async throws -> GymInfo

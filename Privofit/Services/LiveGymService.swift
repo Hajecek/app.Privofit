@@ -47,5 +47,7 @@ import Foundation
     func eligibility() async throws -> DoorEligibility { try await authorized.send(contract.eligibility()) }
     func openDoor(doorID: String, requestID: UUID) async throws -> DoorReceipt { try await authorized.send(contract.openDoor(doorID, requestID: requestID)) }
     func doorStatus(requestID: UUID, operationID: String?) async throws -> DoorReceipt { try await authorized.send(contract.doorStatus(requestID, operationID: operationID)) }
-    func registerPush(token: String) async throws { _ = try await authorized.send(contract.push(token)) }
+    func registerPush(token: String, preferences: PushNotificationPreferences) async throws {
+        _ = try await authorized.send(contract.push(token, preferences: preferences))
+    }
 }

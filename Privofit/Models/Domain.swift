@@ -73,6 +73,10 @@ struct PendingDoorCommand: Codable, Sendable {
     let createdAt: Date
 }
 struct EmptyResponse: Sendable {}
+struct PushNotificationPreferences: Codable, Equatable, Sendable {
+    var enabled: Bool
+    var channels: [String: Bool]
+}
 
 enum AppFailure: Error, LocalizedError, Equatable, Sendable {
     case notConfigured(String), unauthorized, forbidden, unavailable, invalidResponse

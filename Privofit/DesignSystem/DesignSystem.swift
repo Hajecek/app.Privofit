@@ -27,12 +27,23 @@ struct BrandMark: View {
     var size: CGFloat = 44
     var showsName = true
     var body: some View {
-        HStack(spacing: 10) {
-            Text("P").font(.system(size: size * 0.7, weight: .black, design: .rounded)).italic()
-                .foregroundStyle(Brand.ink).frame(width: size, height: size)
-                .background(Brand.lime, in: RoundedRectangle(cornerRadius: size * 0.28))
-            if showsName { Text("privofit").font(.title2.weight(.heavy)).tracking(-1) }
-        }.accessibilityElement(children: .ignore).accessibilityLabel("Privofit")
+        Group {
+            if showsName {
+                Image("BrandLogo")
+                    .renderingMode(.original)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: max(size, 22))
+            } else {
+                Image("BrandIcon")
+                    .renderingMode(.original)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: size, height: size)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Privofit")
     }
 }
 struct PrimaryButton: View {
