@@ -4,10 +4,10 @@
 <dict>
 	<key>APIBaseURL</key>
 	<string>$(API_BASE_URL)</string>
-	<key>ApplePayMerchantID</key>
-	<string>$(APPLE_PAY_MERCHANT_ID)</string>
 	<key>AppEnvironment</key>
 	<string>$(APP_ENVIRONMENT)</string>
+	<key>ApplePayMerchantID</key>
+	<string>$(APPLE_PAY_MERCHANT_ID)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>cs</string>
 	<key>CFBundleDisplayName</key>
