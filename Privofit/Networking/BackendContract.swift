@@ -23,7 +23,7 @@ struct BackendContract: Sendable {
         Endpoint(path: "memberships/plans", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decode($0) })
     }
     func visits() throws -> Endpoint<[Visit]> {
-        Endpoint(path: "visits", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decode($0) })
+        Endpoint(path: "visits", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decodeList($0) })
     }
     func login(_ input: LoginInput) throws -> Endpoint<Session> {
         try APIJSON.post("auth/login", body: LoginBody(identifier: input.identifier, password: input.password))
@@ -46,10 +46,10 @@ struct BackendContract: Sendable {
         Endpoint(path: "memberships/me", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decode($0) })
     }
     func reservations() throws -> Endpoint<[Reservation]> {
-        Endpoint(path: "reservations", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decode($0) })
+        Endpoint(path: "reservations", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decodeList($0) })
     }
     func slots() throws -> Endpoint<[AvailableSlot]> {
-        Endpoint(path: "reservations/slots", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decode($0) })
+        Endpoint(path: "reservations/slots", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decodeList($0) })
     }
     func reserve(_ slot: String, requestID: UUID) throws -> Endpoint<Reservation> {
         try APIJSON.post("reservations", body: ReserveBody(slotID: slot, requestID: requestID))
@@ -71,10 +71,16 @@ struct BackendContract: Sendable {
         })
     }
     func cancel(_ id: String, requestID: UUID) throws -> Endpoint<EmptyResponse> {
-        try APIJSON.postEmpty("reservations/\(id)/cancel", body: RequestIDBody(requestID: requestID))
+        Endpoint(
+            path: "reservations/\(id)/cancel",
+            method: .post,
+            body: try APIJSON.body(RequestIDBody(requestID: requestID)),
+            headers: ["Idempotency-Key": requestID.uuidString],
+            decode: { _ in EmptyResponse() }
+        )
     }
     func inbox() throws -> Endpoint<[InboxItem]> {
-        Endpoint(path: "inbox", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decode($0) })
+        Endpoint(path: "inbox", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decodeList($0) })
     }
     func eligibility() throws -> Endpoint<DoorEligibility> {
         Endpoint(path: "access/eligibility", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decode($0) })
@@ -102,6 +108,25 @@ private enum APIJSON {
         if let value = try? decoder.decode(T.self, from: data) { return value }
         if let envelope = try? decoder.decode(Envelope<T>.self, from: data) { return envelope.data }
         throw AppFailure.invalidResponse
+    }
+    static func decodeList<T: Decodable>(_ data: Data) throws -> [T] {
+        if let items: [T] = try? decode(data) { return items }
+        guard let raw = try? JSONSerialization.jsonObject(with: data) else { throw AppFailure.invalidResponse }
+        let rows: [Any]
+        if let items = raw as? [Any] {
+            rows = items
+        } else if let object = raw as? [String: Any], let items = object["data"] as? [Any] {
+            rows = items
+        } else {
+            throw AppFailure.invalidResponse
+        }
+        let decoder = makeDecoder()
+        return rows.compactMap { item in
+            guard JSONSerialization.isValidJSONObject(item),
+                  let piece = try? JSONSerialization.data(withJSONObject: item),
+                  let value = try? decoder.decode(T.self, from: piece) else { return nil }
+            return value
+        }
     }
     private static func makeDecoder() -> JSONDecoder {
         let decoder = JSONDecoder()

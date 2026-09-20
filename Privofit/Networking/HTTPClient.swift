@@ -44,9 +44,11 @@ actor HTTPClient {
         if let bearer { request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization") }
         let data: Data; let response: URLResponse
         do { (data, response) = try await session.data(for: request) }
+        catch let error as URLError where error.code == .cancelled { throw CancellationError() }
         catch let error as URLError where error.code == .notConnectedToInternet
             || error.code == .cannotConnectToHost || error.code == .networkConnectionLost { throw AppFailure.offline }
         catch let error as URLError where error.code == .timedOut { throw AppFailure.timeout }
+        catch is CancellationError { throw CancellationError() }
         catch { throw AppFailure.unavailable }
         guard let http = response as? HTTPURLResponse else { throw AppFailure.invalidResponse }
         logger.debug("HTTP status: \(http.statusCode, privacy: .public)")

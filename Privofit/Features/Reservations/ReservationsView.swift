@@ -247,26 +247,33 @@ struct ReservationsView: View {
         showCheckout = false
     }
     private func load() async {
-        guard !app.isGuest, !loading else { return }; loading = true; defer { loading = false }
+        guard !app.isGuest else { return }
+        loading = true
+        defer { loading = false }
         var lastError: Error?
         do {
             let bookings = try await app.service.reservations()
-            guard app.phase == .authenticated else { return }
+            guard !Task.isCancelled, app.phase == .authenticated else { return }
             app.reservations = bookings
             cart.removeAll { booked in bookings.contains(where: { $0.id == booked.id }) }
+        } catch is CancellationError {
+            return
         } catch {
             lastError = error
             app.handle(error, surface: false)
         }
         do {
             let available = try await app.service.availableSlots()
-            guard app.phase == .authenticated else { return }
+            guard !Task.isCancelled, app.phase == .authenticated else { return }
             slots = available
             cart.removeAll { booked in !available.contains(where: { $0.id == booked.id }) }
+        } catch is CancellationError {
+            return
         } catch {
             lastError = error
             app.handle(error, surface: false)
         }
+        guard !Task.isCancelled else { return }
         date = ReservationCalendar.clampedDay(date)
         if let lastError { self.error = FriendlyError.message(lastError) } else { error = nil }
     }
@@ -307,9 +314,22 @@ struct ReservationsView: View {
         }
     }
     private func cancel(_ item: Reservation) async {
-        guard !mutating, app.phase == .authenticated else { return }; mutating = true; defer { mutating = false }
-        do { try await app.service.cancelReservation(id: item.id, requestID: UUID()); completed = false; await load() }
-        catch { self.error = FriendlyError.message(error); app.handle(error, surface: false) }
+        guard !mutating, app.phase == .authenticated else { return }
+        mutating = true
+        defer { mutating = false }
+        cancellation = nil
+        do {
+            try await app.service.cancelReservation(id: item.id, requestID: UUID())
+            app.reservations.removeAll { $0.id == item.id }
+            completed = false
+            error = nil
+            await load()
+        } catch is CancellationError {
+            return
+        } catch {
+            self.error = FriendlyError.message(error)
+            app.handle(error, surface: false)
+        }
     }
 }
 

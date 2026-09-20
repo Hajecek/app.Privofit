@@ -121,7 +121,7 @@ enum ReservationSection: Hashable { case slots, mine }
         default:
             return
         }
-        guard !syncing else { return }
+        if syncing && !showLoading { return }
         syncing = true
         if showLoading { loading = true; error = nil }
         let current = epoch
@@ -143,13 +143,16 @@ enum ReservationSection: Hashable { case slots, mine }
             guard current == epoch, phase == .authenticated else { return }
             if let messages = await fetchKeepingSession({ try await service.inbox() }) { inbox = messages }
             guard current == epoch, phase == .authenticated else { return }
-            if showLoading { error = nil }
+            error = nil
+        } catch is CancellationError {
+            return
         } catch {
             if current == epoch { handle(error, surface: showLoading) }
         }
     }
     private func fetchKeepingSession<T>(_ work: () async throws -> T) async -> T? {
         do { return try await work() }
+        catch is CancellationError { return nil }
         catch {
             handle(error, surface: false)
             return nil

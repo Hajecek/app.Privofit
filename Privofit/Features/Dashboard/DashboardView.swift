@@ -86,8 +86,13 @@ struct DashboardView: View {
         await loadPublic()
         guard !app.isGuest else { return }
         await app.loadDashboard()
-        do { visits = try await app.service.visits(); visitError = nil } catch { visitError = FriendlyError.message(error); app.handle(error, surface: false) }
-        do { eligibility = try await app.service.eligibility() } catch { eligibility = nil; app.handle(error, surface: false) }
+        guard !Task.isCancelled else { return }
+        do { visits = try await app.service.visits(); visitError = nil }
+        catch is CancellationError { return }
+        catch { visitError = FriendlyError.message(error); app.handle(error, surface: false) }
+        do { eligibility = try await app.service.eligibility() }
+        catch is CancellationError { return }
+        catch { eligibility = nil; app.handle(error, surface: false) }
     }
 }
 struct DoorHero: View {

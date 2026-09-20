@@ -60,6 +60,11 @@ struct ValidationTests {
         model.handle(AppFailure.unauthorized)
         #expect(model.phase == .sessionExpired); #expect(model.member == nil)
     }
+    @Test func cancelledRequestDoesNotSurfaceError() {
+        let model = app()
+        model.handle(CancellationError())
+        #expect(model.error == nil)
+    }
     @Test func syncPicksUpRemoteBlockAndMembership() async {
         let service = MockGymService()
         let model = app(service)
