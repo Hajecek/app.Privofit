@@ -105,6 +105,13 @@ struct ValidationTests {
         #expect(ReservationCalendar.groupedByDayPart([slot], calendar: calendar).map(\.0) == [.evening])
         #expect(ReservationCalendar.durationMinutes(from: slot.start, to: slot.end) == 60)
         #expect(!ReservationCalendar.isPastDay(wednesday, now: wednesday, calendar: calendar))
+        let grid = ReservationCalendar.monthGrid(containing: wednesday, calendar: calendar)
+        #expect(grid.count == 35 || grid.count == 42)
+        #expect(grid.contains { $0.inMonth && calendar.isDate($0.date, inSameDayAs: wednesday) })
+        #expect(ReservationCalendar.weekdaySymbols(calendar: calendar).count == 7)
+        let grouped = ReservationCalendar.groupedByDay([booking], calendar: calendar)
+        #expect(grouped.count == 1)
+        #expect(grouped[0].1.count == 1)
     }
     @Test func demoSlotsCoverUpcomingDays() {
         var calendar = Calendar(identifier: .gregorian)

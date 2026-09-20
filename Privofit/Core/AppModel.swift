@@ -5,6 +5,7 @@ enum AppPhase: Equatable {
     case launching, signedOut, onboarding, authenticated, guest, sessionExpired, restricted(AccountStatus)
 }
 enum AppTab: Hashable { case dashboard, reservations, door, membership, profile }
+enum ReservationSection: Hashable { case slots, mine }
 @MainActor @Observable final class AppModel {
     private(set) var phase: AppPhase = .launching
     private(set) var member: Member?
@@ -12,6 +13,7 @@ enum AppTab: Hashable { case dashboard, reservations, door, membership, profile 
     var reservations: [Reservation] = []
     var inbox: [InboxItem] = []
     var tab: AppTab = .dashboard
+    var reservationSection: ReservationSection = .slots
     var showGuestGate = false
     var showDoor = false
     var showInbox = false

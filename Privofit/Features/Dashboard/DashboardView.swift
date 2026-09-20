@@ -26,7 +26,10 @@ struct DashboardView: View {
                 DoorHero(eligibility: eligibility)
                 HStack {
                     SectionHeading(title: L10n.tr("redesign.upNext"))
-                    Button(L10n.tr("redesign.allBookings")) { app.tab = .reservations }.font(.subheadline.weight(.medium)).frame(minHeight: 44)
+                    Button(L10n.tr("redesign.allBookings")) {
+                        app.reservationSection = .mine
+                        app.tab = .reservations
+                    }.font(.subheadline.weight(.medium)).frame(minHeight: 44)
                 }
                 if app.loading { SkeletonCard() }
                 if let error = app.error, !app.isGuest { FailureView(message: error) { Task { await load() } } }
@@ -51,7 +54,10 @@ struct DashboardView: View {
                         Label(L10n.tr("reservations.next"), systemImage: "calendar").font(.headline)
                         if let next = ReservationCalendar.next(app.reservations) { ReservationSummary(reservation: next) }
                         else { Text(L10n.tr("reservations.empty")).foregroundStyle(.secondary) }
-                        Button(L10n.tr("reservations.new")) { app.tab = .reservations }.frame(minHeight: 44)
+                        Button(L10n.tr("reservations.new")) {
+                            app.reservationSection = .slots
+                            app.tab = .reservations
+                        }.frame(minHeight: 44)
                     } }
                     BrandCard { VStack(alignment: .leading, spacing: 12) {
                         Label(L10n.tr("visits.title"), systemImage: "figure.walk").font(.headline)

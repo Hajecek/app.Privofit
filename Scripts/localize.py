@@ -131,6 +131,21 @@ reservations.planHint|Vyber den v týdnu a rezervuj si volný čas.|Pick a day i
 reservations.week|Týden|Week
 reservations.previousWeek|Předchozí týden|Previous week
 reservations.nextWeek|Další týden|Next week
+reservations.previousMonth|Předchozí měsíc|Previous month
+reservations.nextMonth|Další měsíc|Next month
+reservations.todayJump|Dnes|Today
+reservations.tab.slots|Termíny|Slots
+reservations.tab.mine|Moje termíny|My bookings
+reservations.mineHint|Tady máš všechny zaplacené tréninky, odděleně od výběru nových termínů.|Here are all your paid sessions, separate from picking new slots.
+reservations.mineEmpty|Zatím nemáš žádný termín.|You don't have any bookings yet.
+reservations.mineEmptyHint|Vyber si čas v záložce Termíny a zaplať ho.|Pick a time in Slots and pay for it.
+reservations.past|Proběhlé|Past
+reservations.goToMine|Zobrazit moje termíny|View my bookings
+reservations.bookedOnDayOne|Tento den už máš termín|You already have a booking this day
+reservations.bookedOnDayMany|termíny tento den|bookings this day
+reservations.legend.free|Volné|Open
+reservations.legend.mine|Moje|Mine
+reservations.legend.selected|Vybrané|Selected
 reservations.today|Dnes|Today
 reservations.tomorrow|Zítra|Tomorrow
 reservations.upcoming|Nadcházející|Upcoming
@@ -152,6 +167,13 @@ reservations.selectHint|Označ všechny termíny, které chceš, a zaplať je na
 reservations.checkout|Potvrdit a zaplatit|Confirm and pay
 reservations.checkoutHint|Vybrané termíny zaplatíš v dalším kroku.|You'll pay for the selected slots next.
 reservations.checkoutTitle|Shrnutí rezervace|Booking summary
+reservations.checkoutCountOne|1 termín k zaplacení|1 slot to pay
+reservations.checkoutCountMany|termíny k zaplacení|slots to pay
+reservations.payFooter|K úhradě|Due now
+reservations.nextSession|Další trénink|Next session
+reservations.happening|Právě teď|Happening now
+reservations.confirmedBadge|Potvrzeno|Confirmed
+reservations.pastBadge|Proběhlo|Completed
 reservations.pay|Zaplatit Apple Pay|Pay with Apple Pay
 reservations.payDemo|V demu se Apple Pay otevře na zařízení s kartou, ale nic nestrhne. V simulátoru můžeš platbu ověřit bez karty.|In demo, Apple Pay opens on a device with a card but nothing is charged. In Simulator you can verify the booking without a card.
 reservations.payDemoAction|Ověřit platbu v demu|Verify payment in demo

@@ -15,15 +15,13 @@ struct ReservationsView: View {
     @State private var checkoutID = UUID()
     @State private var applePay = ApplePayCheckout()
     private var calendar: Calendar { .current }
-    private var week: [Date] { ReservationCalendar.week(containing: date, calendar: calendar) }
     private var daySlots: [AvailableSlot] { ReservationCalendar.slots(on: date, from: slots, calendar: calendar) }
     private var dayBookings: [Reservation] { ReservationCalendar.reservations(on: date, from: app.reservations, calendar: calendar) }
     private var upcoming: [Reservation] { ReservationCalendar.upcoming(app.reservations) }
+    private var laterUpcoming: [Reservation] { Array(upcoming.dropFirst()) }
+    private var past: [Reservation] { ReservationCalendar.past(app.reservations) }
     private var sortedCart: [AvailableSlot] { cart.sorted { $0.start < $1.start } }
-    private var canGoBack: Bool {
-        let current = ReservationCalendar.week(containing: Date(), calendar: calendar).first ?? Date()
-        return (week.first ?? date) > current
-    }
+    private var canGoBackMonth: Bool { !ReservationCalendar.isCurrentMonth(date, calendar: calendar) }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -52,7 +50,7 @@ struct ReservationsView: View {
         VStack(alignment: .leading, spacing: 20) {
             StatusBadge(title: L10n.tr("guest.reservations"), symbol: "eye")
             Text(L10n.tr("guest.reservations.body")).foregroundStyle(.secondary)
-            WeekStrip(date: $date, week: week, slots: [], reservations: [], selection: [], canGoBack: false, onBack: {}, onForward: {})
+            MonthCalendar(date: $date, slots: [], reservations: [], selection: [], canGoBack: false, onBack: {}, onForward: {})
                 .disabled(true)
             BrandCard { VStack(alignment: .leading, spacing: 16) {
                 Label(L10n.tr("reservations.example"), systemImage: "calendar")
@@ -63,25 +61,109 @@ struct ReservationsView: View {
     }
     private var memberContent: some View {
         VStack(alignment: .leading, spacing: 24) {
+            panePicker
             if let error, !showCheckout { FailureView(message: error) { Task { await load() } } }
             if completed { StatusBadge(title: L10n.tr("reservations.paid")) }
             if loading { SkeletonCard() }
-            upcomingSection
+            if app.reservationSection == .slots { slotsPane } else { minePane }
+        }
+    }
+    private var panePicker: some View {
+            Picker(L10n.tr("tab.reservations"), selection: Binding(
+                get: { app.reservationSection },
+                set: { app.reservationSection = $0 }
+            )) {
+            Text(L10n.tr("reservations.tab.slots")).tag(ReservationSection.slots)
+            Text(L10n.tr("reservations.tab.mine")).tag(ReservationSection.mine)
+        }
+        .pickerStyle(.segmented)
+        .accessibilityIdentifier("reservations.panes")
+    }
+    private var slotsPane: some View {
+        VStack(alignment: .leading, spacing: 24) {
             Text(L10n.tr("reservations.plan")).font(.title2.bold())
             Text(L10n.tr("reservations.selectHint")).font(.subheadline).foregroundStyle(.secondary)
-            WeekStrip(
+            MonthCalendar(
                 date: $date,
-                week: week,
                 slots: slots,
                 reservations: app.reservations,
                 selection: cart,
-                canGoBack: canGoBack,
-                onBack: { date = ReservationCalendar.clampedDay(ReservationCalendar.shiftWeek(date, by: -1, calendar: calendar), calendar: calendar) },
-                onForward: { date = ReservationCalendar.shiftWeek(date, by: 1, calendar: calendar) }
+                canGoBack: canGoBackMonth,
+                onBack: { date = ReservationCalendar.clampedDay(ReservationCalendar.shiftMonth(date, by: -1, calendar: calendar), calendar: calendar) },
+                onForward: {
+                    date = ReservationCalendar.startOfDay(ReservationCalendar.shiftMonth(date, by: 1, calendar: calendar), calendar: calendar)
+                }
             )
             dayHeader
-            dayReservations
+            if !dayBookings.isEmpty {
+                Button {
+                    app.reservationSection = .mine
+                } label: {
+                    BrandCard {
+                        HStack(spacing: 12) {
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(Color("AccentColor"))
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(dayBookings.count == 1 ? L10n.tr("reservations.bookedOnDayOne") : "\(dayBookings.count) \(L10n.tr("reservations.bookedOnDayMany"))")
+                                    .font(.headline)
+                                Text(L10n.tr("reservations.goToMine")).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint(L10n.tr("reservations.goToMine"))
+            }
             availability
+        }
+    }
+    @ViewBuilder private var minePane: some View {
+        if upcoming.isEmpty && past.isEmpty && !loading {
+            BrandCard {
+                VStack(alignment: .leading, spacing: 16) {
+                    Image(systemName: "calendar.badge.plus")
+                        .font(.title)
+                        .foregroundStyle(Brand.ink)
+                        .frame(width: 52, height: 52)
+                        .background(Brand.lime, in: RoundedRectangle(cornerRadius: 16))
+                    Text(L10n.tr("reservations.mineEmpty")).font(.title3.bold())
+                    Text(L10n.tr("reservations.mineEmptyHint")).font(.subheadline).foregroundStyle(.secondary)
+                    Button(L10n.tr("reservations.tab.slots")) { app.reservationSection = .slots }.frame(minHeight: 44)
+                }
+            }
+        } else {
+            if let next = upcoming.first {
+                NextSessionHero(reservation: next) {
+                    if next.canCancel { cancellation = next }
+                }
+                .disabled(mutating)
+            }
+            if !laterUpcoming.isEmpty {
+                Text(L10n.tr("reservations.mine")).font(.title2.bold())
+                ForEach(ReservationCalendar.groupedByDay(laterUpcoming, calendar: calendar), id: \.0) { day, items in
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(dayHeading(day)).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                        ForEach(items) { item in
+                            BookedSessionCard(reservation: item, style: .upcoming) {
+                                cancellation = item
+                            }
+                            .disabled(mutating)
+                        }
+                    }
+                }
+            }
+            if !past.isEmpty {
+                Text(L10n.tr("reservations.past")).font(.title2.bold()).padding(.top, upcoming.isEmpty ? 0 : 8)
+                ForEach(ReservationCalendar.groupedByDay(past, descending: true, calendar: calendar), id: \.0) { day, items in
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(dayHeading(day)).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                        ForEach(items) { item in
+                            BookedSessionCard(reservation: item, style: .past, onCancel: nil)
+                        }
+                    }
+                }
+            }
         }
     }
     private var cartBar: some View {
@@ -102,38 +184,10 @@ struct ReservationsView: View {
         .padding(16)
         .background(.ultraThinMaterial)
     }
-    @ViewBuilder private var upcomingSection: some View {
-        if !upcoming.isEmpty {
-            Text(L10n.tr("reservations.upcoming")).font(.title2.bold())
-            ForEach(upcoming) { item in
-                BrandCard { VStack(alignment: .leading, spacing: 16) {
-                    ReservationSummary(reservation: item)
-                    if item.canCancel { Button(L10n.tr("reservations.cancel"), role: .destructive) { cancellation = item }.frame(minHeight: 44).disabled(mutating) }
-                } }
-            }
-        } else if !loading {
-            BrandCard { VStack(alignment: .leading, spacing: 10) {
-                Label(L10n.tr("reservations.empty"), systemImage: "calendar").font(.headline)
-                Text(L10n.tr("reservations.planHint")).font(.subheadline).foregroundStyle(.secondary)
-            } }
-        }
-    }
     private var dayHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(dayTitle).font(.title3.bold())
             Text(slotCountLabel).font(.subheadline).foregroundStyle(.secondary)
-        }
-    }
-    @ViewBuilder private var dayReservations: some View {
-        if !dayBookings.isEmpty {
-            ForEach(dayBookings) { item in
-                BrandCard {
-                    HStack(alignment: .top, spacing: 12) {
-                        Image(systemName: "checkmark.circle.fill").foregroundStyle(Color("AccentColor"))
-                        ReservationSummary(reservation: item)
-                    }
-                }
-            }
         }
     }
     @ViewBuilder private var availability: some View {
@@ -155,10 +209,11 @@ struct ReservationsView: View {
             }
         }
     }
-    private var dayTitle: String {
-        if calendar.isDateInToday(date) { return L10n.tr("reservations.today") }
-        if calendar.isDateInTomorrow(date) { return L10n.tr("reservations.tomorrow") }
-        return date.formatted(.dateTime.weekday(.wide).day().month(.wide))
+    private var dayTitle: String { dayHeading(date) }
+    private func dayHeading(_ day: Date) -> String {
+        if calendar.isDateInToday(day) { return L10n.tr("reservations.today") }
+        if calendar.isDateInTomorrow(day) { return L10n.tr("reservations.tomorrow") }
+        return day.formatted(.dateTime.weekday(.wide).day().month(.wide))
     }
     private var slotCountLabel: String {
         switch daySlots.count {
@@ -225,6 +280,7 @@ struct ReservationsView: View {
                 showCheckout = false
                 completed = true
                 checkoutID = UUID()
+                app.reservationSection = .mine
                 await load()
             } else {
                 self.error = L10n.tr("reservations.uncertain")
@@ -241,7 +297,7 @@ struct ReservationsView: View {
     }
     private func cancel(_ item: Reservation) async {
         guard !mutating, app.phase == .authenticated else { return }; mutating = true; defer { mutating = false }
-        do { try await app.service.cancelReservation(id: item.id, requestID: UUID()); completed = true; await load() }
+        do { try await app.service.cancelReservation(id: item.id, requestID: UUID()); completed = false; await load() }
         catch { self.error = FriendlyError.message(error); app.handle(error) }
     }
 }
@@ -258,65 +314,72 @@ struct BookingCheckoutSheet: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
     private var canPay: Bool { !slots.isEmpty && quote != nil && !busy }
+    private var grouped: [(Date, [AvailableSlot])] { ReservationCalendar.groupedSlots(slots) }
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text(L10n.tr("reservations.checkoutTitle")).font(.title.bold())
-                    Text(L10n.tr("reservations.confirmBody")).foregroundStyle(.secondary)
-                    ForEach(slots) { slot in
-                        BrandCard {
-                            HStack(alignment: .top) {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text(slot.start, format: .dateTime.weekday(.wide).day().month())
-                                        .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                                    Text("\(slot.start.formatted(date: .omitted, time: .shortened)) – \(slot.end.formatted(date: .omitted, time: .shortened))")
-                                        .font(.headline)
-                                    Text("\(ReservationCalendar.durationMinutes(from: slot.start, to: slot.end)) \(L10n.tr("reservations.minutes")) · \(slot.room)")
-                                        .font(.caption).foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Button(L10n.tr("reservations.remove")) { onRemove(slot) }
-                                    .font(.subheadline).disabled(busy)
-                            }
-                        }
+                    checkoutHero
+                    ForEach(grouped, id: \.0) { day, items in
+                        CheckoutDayCard(day: day, slots: items, busy: busy, onRemove: onRemove)
                     }
-                    if let quote {
-                        BrandCard {
-                            VStack(alignment: .leading, spacing: 12) {
-                                LabeledContent(L10n.tr("reservations.perSlot"), value: quote.formatted(quote.pricePerSlot))
-                                LabeledContent(L10n.tr("reservations.total"), value: quote.formatted(quote.total))
-                                    .font(.headline)
-                            }
-                        }
-                    } else if quoteError == nil {
-                        ProgressView().frame(maxWidth: .infinity).padding()
-                    }
+                    if quote == nil && quoteError == nil { ProgressView().frame(maxWidth: .infinity).padding() }
                     if app.isDemo { Text(L10n.tr("reservations.payDemo")).font(.footnote).foregroundStyle(.secondary) }
                     if let message = error ?? quoteError { FailureView(message: message) }
-                    if let quote, ApplePayCheckout.canMakePayments {
-                        ApplePayButton(enabled: canPay) { pay(quote) }
-                            .frame(height: 58)
-                            .accessibilityLabel(payTitle)
-                    } else if !app.isDemo {
-                        Text(L10n.tr("reservations.applePayUnavailable")).font(.footnote).foregroundStyle(.secondary)
-                    }
-                    if app.isDemo {
-                        Button(L10n.tr("reservations.payDemoAction")) { demoPay() }
-                            .font(.subheadline)
-                            .frame(maxWidth: .infinity).frame(minHeight: 44)
-                            .disabled(!canPay)
-                    }
-                    if busy { ProgressView().frame(maxWidth: .infinity) }
-                }.padding(24)
+                }.padding(24).padding(.bottom, 12)
             }
             .brandBackground()
             .toolbar { Button(L10n.tr("common.close")) { dismiss() } }
+            .safeAreaInset(edge: .bottom) { payFooter }
             .task { await loadQuote() }
             .onChange(of: slots.map(\.id)) { _, _ in Task { await loadQuote() } }
         }
         .presentationDetents([.large])
         .interactiveDismissDisabled(busy)
+    }
+    private var checkoutHero: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(L10n.tr("reservations.checkoutTitle")).font(.caption.weight(.semibold)).textCase(.uppercase)
+            Text(countTitle).font(.largeTitle.weight(.bold)).tracking(-0.8)
+            Text(L10n.tr("reservations.confirmBody")).font(.subheadline)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .foregroundStyle(Brand.ink)
+        .background(LinearGradient(colors: [Color(hex: 0xD4F65E), Brand.lime], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 28))
+    }
+    private var countTitle: String {
+        slots.count == 1 ? L10n.tr("reservations.checkoutCountOne") : "\(slots.count) \(L10n.tr("reservations.checkoutCountMany"))"
+    }
+    @ViewBuilder private var payFooter: some View {
+        VStack(spacing: 12) {
+            if let quote {
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.tr("reservations.payFooter")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        Text("\(quote.slots.count)× \(quote.formatted(quote.pricePerSlot))").font(.footnote).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Text(quote.formatted(quote.total)).font(.title.bold()).monospacedDigit()
+                }
+            }
+            if let quote, ApplePayCheckout.canMakePayments {
+                ApplePayButton(enabled: canPay) { pay(quote) }
+                    .frame(height: 58)
+                    .accessibilityLabel(payTitle)
+            } else if !app.isDemo {
+                Text(L10n.tr("reservations.applePayUnavailable")).font(.footnote).foregroundStyle(.secondary)
+            }
+            if app.isDemo {
+                Button(L10n.tr("reservations.payDemoAction")) { demoPay() }
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity).frame(minHeight: 44)
+                    .disabled(!canPay)
+            }
+            if busy { ProgressView() }
+        }
+        .padding(16)
+        .background(.ultraThinMaterial)
     }
     private var payTitle: String {
         if let quote { return "\(L10n.tr("reservations.pay")) · \(quote.formatted(quote.total))" }
@@ -334,9 +397,132 @@ struct BookingCheckoutSheet: View {
     }
 }
 
-struct WeekStrip: View {
+struct CheckoutDayCard: View {
+    let day: Date
+    let slots: [AvailableSlot]
+    var busy = false
+    var onRemove: (AvailableSlot) -> Void
+    var body: some View {
+        BrandCard {
+            HStack(alignment: .top, spacing: 16) {
+                DateBadge(date: day)
+                VStack(spacing: 0) {
+                    ForEach(Array(slots.enumerated()), id: \.element.id) { index, slot in
+                        HStack(alignment: .top, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(ReservationCalendar.timeRange(slot.start, slot.end)).font(.headline.monospacedDigit())
+                                Text("\(ReservationCalendar.durationMinutes(from: slot.start, to: slot.end)) \(L10n.tr("reservations.minutes")) · \(slot.room)")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer(minLength: 8)
+                            Button {
+                                onRemove(slot)
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(.footnote.weight(.bold))
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 44, height: 44)
+                                    .background(Color.primary.opacity(0.06), in: Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(busy)
+                            .accessibilityLabel(L10n.tr("reservations.remove"))
+                        }
+                        .padding(.vertical, 8)
+                        if index < slots.count - 1 {
+                            Divider().opacity(0.35)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct NextSessionHero: View {
+    let reservation: Reservation
+    var onCancel: () -> Void
+    private var live: Bool { ReservationCalendar.current([reservation]) != nil }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Label(live ? L10n.tr("reservations.happening") : L10n.tr("reservations.nextSession"), systemImage: live ? "dot.radiowaves.left.and.right" : "sparkles")
+                .font(.caption.weight(.semibold))
+            HStack(alignment: .bottom, spacing: 16) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(reservation.start.formatted(.dateTime.weekday(.wide).day().month(.wide))).font(.subheadline.weight(.medium))
+                    Text(ReservationCalendar.timeRange(reservation.start, reservation.end))
+                        .font(.largeTitle.weight(.bold)).tracking(-0.8).monospacedDigit()
+                    Text("\(ReservationCalendar.durationMinutes(from: reservation.start, to: reservation.end)) \(L10n.tr("reservations.minutes")) · \(reservation.room)")
+                        .font(.subheadline)
+                }
+                Spacer(minLength: 0)
+            }
+            if reservation.canCancel {
+                Button(L10n.tr("reservations.cancel"), role: .destructive, action: onCancel)
+                    .font(.subheadline.weight(.semibold))
+                    .frame(minHeight: 44)
+            }
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .foregroundStyle(Brand.ink)
+        .background(LinearGradient(colors: [Color(hex: 0xD4F65E), Brand.lime], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 28))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct BookedSessionCard: View {
+    let reservation: Reservation
+    var style: Style = .upcoming
+    var onCancel: (() -> Void)?
+    enum Style { case upcoming, past }
+    var body: some View {
+        BrandCard {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .center, spacing: 16) {
+                    DateBadge(date: reservation.start, muted: style == .past)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(style == .past ? L10n.tr("reservations.pastBadge") : L10n.tr("reservations.confirmedBadge"))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(style == .past ? .secondary : Color("AccentColor"))
+                        Text(ReservationCalendar.timeRange(reservation.start, reservation.end))
+                            .font(.title3.bold()).monospacedDigit()
+                        Text("\(ReservationCalendar.durationMinutes(from: reservation.start, to: reservation.end)) \(L10n.tr("reservations.minutes")) · \(reservation.room)")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+                if style == .upcoming, reservation.canCancel, let onCancel {
+                    Button(L10n.tr("reservations.cancel"), role: .destructive, action: onCancel)
+                        .font(.subheadline.weight(.semibold))
+                        .frame(minHeight: 44)
+                }
+            }
+        }
+        .opacity(style == .past ? 0.78 : 1)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct DateBadge: View {
+    let date: Date
+    var muted = false
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(date.formatted(.dateTime.weekday(.abbreviated))).font(.caption2.weight(.semibold)).textCase(.uppercase)
+            Text(date.formatted(.dateTime.day())).font(.title.bold()).monospacedDigit()
+            Text(date.formatted(.dateTime.month(.abbreviated))).font(.caption2.weight(.medium))
+        }
+        .foregroundStyle(muted ? Color.primary.opacity(0.55) : Brand.ink)
+        .frame(width: 64)
+        .padding(.vertical, 10)
+        .background(muted ? Color.primary.opacity(0.08) : Brand.lime, in: RoundedRectangle(cornerRadius: 16))
+        .accessibilityHidden(true)
+    }
+}
+
+struct MonthCalendar: View {
     @Binding var date: Date
-    let week: [Date]
     let slots: [AvailableSlot]
     let reservations: [Reservation]
     var selection: [AvailableSlot] = []
@@ -344,57 +530,96 @@ struct WeekStrip: View {
     var onBack: () -> Void
     var onForward: () -> Void
     private var calendar: Calendar { .current }
+    private var days: [CalendarDay] { ReservationCalendar.monthGrid(containing: date, calendar: calendar) }
+    private var columns: [GridItem] { Array(repeating: GridItem(.flexible(), spacing: 4), count: 7) }
     var body: some View {
         BrandCard {
             VStack(spacing: 16) {
                 HStack {
                     Button(action: onBack) { Image(systemName: "chevron.left") }
                         .frame(width: 44, height: 44).disabled(!canGoBack)
-                        .accessibilityLabel(L10n.tr("reservations.previousWeek"))
+                        .accessibilityLabel(L10n.tr("reservations.previousMonth"))
                     Spacer()
-                    Text(weekTitle).font(.headline)
+                    VStack(spacing: 2) {
+                        Text(date.formatted(.dateTime.month(.wide).year())).font(.headline)
+                        if !calendar.isDateInToday(date) {
+                            Button(L10n.tr("reservations.todayJump")) { date = ReservationCalendar.clampedDay(Date(), calendar: calendar) }
+                                .font(.caption.weight(.semibold))
+                        }
+                    }
                     Spacer()
                     Button(action: onForward) { Image(systemName: "chevron.right") }
                         .frame(width: 44, height: 44)
-                        .accessibilityLabel(L10n.tr("reservations.nextWeek"))
+                        .accessibilityLabel(L10n.tr("reservations.nextMonth"))
                 }
-                HStack(spacing: 6) {
-                    ForEach(week, id: \.self) { day in
-                        let selected = calendar.isDate(day, inSameDayAs: date)
-                        let past = ReservationCalendar.isPastDay(day)
-                        Button {
-                            date = ReservationCalendar.clampedDay(day)
-                        } label: {
-                            VStack(spacing: 6) {
-                                Text(day.formatted(.dateTime.weekday(.abbreviated))).font(.caption.weight(.semibold))
-                                Text(day, format: .dateTime.day()).font(.headline)
-                                Circle().fill(dotColor(for: day)).frame(width: 6, height: 6)
-                            }
-                            .frame(maxWidth: .infinity).padding(.vertical, 10)
-                            .foregroundStyle(selected ? Brand.ink : Color.primary.opacity(past ? 0.35 : 1))
-                            .background(selected ? Brand.lime : Color.clear, in: RoundedRectangle(cornerRadius: 16))
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(past)
-                        .accessibilityLabel(day.formatted(.dateTime.weekday(.wide).day().month(.wide)))
-                        .accessibilityAddTraits(selected ? .isSelected : [])
+                HStack(spacing: 4) {
+                    ForEach(Array(ReservationCalendar.weekdaySymbols(calendar: calendar).enumerated()), id: \.offset) { _, symbol in
+                        Text(symbol).font(.caption.weight(.semibold)).foregroundStyle(.secondary).frame(maxWidth: .infinity)
                     }
+                }
+                LazyVGrid(columns: columns, spacing: 4) {
+                    ForEach(days, id: \.date) { day in
+                        dayButton(day)
+                    }
+                }
+                HStack(spacing: 16) {
+                    legend(color: Color.primary.opacity(0.28), title: L10n.tr("reservations.legend.free"))
+                    legend(color: Color("AccentColor"), title: L10n.tr("reservations.legend.mine"))
+                    legend(color: Brand.limeDeep, title: L10n.tr("reservations.legend.selected"))
+                }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityIdentifier("reservations.calendar")
+    }
+    private func dayButton(_ day: CalendarDay) -> some View {
+        let selected = calendar.isDate(day.date, inSameDayAs: date)
+        let past = ReservationCalendar.isPastDay(day.date)
+        let today = calendar.isDateInToday(day.date)
+        return Button {
+            date = ReservationCalendar.clampedDay(day.date, calendar: calendar)
+        } label: {
+            VStack(spacing: 4) {
+                Text(day.date, format: .dateTime.day())
+                    .font(.body.weight(today || selected ? .bold : .regular))
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 28)
+                Circle().fill(dotColor(for: day.date, selected: selected)).frame(width: 6, height: 6)
+            }
+            .padding(.vertical, 6)
+            .foregroundStyle(foreground(selected: selected, past: past, inMonth: day.inMonth))
+            .background(selected ? Brand.lime : Color.clear, in: RoundedRectangle(cornerRadius: 12))
+            .overlay {
+                if today && !selected {
+                    RoundedRectangle(cornerRadius: 12).strokeBorder(Brand.limeDeep.opacity(0.7), lineWidth: 1)
                 }
             }
         }
-        .accessibilityIdentifier("reservations.week")
+        .buttonStyle(.plain)
+        .disabled(past)
+        .opacity(day.inMonth || selected ? 1 : 0.35)
+        .accessibilityLabel(day.date.formatted(.dateTime.weekday(.wide).day().month(.wide)))
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityHidden(!day.inMonth && past)
     }
-    private var weekTitle: String {
-        guard let first = week.first, let last = week.last else { return L10n.tr("reservations.week") }
-        return "\(first.formatted(.dateTime.day().month(.abbreviated))) – \(last.formatted(.dateTime.day().month(.abbreviated)))"
+    private func foreground(selected: Bool, past: Bool, inMonth: Bool) -> Color {
+        if selected { return Brand.ink }
+        if past || !inMonth { return Color.primary.opacity(0.35) }
+        return Color.primary
     }
-    private func dotColor(for day: Date) -> Color {
-        if ReservationCalendar.hasReservation(reservations, on: day) { return selected(day) ? Brand.ink : Color("AccentColor") }
-        if ReservationCalendar.hasSelection(selection, on: day) { return selected(day) ? Brand.ink : Brand.limeDeep }
-        if ReservationCalendar.hasAvailability(slots, on: day) { return selected(day) ? Brand.ink.opacity(0.45) : Color.primary.opacity(0.28) }
+    private func dotColor(for day: Date, selected: Bool) -> Color {
+        if ReservationCalendar.hasReservation(reservations, on: day) { return selected ? Brand.ink : Color("AccentColor") }
+        if ReservationCalendar.hasSelection(selection, on: day) { return selected ? Brand.ink : Brand.limeDeep }
+        if ReservationCalendar.hasAvailability(slots, on: day) { return selected ? Brand.ink.opacity(0.45) : Color.primary.opacity(0.28) }
         return .clear
     }
-    private func selected(_ day: Date) -> Bool { calendar.isDate(day, inSameDayAs: date) }
+    private func legend(color: Color, title: String) -> some View {
+        HStack(spacing: 6) {
+            Circle().fill(color).frame(width: 6, height: 6)
+            Text(title)
+        }
+    }
 }
 
 struct SlotRow: View {
@@ -431,13 +656,19 @@ struct SlotRow: View {
 
 struct ReservationSummary: View {
     let reservation: Reservation
+    var hidesDay = false
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(relativeDay).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            Text(reservation.room).font(.headline)
-            Text("\(reservation.start.formatted(date: .omitted, time: .shortened)) – \(reservation.end.formatted(date: .omitted, time: .shortened))")
-            Text("\(ReservationCalendar.durationMinutes(from: reservation.start, to: reservation.end)) \(L10n.tr("reservations.minutes"))")
-                .font(.caption).foregroundStyle(.secondary)
+        HStack(alignment: .center, spacing: 16) {
+            if !hidesDay { DateBadge(date: reservation.start) }
+            VStack(alignment: .leading, spacing: 6) {
+                if hidesDay {
+                    Text(relativeDay).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                }
+                Text(ReservationCalendar.timeRange(reservation.start, reservation.end)).font(.title3.bold()).monospacedDigit()
+                Text("\(ReservationCalendar.durationMinutes(from: reservation.start, to: reservation.end)) \(L10n.tr("reservations.minutes")) · \(reservation.room)")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
         }.accessibilityElement(children: .combine)
     }
     private var relativeDay: String {

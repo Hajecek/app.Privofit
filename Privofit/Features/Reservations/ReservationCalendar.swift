@@ -13,6 +13,11 @@ enum DayPart: String, CaseIterable, Sendable {
     }
 }
 
+struct CalendarDay: Equatable, Hashable, Sendable {
+    var date: Date
+    var inMonth: Bool
+}
+
 enum ReservationCalendar {
     static func startOfDay(_ date: Date, calendar: Calendar = .current) -> Date {
         calendar.startOfDay(for: date)
@@ -28,6 +33,57 @@ enum ReservationCalendar {
 
     static func shiftWeek(_ date: Date, by weeks: Int, calendar: Calendar = .current) -> Date {
         calendar.date(byAdding: .weekOfYear, value: weeks, to: date) ?? date
+    }
+
+    static func monthStart(_ date: Date, calendar: Calendar = .current) -> Date {
+        let components = calendar.dateComponents([.year, .month], from: date)
+        return calendar.date(from: components).map { startOfDay($0, calendar: calendar) } ?? startOfDay(date, calendar: calendar)
+    }
+
+    static func shiftMonth(_ date: Date, by months: Int, calendar: Calendar = .current) -> Date {
+        calendar.date(byAdding: .month, value: months, to: monthStart(date, calendar: calendar)) ?? date
+    }
+
+    static func isCurrentMonth(_ date: Date, now: Date = Date(), calendar: Calendar = .current) -> Bool {
+        calendar.isDate(date, equalTo: now, toGranularity: .month)
+    }
+
+    static func weekdaySymbols(calendar: Calendar = .current) -> [String] {
+        let symbols = calendar.veryShortStandaloneWeekdaySymbols
+        let start = calendar.firstWeekday - 1
+        return Array(symbols[start...]) + Array(symbols[..<start])
+    }
+
+    static func monthGrid(containing date: Date, calendar: Calendar = .current) -> [CalendarDay] {
+        let start = monthStart(date, calendar: calendar)
+        let weekday = calendar.component(.weekday, from: start)
+        let pad = (weekday - calendar.firstWeekday + 7) % 7
+        let gridStart = calendar.date(byAdding: .day, value: -pad, to: start) ?? start
+        let daysInMonth = calendar.range(of: .day, in: .month, for: start)?.count ?? 30
+        let cells = (pad + daysInMonth) <= 35 ? 35 : 42
+        return (0..<cells).compactMap { offset in
+            guard let day = calendar.date(byAdding: .day, value: offset, to: gridStart) else { return nil }
+            return CalendarDay(
+                date: startOfDay(day, calendar: calendar),
+                inMonth: calendar.isDate(day, equalTo: start, toGranularity: .month)
+            )
+        }
+    }
+
+    static func groupedByDay(_ items: [Reservation], descending: Bool = false, calendar: Calendar = .current) -> [(Date, [Reservation])] {
+        let groups = Dictionary(grouping: items) { startOfDay($0.start, calendar: calendar) }
+        let keys = descending ? groups.keys.sorted(by: >) : groups.keys.sorted()
+        return keys.map { day in (day, groups[day]!.sorted { $0.start < $1.start }) }
+    }
+
+    static func groupedSlots(_ slots: [AvailableSlot], calendar: Calendar = .current) -> [(Date, [AvailableSlot])] {
+        Dictionary(grouping: slots) { startOfDay($0.start, calendar: calendar) }
+            .sorted { $0.key < $1.key }
+            .map { day, items in (day, items.sorted { $0.start < $1.start }) }
+    }
+
+    static func timeRange(_ start: Date, _ end: Date) -> String {
+        "\(start.formatted(date: .omitted, time: .shortened)) – \(end.formatted(date: .omitted, time: .shortened))"
     }
 
     static func isPastDay(_ date: Date, now: Date = Date(), calendar: Calendar = .current) -> Bool {

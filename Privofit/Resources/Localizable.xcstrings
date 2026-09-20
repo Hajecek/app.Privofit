@@ -20,22 +20,22 @@
     "%lld / 4" : {
 
     },
-    "%lld %@" : {
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld %2$@"
-          }
-        }
-      }
-    },
     "%lld %@ · %@" : {
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld %2$@ · %3$@"
+          }
+        }
+      }
+    },
+    "%lld× %@" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld× %2$@"
           }
         }
       }
@@ -3350,6 +3350,40 @@
         }
       }
     },
+    "reservations.bookedOnDayMany" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "termíny tento den"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bookings this day"
+          }
+        }
+      }
+    },
+    "reservations.bookedOnDayOne" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento den už máš termín"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You already have a booking this day"
+          }
+        }
+      }
+    },
     "reservations.cancel" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3431,6 +3465,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Confirm and pay"
+          }
+        }
+      }
+    },
+    "reservations.checkoutCountMany" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "termíny k zaplacení"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "slots to pay"
+          }
+        }
+      }
+    },
+    "reservations.checkoutCountOne" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 termín k zaplacení"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 slot to pay"
           }
         }
       }
@@ -3520,6 +3588,23 @@
         }
       }
     },
+    "reservations.confirmedBadge" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potvrzeno"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmed"
+          }
+        }
+      }
+    },
     "reservations.date" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3605,6 +3690,91 @@
         }
       }
     },
+    "reservations.goToMine" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobrazit moje termíny"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View my bookings"
+          }
+        }
+      }
+    },
+    "reservations.happening" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Právě teď"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Happening now"
+          }
+        }
+      }
+    },
+    "reservations.legend.free" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volné"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open"
+          }
+        }
+      }
+    },
+    "reservations.legend.mine" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moje"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mine"
+          }
+        }
+      }
+    },
+    "reservations.legend.selected" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vybrané"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selected"
+          }
+        }
+      }
+    },
     "reservations.mine" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3618,6 +3788,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your bookings"
+          }
+        }
+      }
+    },
+    "reservations.mineEmpty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zatím nemáš žádný termín."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You don't have any bookings yet."
+          }
+        }
+      }
+    },
+    "reservations.mineEmptyHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vyber si čas v záložce Termíny a zaplať ho."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a time in Slots and pay for it."
+          }
+        }
+      }
+    },
+    "reservations.mineHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tady máš všechny zaplacené tréninky, odděleně od výběru nových termínů."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Here are all your paid sessions, separate from picking new slots."
           }
         }
       }
@@ -3669,6 +3890,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next booking"
+          }
+        }
+      }
+    },
+    "reservations.nextMonth" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Další měsíc"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next month"
+          }
+        }
+      }
+    },
+    "reservations.nextSession" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Další trénink"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next session"
           }
         }
       }
@@ -3741,6 +3996,40 @@
         }
       }
     },
+    "reservations.past" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proběhlé"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Past"
+          }
+        }
+      }
+    },
+    "reservations.pastBadge" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proběhlo"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completed"
+          }
+        }
+      }
+    },
     "reservations.pay" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3788,6 +4077,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Verify payment in demo"
+          }
+        }
+      }
+    },
+    "reservations.payFooter" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "K úhradě"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Due now"
           }
         }
       }
@@ -3894,6 +4200,23 @@
         }
       }
     },
+    "reservations.previousMonth" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Předchozí měsíc"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous month"
+          }
+        }
+      }
+    },
     "reservations.previousWeek" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3996,7 +4319,58 @@
         }
       }
     },
+    "reservations.tab.mine" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moje termíny"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My bookings"
+          }
+        }
+      }
+    },
+    "reservations.tab.slots" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termíny"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slots"
+          }
+        }
+      }
+    },
     "reservations.today" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dnes"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today"
+          }
+        }
+      }
+    },
+    "reservations.todayJump" : {
       "extractionState" : "manual",
       "localizations" : {
         "cs" : {
