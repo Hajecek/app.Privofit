@@ -17,6 +17,19 @@
         }
       }
     },
+    "%@ %@" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%lld" : {
+
+    },
     "%lld / 4" : {
 
     },
@@ -3475,13 +3488,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "termíny k zaplacení"
+            "value" : "vstupy"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "slots to pay"
+            "value" : "entries"
           }
         }
       }
@@ -3492,13 +3505,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1 termín k zaplacení"
+            "value" : "1 vstup"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1 slot to pay"
+            "value" : "1 entry"
           }
         }
       }
@@ -3656,6 +3669,23 @@
         }
       }
     },
+    "reservations.entryOne" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vstup"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "entry"
+          }
+        }
+      }
+    },
     "reservations.example" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3720,6 +3750,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Happening now"
+          }
+        }
+      }
+    },
+    "reservations.intoRoom" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "do"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in"
           }
         }
       }
@@ -4268,6 +4315,57 @@
         }
       }
     },
+    "reservations.roomOne" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "místnost"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "room"
+          }
+        }
+      }
+    },
+    "reservations.roomsMany" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "místnosti"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "rooms"
+          }
+        }
+      }
+    },
+    "reservations.roomsOne" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 místnost"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 room"
+          }
+        }
+      }
+    },
     "reservations.selectHint" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4468,6 +4566,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Week"
+          }
+        }
+      }
+    },
+    "reservations.whenTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kdy"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When"
+          }
+        }
+      }
+    },
+    "reservations.whereTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kam jdeš"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where you're going"
           }
         }
       }

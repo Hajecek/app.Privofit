@@ -82,6 +82,14 @@ enum ReservationCalendar {
             .map { day, items in (day, items.sorted { $0.start < $1.start }) }
     }
 
+    static func uniqueRooms(_ slots: [AvailableSlot]) -> [String] {
+        Array(Set(slots.map(\.room))).sorted()
+    }
+
+    static func totalMinutes(_ slots: [AvailableSlot]) -> Int {
+        slots.reduce(0) { $0 + durationMinutes(from: $1.start, to: $1.end) }
+    }
+
     static func timeRange(_ start: Date, _ end: Date) -> String {
         "\(start.formatted(date: .omitted, time: .shortened)) – \(end.formatted(date: .omitted, time: .shortened))"
     }

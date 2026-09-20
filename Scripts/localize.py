@@ -167,8 +167,15 @@ reservations.selectHint|Označ všechny termíny, které chceš, a zaplať je na
 reservations.checkout|Potvrdit a zaplatit|Confirm and pay
 reservations.checkoutHint|Vybrané termíny zaplatíš v dalším kroku.|You'll pay for the selected slots next.
 reservations.checkoutTitle|Shrnutí rezervace|Booking summary
-reservations.checkoutCountOne|1 termín k zaplacení|1 slot to pay
-reservations.checkoutCountMany|termíny k zaplacení|slots to pay
+reservations.checkoutCountOne|1 vstup|1 entry
+reservations.checkoutCountMany|vstupy|entries
+reservations.entryOne|vstup|entry
+reservations.whereTitle|Kam jdeš|Where you're going
+reservations.whenTitle|Kdy|When
+reservations.roomsOne|1 místnost|1 room
+reservations.roomsMany|místnosti|rooms
+reservations.roomOne|místnost|room
+reservations.intoRoom|do|in
 reservations.payFooter|K úhradě|Due now
 reservations.nextSession|Další trénink|Next session
 reservations.happening|Právě teď|Happening now
