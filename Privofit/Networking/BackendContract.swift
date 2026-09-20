@@ -111,16 +111,17 @@ private enum APIJSON {
             let raw = try container.decode(String.self)
             let iso = ISO8601DateFormatter()
             iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            iso.timeZone = TimeZone(secondsFromGMT: 0)
             if let date = iso.date(from: raw) { return date }
             iso.formatOptions = [.withInternetDateTime]
             if let date = iso.date(from: raw) { return date }
             let posix = DateFormatter()
             posix.locale = Locale(identifier: "en_US_POSIX")
             posix.timeZone = TimeZone(secondsFromGMT: 0)
-            posix.dateFormat = "yyyy-MM-dd HH:mm:ss"
-            if let date = posix.date(from: raw) { return date }
-            posix.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-            if let date = posix.date(from: raw) { return date }
+            for format in ["yyyy-MM-dd'T'HH:mm:ssXXXXX", "yyyy-MM-dd'T'HH:mm:ssX", "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd HH:mm:ss"] {
+                posix.dateFormat = format
+                if let date = posix.date(from: raw) { return date }
+            }
             throw DecodingError.dataCorruptedError(in: container, debugDescription: "date")
         }
         return decoder
