@@ -1,0 +1,89 @@
+import SwiftUI
+
+struct RootView: View {
+    @Environment(AppModel.self) private var app
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var body: some View {
+        @Bindable var app = app
+        ZStack {
+            Group {
+                switch app.phase {
+                case .launching: LaunchView()
+                case .signedOut: AuthenticationView()
+                case .onboarding: OnboardingView()
+                case .authenticated, .guest: MainTabs()
+                case .sessionExpired: recovery(title: "session.title", message: "error.session")
+                case .restricted: recovery(title: "account.restricted", message: "account.restricted.body")
+                }
+            }
+            .disabled(app.locked).accessibilityHidden(app.locked)
+            if app.locked { lockScreen }
+            if scenePhase != .active { BrandMark().frame(maxWidth: .infinity, maxHeight: .infinity).brandBackground().accessibilityHidden(true) }
+        }
+        .brandBackground()
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: app.phase)
+        .task { await app.boot() }
+        .task(id: app.phase) {
+            if app.phase == .authenticated, let token = app.notifications.deviceToken { await app.uploadPushToken(token) }
+        }
+        .onChange(of: scenePhase) { _, phase in if phase == .background { app.backgrounded() } }
+        .onReceive(NotificationCenter.default.publisher(for: .privofitPushToken)) { notification in
+            if let token = notification.object as? String { Task { await app.uploadPushToken(token) } }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .privofitPushFailure)) { _ in app.notifications.registrationError = L10n.tr("notifications.registration.failed") }
+        .onReceive(NotificationCenter.default.publisher(for: .privofitShowInbox)) { _ in
+            if app.phase == .authenticated { app.showInbox = true }
+        }
+        .sheet(isPresented: $app.showGuestGate) { GuestGate().presentationDetents([.medium, .large]) }
+    }
+    private var lockScreen: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "lock.shield").font(.largeTitle)
+            Text(L10n.tr("lock.title")).font(.title.bold())
+            PrimaryButton(title: L10n.tr("lock.unlock"), symbol: "faceid") { Task { await app.unlock() } }
+            if let error = app.error { FailureView(message: error) }
+            Button(L10n.tr("auth.signout")) { Task { await app.logout() } }.frame(minHeight: 44)
+        }.padding(28).frame(maxWidth: .infinity, maxHeight: .infinity).brandBackground()
+    }
+    private func recovery(title: String, message: String) -> some View {
+        VStack(spacing: 24) {
+            BrandMark(); Text(L10n.tr(title)).font(.largeTitle.bold()); Text(L10n.tr(message))
+            PrimaryButton(title: L10n.tr("auth.login")) { Task { await app.logout() } }
+        }.padding(28)
+    }
+}
+struct MainTabs: View {
+    @Environment(AppModel.self) private var app
+    var body: some View {
+        @Bindable var app = app
+        TabView(selection: $app.tab) {
+            Tab(L10n.tr("tab.dashboard"), systemImage: "square.grid.2x2", value: AppTab.dashboard) { NavigationStack { DashboardView() } }
+            Tab(L10n.tr("tab.reservations"), systemImage: "calendar", value: AppTab.reservations) { NavigationStack { ReservationsView() } }
+            Tab(L10n.tr("tab.door"), systemImage: "door.left.hand.open", value: AppTab.door) { NavigationStack { DoorEntryView() } }
+            Tab(L10n.tr("tab.membership"), systemImage: "creditcard", value: AppTab.membership) { NavigationStack { MembershipView() } }
+            Tab(L10n.tr("tab.profile"), systemImage: "person.crop.circle", value: AppTab.profile) { NavigationStack { ProfileView() } }
+        }
+        .clearTopChrome()
+        .fullScreenCover(isPresented: $app.showDoor) {
+            DoorView(model: DoorModel(app: app)).environment(app)
+                .overlay { if app.locked || app.phase != .authenticated { Brand.night.ignoresSafeArea().overlay { ProgressView() } } }
+                .onChange(of: app.locked) { _, locked in if locked { app.showDoor = false } }
+                .onChange(of: app.phase) { _, phase in if phase != .authenticated { app.showDoor = false } }
+        }
+        .sheet(isPresented: $app.showInbox) { NavigationStack { NotificationsView() }.environment(app).privacyShield() }
+    }
+}
+struct GuestGate: View {
+    @Environment(AppModel.self) private var app
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        ScrollView { VStack(alignment: .leading, spacing: 20) {
+            Label(L10n.tr("guest.gate.title"), systemImage: "lock.shield").font(.title2.bold())
+            Text(L10n.tr("guest.gate.body")).foregroundStyle(.secondary)
+            PrimaryButton(title: L10n.tr("auth.login")) { app.registrationRequested = false; dismiss(); app.requireLogin() }
+            Button(L10n.tr("auth.create")) { app.registrationRequested = true; dismiss(); app.requireLogin() }.frame(minHeight: 44)
+            Button(L10n.tr("common.notNow"), role: .cancel) { dismiss() }.frame(minHeight: 44)
+        }.padding(28) }.brandBackground()
+    }
+}

@@ -1,0 +1,10 @@
+// Public configuration only. Never put secrets in these files.
+// Use https:/$()/your-domain/api/v1/ to avoid xcconfig // comment parsing.
+API_BASE_URL =
+GOOGLE_CLIENT_ID =
+GOOGLE_REDIRECT_URI =
+GOOGLE_CALLBACK_SCHEME = privofit-unconfigured
+SUPPORT_URL =
+TERMS_URL =
+PRIVACY_URL =
+CHECKOUT_URL =
