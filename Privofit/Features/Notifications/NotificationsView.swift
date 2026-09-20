@@ -19,6 +19,6 @@ struct NotificationsView: View {
     private func load() async {
         guard app.phase == .authenticated, !loading else { return }; loading = true; defer { loading = false }
         do { let items = try await app.service.inbox(); guard app.phase == .authenticated else { return }; app.inbox = items; error = nil }
-        catch { self.error = FriendlyError.message(error); app.handle(error) }
+        catch { self.error = FriendlyError.message(error); app.handle(error, surface: false) }
     }
 }

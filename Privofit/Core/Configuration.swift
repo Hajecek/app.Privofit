@@ -63,6 +63,7 @@ enum FriendlyError {
         case .offline: return L10n.tr("error.offline")
         case .biometricsUnavailable: return L10n.tr("error.biometry")
         case .cancelled: return L10n.tr("error.cancelled")
+        case .timeout: return L10n.tr("error.timeout")
         case .rejected(let message): return message
         default: return L10n.tr("error.generic")
         }

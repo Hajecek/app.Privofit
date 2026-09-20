@@ -49,7 +49,7 @@ struct ProfileView: View {
             if app.preferences.biometrics { try await app.biometrics.authenticate(reason: L10n.tr("account.delete.title")) }
             try await app.service.deleteAccount()
             await app.logout()
-        } catch { self.error = FriendlyError.message(error); app.handle(error) }
+        } catch { self.error = FriendlyError.message(error); app.handle(error, surface: false) }
     }
 }
 struct ConfiguredLink: View {

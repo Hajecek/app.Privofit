@@ -1382,6 +1382,23 @@
         }
       }
     },
+    "error.timeout" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server neodpověděl včas. Zkus to znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server did not respond in time. Please try again."
+          }
+        }
+      }
+    },
     "error.session" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3580,6 +3597,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You'll pay with Apple Pay in the app. After payment the slots are booked."
+          }
+        }
+      }
+    },
+    "reservations.confirmAction" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potvrdit rezervaci"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm booking"
           }
         }
       }

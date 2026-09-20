@@ -33,7 +33,7 @@ struct MembershipView: View {
         do { offers = try await app.service.offers() } catch { self.error = FriendlyError.message(error) }
         if !app.isGuest {
             do { let result = try await app.service.membership(); guard app.phase == .authenticated else { return }; app.membership = result }
-            catch { self.error = FriendlyError.message(error); app.handle(error) }
+            catch { self.error = FriendlyError.message(error); app.handle(error, surface: false) }
         }
     }
 }

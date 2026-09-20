@@ -229,6 +229,6 @@ struct PasswordActionView: View {
         do {
             if mode == .reset { try await app.service.requestPasswordReset(identifier: identifier); result = L10n.tr("password.resetSent") }
             else { try await app.service.changePassword(current: current, new: new); result = L10n.tr("password.changed"); current = ""; new = "" }
-        } catch { self.error = FriendlyError.message(error); if mode == .change { app.handle(error) } }
+        } catch { self.error = FriendlyError.message(error); if mode == .change { app.handle(error, surface: false) } }
     }
 }

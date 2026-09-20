@@ -53,6 +53,7 @@ error.session|Přihlášení vypršelo. Přihlas se prosím znovu.|Your session 
 error.credentials|Přihlášení se nepodařilo. Zkontroluj své údaje.|Could not sign in. Please check your credentials.
 error.denied|Pro tuto akci nemáš oprávnění.|You are not permitted to perform this action.
 error.offline|Není dostupné připojení. Zkontroluj internet.|You appear to be offline. Check your connection.
+error.timeout|Server neodpověděl včas. Zkus to znovu.|The server did not respond in time. Please try again.
 error.biometry|Biometrické ověření není dostupné.|Biometric authentication is unavailable.
 error.cancelled|Ověření bylo zrušeno.|Authentication was cancelled.
 session.title|Přivítáme tě znovu.|Welcome back.
@@ -162,6 +163,7 @@ reservations.noSlots|V tento den nejsou dostupné termíny.|No time slots availa
 reservations.reserve|Rezervovat|Book session
 reservations.detail|Tvůj další trénink|Your next workout
 reservations.confirmBody|Zaplatíš Apple Pay přímo v aplikaci. Po potvrzení platby se termíny rezervují.|You'll pay with Apple Pay in the app. After payment the slots are booked.
+reservations.confirmAction|Potvrdit rezervaci|Confirm booking
 reservations.confirmed|Změna byla potvrzena serverem|Change confirmed by the server
 reservations.selectHint|Označ všechny termíny, které chceš, a zaplať je najednou.|Mark every slot you want, then pay for them together.
 reservations.checkout|Potvrdit a zaplatit|Confirm and pay

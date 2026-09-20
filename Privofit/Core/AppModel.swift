@@ -33,6 +33,7 @@ enum ReservationSection: Hashable { case slots, mine }
     let apple = AppleSignIn()
     let google = GoogleSignIn()
     private var epoch = 0
+    private var syncing = false
     var isGuest: Bool { phase == .guest || (phase == .onboarding && member == nil) }
     var isDemo: Bool { service.isDemo }
     init(service: any GymService, preferences: Preferences = Preferences(), notifications: NotificationService = NotificationService(),
@@ -53,7 +54,12 @@ enum ReservationSection: Hashable { case slots, mine }
     }
     private func accept(_ user: Member) {
         member = user
-        guard user.status == .active else { phase = .restricted(user.status); return }
+        guard user.status == .active else {
+            showDoor = false
+            showInbox = false
+            phase = .restricted(user.status)
+            return
+        }
         if isDemo {
             preferences.completeOnboarding(for: user.id)
             phase = .authenticated
@@ -104,18 +110,52 @@ enum ReservationSection: Hashable { case slots, mine }
         await service.logout(); busy = false
     }
     func loadDashboard() async {
-        guard phase == .authenticated, !locked, !loading else { return }
-        loading = true; error = nil; let current = epoch
-        defer { loading = false }
-        do {
-            let plan = try await service.membership()
-            let bookings = try await service.reservations()
-            let messages = try await service.inbox()
-            guard current == epoch, phase == .authenticated else { return }
-            membership = plan; reservations = bookings; inbox = messages
-        } catch { if current == epoch { handle(error) } }
+        await syncAccount(showLoading: true)
     }
-    func handle(_ failure: Error) {
+    func syncAccount(showLoading: Bool = false) async {
+        switch phase {
+        case .authenticated, .restricted:
+            break
+        case .onboarding:
+            guard member != nil else { return }
+        default:
+            return
+        }
+        guard !syncing else { return }
+        syncing = true
+        if showLoading { loading = true; error = nil }
+        let current = epoch
+        defer {
+            syncing = false
+            if showLoading { loading = false }
+        }
+        do {
+            guard let user = try await service.restore() else { return }
+            guard current == epoch else { return }
+            accept(user)
+            guard phase == .authenticated else {
+                membership = nil
+                return
+            }
+            if let plan = await fetchKeepingSession({ try await service.membership() }) { membership = plan }
+            guard current == epoch, phase == .authenticated else { return }
+            if let bookings = await fetchKeepingSession({ try await service.reservations() }) { reservations = bookings }
+            guard current == epoch, phase == .authenticated else { return }
+            if let messages = await fetchKeepingSession({ try await service.inbox() }) { inbox = messages }
+            guard current == epoch, phase == .authenticated else { return }
+            if showLoading { error = nil }
+        } catch {
+            if current == epoch { handle(error, surface: showLoading) }
+        }
+    }
+    private func fetchKeepingSession<T>(_ work: () async throws -> T) async -> T? {
+        do { return try await work() }
+        catch {
+            handle(error, surface: false)
+            return nil
+        }
+    }
+    func handle(_ failure: Error, surface: Bool = true) {
         if failure is CancellationError { return }
         if let failure = failure as? AppFailure, failure == .unauthorized {
             if phase == .sessionExpired { error = L10n.tr("error.session"); return }
@@ -125,8 +165,10 @@ enum ReservationSection: Hashable { case slots, mine }
             Task { await service.logout(); busy = false }
             epoch += 1; member = nil; membership = nil; reservations = []; inbox = []; locked = false; phase = .sessionExpired
             AppDelegate.shared?.updateAuthentication(isLoggedIn: false)
+            error = FriendlyError.message(failure)
+            return
         }
-        error = FriendlyError.message(failure)
+        if surface { error = FriendlyError.message(failure) }
     }
     func backgrounded() { if member != nil && preferences.biometrics { locked = true } }
     func unlock() async {
@@ -136,7 +178,7 @@ enum ReservationSection: Hashable { case slots, mine }
     func refreshInbox() async {
         guard phase == .authenticated, !locked else { return }
         do { inbox = try await service.inbox() }
-        catch { handle(error) }
+        catch { handle(error, surface: false) }
     }
     func uploadPushToken(_ token: String, kind: String? = nil) async {
         if kind == "fcm" {

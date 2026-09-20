@@ -60,6 +60,22 @@ struct ValidationTests {
         model.handle(AppFailure.unauthorized)
         #expect(model.phase == .sessionExpired); #expect(model.member == nil)
     }
+    @Test func syncPicksUpRemoteBlockAndMembership() async {
+        let service = MockGymService()
+        let model = app(service)
+        await model.login(identifier: "alex", password: "sample")
+        #expect(model.phase == .authenticated)
+        service.accountStatus = .blocked
+        await model.syncAccount()
+        #expect(model.phase == .restricted(.blocked))
+        #expect(model.showDoor == false)
+        service.accountStatus = .active
+        await model.syncAccount()
+        #expect(model.phase == .authenticated)
+        service.inactiveMembership = true
+        await model.syncAccount()
+        #expect(model.membership?.isActive == false)
+    }
     @Test func doorRejectsGuestAndServerDenial() async {
         let service = MockGymService(); let model = app(service)
         model.enterGuest(); model.finishOnboarding()

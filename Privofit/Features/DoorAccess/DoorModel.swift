@@ -62,7 +62,7 @@ enum DoorState: Equatable {
             if !app.isDemo { try await app.vault.saveDoor(command) }
             pending = command
             app.unconfirmedDoorCommands[userID] = command
-        } catch { state = .failed(FriendlyError.message(error)); app.handle(error); return }
+        } catch { state = .failed(FriendlyError.message(error)); app.handle(error, surface: false); return }
         guard let pending else { state = .failed(L10n.tr("door.failed")); return }
         guard app.phase == .authenticated, app.member?.id == userID, !app.locked, isActive() else {
             // Persistence suspended; the app may have gone to the background.
@@ -77,7 +77,7 @@ enum DoorState: Equatable {
             let receipt = try await app.service.openDoor(doorID: eligibility.doorID, requestID: pending.requestID)
             guard app.member?.id == userID, app.phase == .authenticated else { state = .uncertain; return }
             try await apply(receipt, pending: pending)
-        } catch { state = .uncertain; app.handle(error) }
+        } catch { state = .uncertain; app.handle(error, surface: false) }
     }
     func reconcile() async {
         guard !state.busy, let pending, app.member?.id == pending.memberID,
@@ -86,7 +86,7 @@ enum DoorState: Equatable {
         do { let receipt = try await app.service.doorStatus(requestID: pending.requestID, operationID: pending.operationID)
             guard app.member?.id == pending.memberID else { state = .uncertain; return }
             try await apply(receipt, pending: pending)
-        } catch { state = .uncertain; app.handle(error) }
+        } catch { state = .uncertain; app.handle(error, surface: false) }
     }
     func advanceCooldown() {
         if state == .confirmed { state = .cooldown }

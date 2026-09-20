@@ -248,16 +248,27 @@ struct ReservationsView: View {
     }
     private func load() async {
         guard !app.isGuest, !loading else { return }; loading = true; defer { loading = false }
+        var lastError: Error?
         do {
             let bookings = try await app.service.reservations()
-            let available = try await app.service.availableSlots()
             guard app.phase == .authenticated else { return }
             app.reservations = bookings
+            cart.removeAll { booked in bookings.contains(where: { $0.id == booked.id }) }
+        } catch {
+            lastError = error
+            app.handle(error, surface: false)
+        }
+        do {
+            let available = try await app.service.availableSlots()
+            guard app.phase == .authenticated else { return }
             slots = available
-            cart.removeAll { booked in bookings.contains(where: { $0.id == booked.id }) || !available.contains(where: { $0.id == booked.id }) }
-            date = ReservationCalendar.clampedDay(date)
-            error = nil
-        } catch { self.error = FriendlyError.message(error); app.handle(error) }
+            cart.removeAll { booked in !available.contains(where: { $0.id == booked.id }) }
+        } catch {
+            lastError = error
+            app.handle(error, surface: false)
+        }
+        date = ReservationCalendar.clampedDay(date)
+        if let lastError { self.error = FriendlyError.message(lastError) } else { error = nil }
     }
     private func payAndReserve(quote: BookingQuote?, applePay useApplePay: Bool) async {
         guard !mutating, app.phase == .authenticated, !cart.isEmpty else { return }
@@ -290,7 +301,7 @@ struct ReservationsView: View {
         } catch let failure as AppFailure where failure == .unavailable {
             self.error = L10n.tr("reservations.applePayFailed")
         } catch {
-            app.handle(error)
+            app.handle(error, surface: false)
             await load()
             self.error = FriendlyError.message(error)
         }
@@ -298,7 +309,7 @@ struct ReservationsView: View {
     private func cancel(_ item: Reservation) async {
         guard !mutating, app.phase == .authenticated else { return }; mutating = true; defer { mutating = false }
         do { try await app.service.cancelReservation(id: item.id, requestID: UUID()); completed = false; await load() }
-        catch { self.error = FriendlyError.message(error); app.handle(error) }
+        catch { self.error = FriendlyError.message(error); app.handle(error, surface: false) }
     }
 }
 
@@ -418,14 +429,17 @@ struct BookingSummaryView: View {
                     Text(quote.formatted(quote.total)).font(.title.bold()).monospacedDigit()
                 }
             }
-            if let quote, ApplePayCheckout.canMakePayments {
+            if let quote, quote.total == 0 {
+                PrimaryButton(title: L10n.tr("reservations.confirmAction"), symbol: "checkmark", busy: busy) { demoPay() }
+                    .disabled(!canPay)
+            } else if let quote, ApplePayCheckout.canMakePayments {
                 ApplePayButton(enabled: canPay) { pay(quote) }
                     .frame(height: 58)
                     .accessibilityLabel(payTitle)
             } else if !app.isDemo {
                 Text(L10n.tr("reservations.applePayUnavailable")).font(.footnote).foregroundStyle(.secondary)
             }
-            if app.isDemo {
+            if app.isDemo, (quote?.total ?? 1) != 0 {
                 Button(L10n.tr("reservations.payDemoAction")) { demoPay() }
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity).frame(minHeight: 44)

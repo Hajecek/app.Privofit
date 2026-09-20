@@ -96,11 +96,34 @@ struct BackendContract: Sendable {
 }
 
 private enum APIJSON {
+    private struct Envelope<Value: Decodable>: Decodable { var data: Value }
     static func decode<T: Decodable>(_ data: Data) throws -> T {
+        let decoder = makeDecoder()
+        if let value = try? decoder.decode(T.self, from: data) { return value }
+        if let envelope = try? decoder.decode(Envelope<T>.self, from: data) { return envelope.data }
+        throw AppFailure.invalidResponse
+    }
+    private static func makeDecoder() -> JSONDecoder {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        do { return try decoder.decode(T.self, from: data) }
-        catch { throw AppFailure.invalidResponse }
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            if let value = try? container.decode(Double.self) { return Date(timeIntervalSince1970: value) }
+            let raw = try container.decode(String.self)
+            let iso = ISO8601DateFormatter()
+            iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let date = iso.date(from: raw) { return date }
+            iso.formatOptions = [.withInternetDateTime]
+            if let date = iso.date(from: raw) { return date }
+            let posix = DateFormatter()
+            posix.locale = Locale(identifier: "en_US_POSIX")
+            posix.timeZone = TimeZone(secondsFromGMT: 0)
+            posix.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            if let date = posix.date(from: raw) { return date }
+            posix.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+            if let date = posix.date(from: raw) { return date }
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "date")
+        }
+        return decoder
     }
     static func body(_ value: some Encodable) throws -> Data {
         let encoder = JSONEncoder()

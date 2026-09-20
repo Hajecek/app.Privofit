@@ -44,14 +44,17 @@ actor HTTPClient {
         if let bearer { request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization") }
         let data: Data; let response: URLResponse
         do { (data, response) = try await session.data(for: request) }
-        catch let error as URLError where error.code == .notConnectedToInternet { throw AppFailure.offline }
+        catch let error as URLError where error.code == .notConnectedToInternet
+            || error.code == .cannotConnectToHost || error.code == .networkConnectionLost { throw AppFailure.offline }
+        catch let error as URLError where error.code == .timedOut { throw AppFailure.timeout }
+        catch { throw AppFailure.unavailable }
         guard let http = response as? HTTPURLResponse else { throw AppFailure.invalidResponse }
         logger.debug("HTTP status: \(http.statusCode, privacy: .public)")
         switch http.statusCode {
         case 200..<300: return try endpoint.decode(data)
         case 401: throw AppFailure.unauthorized
         case 403: throw AppFailure.forbidden
-        case 400, 409, 422: throw Self.rejected(from: data) ?? AppFailure.http(http.statusCode)
+        case 400, 404, 409, 422, 500, 502, 503: throw Self.rejected(from: data) ?? AppFailure.http(http.statusCode)
         default: throw AppFailure.http(http.statusCode)
         }
     }
