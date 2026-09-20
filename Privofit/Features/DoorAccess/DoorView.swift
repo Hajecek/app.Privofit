@@ -75,7 +75,7 @@ struct DoorView: View {
                         .scaleEffect(appeared || reduceMotion ? 1 : 0.88)
                         .opacity(appeared ? 1 : 0)
                     stateContent.font(.subheadline).multilineTextAlignment(.center).frame(maxWidth: 420)
-                    if let booking = app.reservations.first(where: { $0.start <= Date() && $0.end >= Date() }) {
+                    if let booking = ReservationCalendar.current(app.reservations) {
                         HStack { Image(systemName: "calendar"); Text(booking.start, style: .time); Text("–"); Text(booking.end, style: .time) }
                             .font(.subheadline.weight(.medium)).padding(12).background(Brand.ink.opacity(0.05), in: Capsule())
                     }

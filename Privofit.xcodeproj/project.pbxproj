@@ -42,6 +42,7 @@
 		C96D5F28FCE77F3C8B141C7B /* AppIconBadgeSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19B5DA490002A5547E65FD00 /* AppIconBadgeSync.swift */; };
 		CA883CF2C5A8D64E25E94740 /* BackendContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2617AAB567A5F591B6D5A4DF /* BackendContract.swift */; };
 		D1C1CF310BC5BE7508A92A63 /* ReservationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0887D096BBDAFDAC4AAFE296 /* ReservationsView.swift */; };
+		366F479E360392D3C55FE845 /* ReservationCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F916276D5ED1C6E6FF63F5D1 /* ReservationCalendar.swift */; };
 		D591A7941D15E5EDBBFA43A8 /* AccessArtwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A2BF28CB181B719896E1035 /* AccessArtwork.swift */; };
 		DA4F0AEF8E3849F40DBA11E1 /* GymService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12E49F17590D93ACEECE037 /* GymService.swift */; };
 		E2319BFD1EE5CCE2DF5B0199 /* KeychainVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4F904F31848ADF8DDB94DD6 /* KeychainVault.swift */; };
@@ -70,6 +71,7 @@
 
 /* Begin PBXFileReference section */
 		0887D096BBDAFDAC4AAFE296 /* ReservationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ReservationsView.swift; path = Privofit/Features/Reservations/ReservationsView.swift; sourceTree = "<group>"; };
+		F916276D5ED1C6E6FF63F5D1 /* ReservationCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ReservationCalendar.swift; path = Privofit/Features/Reservations/ReservationCalendar.swift; sourceTree = "<group>"; };
 		0A07735BC4E9085AAAE46C3B /* PrivofitUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PrivofitUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0C31496AF991DF673C5B3EBC /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Configuration.swift; path = Privofit/Core/Configuration.swift; sourceTree = "<group>"; };
 		19B5DA490002A5547E65FD00 /* AppIconBadgeSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppIconBadgeSync.swift; path = Privofit/Services/AppIconBadgeSync.swift; sourceTree = "<group>"; };
@@ -179,6 +181,7 @@
 				3B472E46D3716D9190B1C7B1 /* OnboardingView.swift */,
 				A090070EA1B94233F426286B /* ProfileView.swift */,
 				0887D096BBDAFDAC4AAFE296 /* ReservationsView.swift */,
+				F916276D5ED1C6E6FF63F5D1 /* ReservationCalendar.swift */,
 				6816547431CD2BE70BFB6453 /* SettingsView.swift */,
 			);
 			name = Features;
@@ -490,6 +493,7 @@
 				99A2E6BF1B2ED5EBBB28930B /* OnboardingView.swift in Sources */,
 				0C4F5D9488212EF4F544FEA3 /* ProfileView.swift in Sources */,
 				D1C1CF310BC5BE7508A92A63 /* ReservationsView.swift in Sources */,
+				366F479E360392D3C55FE845 /* ReservationCalendar.swift in Sources */,
 				81BFFAD01DB8E68F6DD06027 /* SettingsView.swift in Sources */,
 				A644A57F69ABCCEC84061380 /* Domain.swift in Sources */,
 				37B1E2B4BF36980B88D4A0B9 /* AuthorizedClient.swift in Sources */,

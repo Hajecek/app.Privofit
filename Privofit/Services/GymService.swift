@@ -21,6 +21,8 @@ import Foundation
     func reservations() async throws -> [Reservation]
     func availableSlots() async throws -> [AvailableSlot]
     func reserve(slotID: String, requestID: UUID) async throws -> Reservation
+    func quoteReservations(slotIDs: [String]) async throws -> BookingQuote
+    func payAndReserve(slotIDs: [String], requestID: UUID) async throws -> BookingPayment
     func cancelReservation(id: String, requestID: UUID) async throws
 }
 @MainActor protocol DoorAccessServicing {

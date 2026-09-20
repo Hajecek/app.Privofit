@@ -31,6 +31,22 @@ struct AvailableSlot: Codable, Identifiable, Equatable, Sendable {
     let end: Date
     let room: String
 }
+struct BookingQuote: Equatable, Sendable {
+    var slots: [AvailableSlot]
+    var pricePerSlot: Decimal
+    var currencyCode: String
+    var total: Decimal { pricePerSlot * Decimal(slots.count) }
+    func formatted(_ value: Decimal) -> String {
+        value.formatted(.currency(code: currencyCode).locale(Locale(identifier: "cs_CZ")))
+    }
+}
+struct BookingPayment: Equatable, Sendable {
+    enum Status: String, Sendable { case paid, pending, failed }
+    var id: String
+    var status: Status
+    var checkoutURL: URL?
+    var reservations: [Reservation]
+}
 struct InboxItem: Codable, Identifiable, Equatable, Sendable {
     let id: String
     let title: String

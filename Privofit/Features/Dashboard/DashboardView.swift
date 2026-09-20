@@ -49,7 +49,7 @@ struct DashboardView: View {
                     }
                     BrandCard { VStack(alignment: .leading, spacing: 14) {
                         Label(L10n.tr("reservations.next"), systemImage: "calendar").font(.headline)
-                        if let next = app.reservations.filter({ $0.end > Date() }).sorted(by: { $0.start < $1.start }).first { ReservationSummary(reservation: next) }
+                        if let next = ReservationCalendar.next(app.reservations) { ReservationSummary(reservation: next) }
                         else { Text(L10n.tr("reservations.empty")).foregroundStyle(.secondary) }
                         Button(L10n.tr("reservations.new")) { app.tab = .reservations }.frame(minHeight: 44)
                     } }

@@ -84,6 +84,66 @@ struct ValidationTests {
         #expect(payload.channels["door"] == false)
         #expect(payload.channels["reservations"] == true)
     }
+    @Test func reservationCalendarPlansWeekAndConflicts() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+        calendar.firstWeekday = 2
+        calendar.locale = Locale(identifier: "cs_CZ")
+        let wednesday = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 12))!
+        let week = ReservationCalendar.week(containing: wednesday, calendar: calendar)
+        #expect(week.count == 7)
+        #expect(calendar.component(.weekday, from: week[0]) == 2)
+        #expect(calendar.isDate(week[2], inSameDayAs: wednesday))
+
+        let start = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 17))!
+        let slot = AvailableSlot(id: "s1", start: start, end: start.addingTimeInterval(3600), room: "PRIVOFIT / 01")
+        let booking = Reservation(id: "r1", start: start.addingTimeInterval(1800), end: start.addingTimeInterval(5400), room: "PRIVOFIT / 01", canCancel: true)
+        #expect(ReservationCalendar.overlaps(slot, with: [booking]))
+        #expect(ReservationCalendar.next([booking], now: start.addingTimeInterval(-60))?.id == "r1")
+        #expect(ReservationCalendar.upcoming([booking], now: start.addingTimeInterval(10_000)).isEmpty)
+        #expect(ReservationCalendar.groupedByDayPart([slot], calendar: calendar).map(\.0) == [.evening])
+        #expect(ReservationCalendar.durationMinutes(from: slot.start, to: slot.end) == 60)
+        #expect(!ReservationCalendar.isPastDay(wednesday, now: wednesday, calendar: calendar))
+    }
+    @Test func demoSlotsCoverUpcomingDays() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 18, hour: 9))!
+        let slots = MockGymService.demoSlots(now: now, calendar: calendar)
+        #expect(!slots.isEmpty)
+        let days = Set(slots.map { calendar.startOfDay(for: $0.start) })
+        #expect(days.count > 5)
+        #expect(slots.allSatisfy { $0.start > now })
+        #expect(!slots.contains { calendar.component(.weekday, from: $0.start) == 1 })
+    }
+    @Test func selectedSlotsCanBePaidTogether() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 18, hour: 9))!
+        let first = AvailableSlot(id: "a", start: now.addingTimeInterval(3600), end: now.addingTimeInterval(7200), room: "PRIVOFIT / 01")
+        let second = AvailableSlot(id: "b", start: now.addingTimeInterval(8000), end: now.addingTimeInterval(11600), room: "PRIVOFIT / 01")
+        let clash = AvailableSlot(id: "c", start: now.addingTimeInterval(5400), end: now.addingTimeInterval(9000), room: "PRIVOFIT / 01")
+        #expect(!ReservationCalendar.conflicts(first, reservations: [], cart: [second]))
+        #expect(ReservationCalendar.conflicts(clash, reservations: [], cart: [first]))
+
+        let service = MockGymService()
+        let model = app(service)
+        await model.login(identifier: "alex", password: "sample")
+        let slots = try await service.availableSlots()
+        let pick = Array(slots.prefix(2))
+        #expect(pick.count == 2)
+        let quote = try await service.quoteReservations(slotIDs: pick.map(\.id))
+        #expect(quote.slots.count == 2)
+        #expect(quote.total == Decimal(700))
+        let request = UUID()
+        let paid = try await service.payAndReserve(slotIDs: pick.map(\.id), requestID: request)
+        #expect(paid.status == .paid)
+        #expect(paid.reservations.count == 2)
+        _ = try await service.payAndReserve(slotIDs: pick.map(\.id), requestID: request)
+        #expect(service.checkoutCount == 1)
+        let bookings = try await service.reservations()
+        #expect(bookings.count == 2)
+    }
     @Test func acceptedIsNotPhysicalSuccess() async {
         let service = MockGymService(); service.doorOutcome = .accepted
         let model = app(service); await model.login(identifier: "alex", password: "sample"); model.finishOnboarding()

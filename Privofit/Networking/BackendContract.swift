@@ -26,6 +26,10 @@ struct BackendContract: Sendable {
     func reservations() throws -> Endpoint<[Reservation]> { throw missing("reservations") }
     func slots() throws -> Endpoint<[AvailableSlot]> { throw missing("available slots") }
     func reserve(_ slot: String, requestID: UUID) throws -> Endpoint<Reservation> { throw missing("create reservation + idempotency") }
+    func quoteReservations(_ slotIDs: [String]) throws -> Endpoint<BookingQuote> { throw missing("reservation quote") }
+    func payAndReserve(_ slotIDs: [String], requestID: UUID) throws -> Endpoint<BookingPayment> {
+        throw missing("reservation checkout + payment")
+    }
     func cancel(_ id: String, requestID: UUID) throws -> Endpoint<EmptyResponse> { throw missing("cancel reservation + idempotency") }
     func inbox() throws -> Endpoint<[InboxItem]> { throw missing("inbox") }
     func eligibility() throws -> Endpoint<DoorEligibility> { throw missing("door eligibility") }

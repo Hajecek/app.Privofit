@@ -126,13 +126,41 @@ reservations.new|Rychlá rezervace|Quick booking
 reservations.next|Nejbližší rezervace|Next booking
 reservations.empty|Zatím žádná rezervace|No bookings yet
 reservations.mine|Tvoje rezervace|Your bookings
+reservations.plan|Naplánuj trénink|Plan your workout
+reservations.planHint|Vyber den v týdnu a rezervuj si volný čas.|Pick a day in the week and book an open slot.
+reservations.week|Týden|Week
+reservations.previousWeek|Předchozí týden|Previous week
+reservations.nextWeek|Další týden|Next week
+reservations.today|Dnes|Today
+reservations.tomorrow|Zítra|Tomorrow
+reservations.upcoming|Nadcházející|Upcoming
+reservations.slotsOne|1 volný termín|1 open slot
+reservations.slotsMany|volných termínů|open slots
+reservations.minutes|min|min
+reservations.overlap|V tomto čase už máš rezervaci.|You already have a booking at this time.
+reservations.period.morning|Ráno|Morning
+reservations.period.afternoon|Odpoledne|Afternoon
+reservations.period.evening|Večer|Evening
 reservations.available|Vyber si svůj čas.|Choose your time.
 reservations.date|Datum tréninku|Workout date
 reservations.noSlots|V tento den nejsou dostupné termíny.|No time slots available on this day.
 reservations.reserve|Rezervovat|Book session
 reservations.detail|Tvůj další trénink|Your next workout
-reservations.confirmBody|Termín potvrdíme až po přijetí rezervace serverem.|Your slot is confirmed only after the server accepts your booking.
+reservations.confirmBody|Po zaplacení se termíny rezervují. Platbu potvrdí server.|After payment the slots are booked. The server confirms the payment.
 reservations.confirmed|Změna byla potvrzena serverem|Change confirmed by the server
+reservations.selectHint|Označ všechny termíny, které chceš, a zaplať je najednou.|Mark every slot you want, then pay for them together.
+reservations.checkout|Potvrdit a zaplatit|Confirm and pay
+reservations.checkoutHint|Vybrané termíny zaplatíš v dalším kroku.|You'll pay for the selected slots next.
+reservations.checkoutTitle|Shrnutí rezervace|Booking summary
+reservations.pay|Zaplatit a rezervovat|Pay and book
+reservations.payDemo|Ukázková platba. Žádné peníze se nestrhnou, termíny se jen rezervují v demu.|Demo payment. No money is charged; slots are only booked in the demo.
+reservations.paid|Platba prošla. Termíny jsou rezervované.|Payment succeeded. Your slots are booked.
+reservations.cartOne|1 vybraný termín|1 selected slot
+reservations.cartMany|vybrané termíny|selected slots
+reservations.clearCart|Zrušit výběr|Clear selection
+reservations.remove|Odebrat|Remove
+reservations.total|Celkem|Total
+reservations.perSlot|Cena za termín|Price per slot
 reservations.cancel|Zrušit rezervaci|Cancel booking
 reservations.cancelConfirm|Opravdu zrušit tento termín?|Cancel this booking?
 reservations.example|Ilustrační rezervace|Illustrative booking
