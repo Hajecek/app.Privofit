@@ -1,4 +1,8 @@
 #include "Base.xcconfig"
 APP_ENVIRONMENT = production
 APS_ENVIRONMENT = production
-// Override API_BASE_URL, Apple Pay merchant ID and public OAuth configuration here.
+API_BASE_URL = https:/$()/privofit.cz/api/v1/
+SUPPORT_URL = https:/$()/privofit.cz/kontakt
+TERMS_URL = https:/$()/privofit.cz/dokument/obchodni-podminky
+PRIVACY_URL = https:/$()/privofit.cz/dokument/ochrana-udaju
+CHECKOUT_URL = https:/$()/privofit.cz/cenik

@@ -1,10 +1,9 @@
 #include "Base.xcconfig"
 APP_ENVIRONMENT = development
 APS_ENVIRONMENT = development
-// Local XAMPP PRIVOFIT. $() stops xcconfig from treating // as a comment.
-API_BASE_URL = http:/$()/127.0.0.1/privofit/api/v1/
-SUPPORT_URL = http:/$()/127.0.0.1/privofit/kontakt
-TERMS_URL = http:/$()/127.0.0.1/privofit/dokument/obchodni-podminky
-PRIVACY_URL = http:/$()/127.0.0.1/privofit/dokument/ochrana-udaju
-CHECKOUT_URL = http:/$()/127.0.0.1/privofit/cenik
-// Na fyzickém iPhonu nahraď 127.0.0.1 LAN IP tohoto Macu.
+// $() stops xcconfig from treating // as a comment.
+API_BASE_URL = https:/$()/privofit.cz/api/v1/
+SUPPORT_URL = https:/$()/privofit.cz/kontakt
+TERMS_URL = https:/$()/privofit.cz/dokument/obchodni-podminky
+PRIVACY_URL = https:/$()/privofit.cz/dokument/ochrana-udaju
+CHECKOUT_URL = https:/$()/privofit.cz/cenik

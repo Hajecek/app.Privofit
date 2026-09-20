@@ -38,14 +38,20 @@ APPLE_PAY_MERCHANT_ID = merchant.cz.privofit.app
 (R/'Configuration/Development.xcconfig').write_text('''#include "Base.xcconfig"
 APP_ENVIRONMENT = development
 APS_ENVIRONMENT = development
-API_BASE_URL = http:/$()/127.0.0.1/privofit/api/v1/
-SUPPORT_URL = http:/$()/127.0.0.1/privofit/kontakt
-TERMS_URL = http:/$()/127.0.0.1/privofit/dokument/obchodni-podminky
-PRIVACY_URL = http:/$()/127.0.0.1/privofit/dokument/ochrana-udaju
-CHECKOUT_URL = http:/$()/127.0.0.1/privofit/cenik
+API_BASE_URL = https:/$()/privofit.cz/api/v1/
+SUPPORT_URL = https:/$()/privofit.cz/kontakt
+TERMS_URL = https:/$()/privofit.cz/dokument/obchodni-podminky
+PRIVACY_URL = https:/$()/privofit.cz/dokument/ochrana-udaju
+CHECKOUT_URL = https:/$()/privofit.cz/cenik
 ''')
+urls='''API_BASE_URL = https:/$()/privofit.cz/api/v1/
+SUPPORT_URL = https:/$()/privofit.cz/kontakt
+TERMS_URL = https:/$()/privofit.cz/dokument/obchodni-podminky
+PRIVACY_URL = https:/$()/privofit.cz/dokument/ochrana-udaju
+CHECKOUT_URL = https:/$()/privofit.cz/cenik
+'''
 for filename,environment,aps in [('Staging','staging','development'),('Production','production','production')]:
- (R/f'Configuration/{filename}.xcconfig').write_text('#include "Base.xcconfig"\nAPP_ENVIRONMENT = '+environment+'\nAPS_ENVIRONMENT = '+aps+'\n// Override API_BASE_URL, Apple Pay merchant ID and public OAuth configuration here.\n')
+ (R/f'Configuration/{filename}.xcconfig').write_text('#include "Base.xcconfig"\nAPP_ENVIRONMENT = '+environment+'\nAPS_ENVIRONMENT = '+aps+'\n'+urls)
 objects={}
 def uid(s): return hashlib.sha1(s.encode()).hexdigest()[:24].upper()
 def add(key,isa,**args):
