@@ -32,11 +32,10 @@ actor HTTPClient {
         self.session = session ?? URLSession(configuration: config, delegate: NoRedirectDelegate(), delegateQueue: nil)
     }
     func send<T>(_ endpoint: Endpoint<T>, bearer: String? = nil) async throws -> T {
-        guard let baseURL, baseURL.scheme == "https", baseURL.host != nil,
-              baseURL.user == nil, baseURL.password == nil else { throw AppFailure.notConfigured("HTTPS API_BASE_URL") }
+        guard let baseURL, Configuration.isAllowedAPIBase(baseURL) else { throw AppFailure.notConfigured("HTTPS API_BASE_URL") }
         guard !endpoint.path.contains("://"), !endpoint.path.hasPrefix("//"),
               !endpoint.path.contains(".."), let url = URL(string: endpoint.path, relativeTo: baseURL)?.absoluteURL,
-              url.scheme == "https", url.host == baseURL.host, url.port == baseURL.port else { throw AppFailure.invalidResponse }
+              Configuration.isAllowedAPIBase(url), url.host == baseURL.host, url.port == baseURL.port else { throw AppFailure.invalidResponse }
         var request = URLRequest(url: url)
         request.httpMethod = endpoint.method.rawValue; request.httpBody = endpoint.body
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -52,7 +51,15 @@ actor HTTPClient {
         case 200..<300: return try endpoint.decode(data)
         case 401: throw AppFailure.unauthorized
         case 403: throw AppFailure.forbidden
+        case 400, 409, 422: throw Self.rejected(from: data) ?? AppFailure.http(http.statusCode)
         default: throw AppFailure.http(http.statusCode)
         }
+    }
+    private static func rejected(from data: Data) -> AppFailure? {
+        struct Payload: Decodable { var message: String? }
+        guard let message = try? JSONDecoder().decode(Payload.self, from: data).message else { return nil }
+        let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (1...180).contains(trimmed.count) else { return nil }
+        return .rejected(trimmed)
     }
 }

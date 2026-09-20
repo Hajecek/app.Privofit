@@ -15,6 +15,13 @@ struct ValidationTests {
         #expect(!InputValidator.email("alex@"))
         #expect(!InputValidator.email("a b@example.com"))
     }
+    @Test func registrationUsernameAndPassword() {
+        #expect(InputValidator.username("haj8cek"))
+        #expect(!InputValidator.username("Jan Novak"))
+        #expect(InputValidator.password("silne-heslo-12"))
+        #expect(!InputValidator.password("kratke"))
+        #expect(FriendlyError.message(AppFailure.rejected("Heslo musí mít alespoň 12 znaků.")) == "Heslo musí mít alespoň 12 znaků.")
+    }
     @Test func errorsDoNotLeakServerDetails() {
         let message = FriendlyError.message(AppFailure.notConfigured("SECRET internal service name"))
         #expect(!message.contains("SECRET"))

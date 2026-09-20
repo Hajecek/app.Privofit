@@ -135,7 +135,7 @@ struct RegistrationView: View {
     @State private var emailTouched = false
     private var input: RegistrationInput { .init(firstName: name, username: username, email: email, password: password) }
     private var valid: Bool {
-        if step == 0 { return InputValidator.identifier(name) && InputValidator.identifier(username) }
+        if step == 0 { return InputValidator.identifier(name) && InputValidator.username(username) }
         if step == 1 { return InputValidator.email(email) }
         return InputValidator.registration(input) && password == confirmation
     }
@@ -154,7 +154,15 @@ struct RegistrationView: View {
                         MemberPass(name: name.isEmpty ? L10n.tr("pass.yourName") : name).padding(.vertical, 6)
                         ProviderButtons()
                         FieldLabel(title: L10n.tr("profile.name")) { TextField(L10n.tr("profile.name"), text: $name).textContentType(.givenName).brandField() }
-                        FieldLabel(title: L10n.tr("profile.username")) { TextField(L10n.tr("profile.username"), text: $username).textContentType(.username).textInputAutocapitalization(.never).autocorrectionDisabled().brandField() }
+                        FieldLabel(title: L10n.tr("profile.username")) {
+                            TextField(L10n.tr("profile.username"), text: $username).textContentType(.username).textInputAutocapitalization(.never).autocorrectionDisabled().brandField()
+                                .onChange(of: username) { _, value in
+                                    username = value.lowercased().replacingOccurrences(of: " ", with: "")
+                                }
+                        }
+                        if !username.isEmpty && !InputValidator.username(username) {
+                            Text(L10n.tr("validation.username")).font(.caption).foregroundStyle(Brand.danger)
+                        }
                     } else if step == 1 {
                         Image(systemName: "envelope").font(.system(size: 64, weight: .ultraLight)).foregroundStyle(Color("AccentColor")).frame(maxWidth: .infinity, minHeight: 140).accessibilityHidden(true)
                         FieldLabel(title: L10n.tr("profile.email")) {
@@ -166,6 +174,11 @@ struct RegistrationView: View {
                         AccessToken().frame(maxWidth: .infinity)
                         FieldLabel(title: L10n.tr("auth.password")) { PasswordField(title: L10n.tr("auth.password"), text: $password, isNew: true) }
                         FieldLabel(title: L10n.tr("auth.confirmPassword")) { PasswordField(title: L10n.tr("auth.confirmPassword"), text: $confirmation, isNew: true) }
+                        if !password.isEmpty && !InputValidator.password(password) {
+                            Text(L10n.tr("validation.passwordLength")).font(.caption).foregroundStyle(Brand.danger)
+                        } else if !confirmation.isEmpty && password != confirmation {
+                            Text(L10n.tr("validation.passwordMatch")).font(.caption).foregroundStyle(Brand.danger)
+                        }
                         Text(L10n.tr("registration.passwordPolicy")).font(.caption).foregroundStyle(.secondary)
                     }
                     if let error = app.error { FailureView(message: error) }

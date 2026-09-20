@@ -3250,13 +3250,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zvol silné, jedinečné heslo. Pravidla hesla ověříme při vytvoření účtu."
+            "value" : "Zvol heslo o alespoň 12 znacích. Nesmí to být běžné heslo ze seznamů úniků."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose a strong, unique password. Password requirements are checked when creating your account."
+            "value" : "Choose a password with at least 12 characters. Avoid common leaked passwords."
           }
         }
       }
@@ -4838,6 +4838,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Please check your email address."
+          }
+        }
+      }
+    },
+    "validation.passwordLength" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heslo musí mít alespoň 12 znaků."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password must be at least 12 characters."
+          }
+        }
+      }
+    },
+    "validation.passwordMatch" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hesla se neshodují."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passwords do not match."
+          }
+        }
+      }
+    },
+    "validation.username" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uživatelské jméno: 3–30 znaků, jen písmena, číslice, tečka nebo podtržítko."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Username: 3–30 characters, letters, numbers, dot or underscore only."
           }
         }
       }

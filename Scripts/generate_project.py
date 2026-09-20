@@ -16,7 +16,7 @@ draw.polygon([(300,245),(555,245),(710,290),(735,440),(660,552),(470,575),(435,7
 draw.rounded_rectangle((465,355,595,450),radius=36,fill='#C6F21A')
 im.save(icon/'AppIcon.png')
 (icon/'Contents.json').write_text(json.dumps({'images':[{'filename':'AppIcon.png','idiom':'universal','platform':'ios','size':'1024x1024'}],'info':{'author':'xcode','version':1}},indent=2))
-info={'CFBundleDevelopmentRegion':'cs','CFBundleDisplayName':'Privofit','CFBundleExecutable':'$(EXECUTABLE_NAME)','CFBundleIdentifier':'$(PRODUCT_BUNDLE_IDENTIFIER)','CFBundleInfoDictionaryVersion':'6.0','CFBundleName':'$(PRODUCT_NAME)','CFBundlePackageType':'APPL','CFBundleShortVersionString':'$(MARKETING_VERSION)','CFBundleVersion':'$(CURRENT_PROJECT_VERSION)','LSRequiresIPhoneOS':True,'UIApplicationSupportsIndirectInputEvents':True,'UIApplicationSceneManifest':{'UIApplicationSupportsMultipleScenes':False},'UILaunchScreen':{'UIColorName':'Background'},'UISupportedInterfaceOrientations':['UIInterfaceOrientationPortrait','UIInterfaceOrientationLandscapeLeft','UIInterfaceOrientationLandscapeRight'],'NSFaceIDUsageDescription':'Face ID chrání tvůj účet a potvrzuje vstup do Privofit.','APIBaseURL':'$(API_BASE_URL)','AppEnvironment':'$(APP_ENVIRONMENT)','GoogleClientID':'$(GOOGLE_CLIENT_ID)','GoogleRedirectURI':'$(GOOGLE_REDIRECT_URI)','SupportURL':'$(SUPPORT_URL)','PrivacyURL':'$(PRIVACY_URL)','TermsURL':'$(TERMS_URL)','CheckoutURL':'$(CHECKOUT_URL)','ApplePayMerchantID':'$(APPLE_PAY_MERCHANT_ID)','CFBundleURLTypes':[{'CFBundleURLName':'Google OAuth','CFBundleURLSchemes':['$(GOOGLE_CALLBACK_SCHEME)']}],'ITSAppUsesNonExemptEncryption':False,'FirebaseAppDelegateProxyEnabled':False,'UIBackgroundModes':['remote-notification']}
+info={'CFBundleDevelopmentRegion':'cs','CFBundleDisplayName':'Privofit','CFBundleExecutable':'$(EXECUTABLE_NAME)','CFBundleIdentifier':'$(PRODUCT_BUNDLE_IDENTIFIER)','CFBundleInfoDictionaryVersion':'6.0','CFBundleName':'$(PRODUCT_NAME)','CFBundlePackageType':'APPL','CFBundleShortVersionString':'$(MARKETING_VERSION)','CFBundleVersion':'$(CURRENT_PROJECT_VERSION)','LSRequiresIPhoneOS':True,'UIApplicationSupportsIndirectInputEvents':True,'UIApplicationSceneManifest':{'UIApplicationSupportsMultipleScenes':False},'UILaunchScreen':{'UIColorName':'Background'},'UISupportedInterfaceOrientations':['UIInterfaceOrientationPortrait','UIInterfaceOrientationLandscapeLeft','UIInterfaceOrientationLandscapeRight'],'NSFaceIDUsageDescription':'Face ID chrání tvůj účet a potvrzuje vstup do Privofit.','NSAppTransportSecurity':{'NSAllowsLocalNetworking':True},'APIBaseURL':'$(API_BASE_URL)','AppEnvironment':'$(APP_ENVIRONMENT)','GoogleClientID':'$(GOOGLE_CLIENT_ID)','GoogleRedirectURI':'$(GOOGLE_REDIRECT_URI)','SupportURL':'$(SUPPORT_URL)','PrivacyURL':'$(PRIVACY_URL)','TermsURL':'$(TERMS_URL)','CheckoutURL':'$(CHECKOUT_URL)','ApplePayMerchantID':'$(APPLE_PAY_MERCHANT_ID)','CFBundleURLTypes':[{'CFBundleURLName':'Google OAuth','CFBundleURLSchemes':['$(GOOGLE_CALLBACK_SCHEME)']}],'ITSAppUsesNonExemptEncryption':False,'FirebaseAppDelegateProxyEnabled':False,'UIBackgroundModes':['remote-notification']}
 (R/'Privofit/Resources/Info.plist').write_bytes(plistlib.dumps(info))
 (R/'Privofit/Resources/Privofit.entitlements').write_bytes(plistlib.dumps({'aps-environment':'$(APS_ENVIRONMENT)','com.apple.developer.applesignin':['Default'],'com.apple.developer.in-app-payments':['$(APPLE_PAY_MERCHANT_ID)']}))
 (R/'Privofit/Resources/PrivacyInfo.xcprivacy').write_bytes(plistlib.dumps({'NSPrivacyTracking':False,'NSPrivacyTrackingDomains':[],'NSPrivacyCollectedDataTypes':[],'NSPrivacyAccessedAPITypes':[{'NSPrivacyAccessedAPIType':'NSPrivacyAccessedAPICategoryUserDefaults','NSPrivacyAccessedAPITypeReasons':['CA92.1']}]}))
@@ -35,7 +35,16 @@ CHECKOUT_URL =
 APPLE_PAY_MERCHANT_ID = merchant.cz.privofit.app
 '''
 (R/'Configuration/Base.xcconfig').write_text(base)
-for filename,environment,aps in [('Development','development','development'),('Staging','staging','development'),('Production','production','production')]:
+(R/'Configuration/Development.xcconfig').write_text('''#include "Base.xcconfig"
+APP_ENVIRONMENT = development
+APS_ENVIRONMENT = development
+API_BASE_URL = http:/$()/127.0.0.1/privofit/api/v1/
+SUPPORT_URL = http:/$()/127.0.0.1/privofit/kontakt
+TERMS_URL = http:/$()/127.0.0.1/privofit/dokument/obchodni-podminky
+PRIVACY_URL = http:/$()/127.0.0.1/privofit/dokument/ochrana-udaju
+CHECKOUT_URL = http:/$()/127.0.0.1/privofit/cenik
+''')
+for filename,environment,aps in [('Staging','staging','development'),('Production','production','production')]:
  (R/f'Configuration/{filename}.xcconfig').write_text('#include "Base.xcconfig"\nAPP_ENVIRONMENT = '+environment+'\nAPS_ENVIRONMENT = '+aps+'\n// Override API_BASE_URL, Apple Pay merchant ID and public OAuth configuration here.\n')
 objects={}
 def uid(s): return hashlib.sha1(s.encode()).hexdigest()[:24].upper()

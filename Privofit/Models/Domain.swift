@@ -102,7 +102,7 @@ struct PushNotificationPreferences: Codable, Equatable, Sendable {
 
 enum AppFailure: Error, LocalizedError, Equatable, Sendable {
     case notConfigured(String), unauthorized, forbidden, unavailable, invalidResponse
-    case http(Int), offline, biometricsUnavailable, cancelled, sessionChanged
+    case http(Int), offline, biometricsUnavailable, cancelled, sessionChanged, rejected(String)
     var errorDescription: String? {
         switch self {
         case .notConfigured(let item): return "Chybí konfigurace: \(item)."
@@ -115,6 +115,7 @@ enum AppFailure: Error, LocalizedError, Equatable, Sendable {
         case .biometricsUnavailable: return "Biometrické ověření není dostupné."
         case .cancelled: return "Ověření bylo zrušeno."
         case .sessionChanged: return "Stav přihlášení se změnil."
+        case .rejected(let message): return message
         }
     }
 }

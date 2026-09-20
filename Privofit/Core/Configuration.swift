@@ -11,11 +11,28 @@ enum Configuration {
         return value
     }
     static func httpsURL(_ key: String) -> URL? {
-        guard let raw = value(key), let url = URL(string: raw), url.scheme == "https",
-              url.host != nil, url.user == nil, url.password == nil else { return nil }
+        guard let raw = value(key), let url = URL(string: raw), url.host != nil,
+              url.user == nil, url.password == nil, isAllowedAPIBase(url) else { return nil }
         return url
     }
     static var apiURL: URL? { httpsURL("APIBaseURL") }
+    static func isAllowedAPIBase(_ url: URL) -> Bool {
+        guard url.user == nil, url.password == nil, let host = url.host else { return false }
+        if url.scheme == "https" { return true }
+        #if DEBUG
+        return url.scheme == "http" && isLocalHost(host)
+        #else
+        return false
+        #endif
+    }
+    static func isLocalHost(_ host: String) -> Bool {
+        let value = host.lowercased()
+        if value == "localhost" || value == "127.0.0.1" || value == "::1" { return true }
+        if value.hasPrefix("192.168.") || value.hasPrefix("10.") { return true }
+        let parts = value.split(separator: ".")
+        if value.hasPrefix("172."), parts.count >= 2, let second = Int(parts[1]), (16...31).contains(second) { return true }
+        return false
+    }
     static var googleClientID: String? { value("GoogleClientID") }
     static var googleRedirect: String? { value("GoogleRedirectURI") }
     static var applePayMerchantID: String? { value("ApplePayMerchantID") }
@@ -23,10 +40,14 @@ enum Configuration {
 enum InputValidator {
     static func identifier(_ value: String) -> Bool { !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     static func email(_ value: String) -> Bool { value.range(of: #"^[^\s@]+@[^\s@]+\.[^\s@]+$"#, options: .regularExpression) != nil }
+    static func username(_ value: String) -> Bool {
+        value.range(of: #"^[a-z0-9._]{3,30}$"#, options: .regularExpression) != nil
+    }
+    static func password(_ value: String) -> Bool { value.count >= 12 }
     // Login must not reject valid legacy passwords by inventing a backend length policy.
     static func login(_ identifier: String, _ password: String) -> Bool { self.identifier(identifier) && !password.isEmpty }
     static func registration(_ input: RegistrationInput) -> Bool {
-        identifier(input.firstName) && identifier(input.username) && email(input.email) && !input.password.isEmpty
+        identifier(input.firstName) && username(input.username.lowercased()) && email(input.email) && password(input.password)
     }
 }
 enum L10n {
@@ -42,6 +63,7 @@ enum FriendlyError {
         case .offline: return L10n.tr("error.offline")
         case .biometricsUnavailable: return L10n.tr("error.biometry")
         case .cancelled: return L10n.tr("error.cancelled")
+        case .rejected(let message): return message
         default: return L10n.tr("error.generic")
         }
     }
