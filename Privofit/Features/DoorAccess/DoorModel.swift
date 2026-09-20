@@ -50,9 +50,11 @@ enum DoorState: Equatable {
             eligibility = try await app.service.eligibility()
             doorName = eligibility.doorName ?? L10n.tr("door.entrance")
             guard eligibility.allowed else { state = .denied(eligibility.reason ?? L10n.tr("door.denied")); return }
-            if app.preferences.biometrics {
+            if app.biometrics.available {
                 state = .authenticating
                 try await app.biometrics.authenticate(reason: L10n.tr("biometry.reason"))
+            } else if app.preferences.biometrics {
+                throw AppFailure.biometricsUnavailable
             }
             try Task.checkCancellation()
             guard app.phase == .authenticated, app.member?.id == userID, !app.locked,
@@ -62,6 +64,10 @@ enum DoorState: Equatable {
             if !app.isDemo { try await app.vault.saveDoor(command) }
             pending = command
             app.unconfirmedDoorCommands[userID] = command
+        } catch let failure as AppFailure where failure == .cancelled || failure == .biometricsUnavailable {
+            state = .failed(L10n.tr("door.biometry.failed"))
+            app.handle(failure, surface: false)
+            return
         } catch { state = .failed(FriendlyError.message(error)); app.handle(error, surface: false); return }
         guard let pending else { state = .failed(L10n.tr("door.failed")); return }
         guard app.phase == .authenticated, app.member?.id == userID, !app.locked, isActive() else {

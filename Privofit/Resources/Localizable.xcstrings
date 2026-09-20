@@ -787,6 +787,23 @@
         }
       }
     },
+    "door.biometry.failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ověření se nepovedlo. Dveře zůstávají zavřené."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identity check failed. The door stays closed."
+          }
+        }
+      }
+    },
     "door.checkAgain" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -844,13 +861,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Potvrzením požádáš o jednorázové otevření. Nejdřív ověříme oprávnění."
+            "value" : "Potvrzením požádáš o jednorázové otevření. Nejdřív ověříme oprávnění a identitu."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Confirm to request one opening. We will verify your permission first."
+            "value" : "Confirm to request one opening. We will verify your permission and identity first."
           }
         }
       }
@@ -1055,6 +1072,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Check your membership and connection. Contact support if the issue persists."
+          }
+        }
+      }
+    },
+    "door.failure.denied.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teď nemáš platný vstup. Zkontroluj rezervaci nebo členství."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You don't have valid entry right now. Check your booking or membership."
           }
         }
       }
@@ -1382,23 +1416,6 @@
         }
       }
     },
-    "error.timeout" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Server neodpověděl včas. Zkus to znovu."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The server did not respond in time. Please try again."
-          }
-        }
-      }
-    },
     "error.session" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1412,6 +1429,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your session expired. Please sign in again."
+          }
+        }
+      }
+    },
+    "error.timeout" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server neodpověděl včas. Zkus to znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server did not respond in time. Please try again."
           }
         }
       }
@@ -2961,13 +2995,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Potvrď otevření v aplikaci."
+            "value" : "Potvrď otevření a ověř se Face ID nebo Touch ID."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Confirm entry in the app."
+            "value" : "Confirm entry and verify with Face ID or Touch ID."
           }
         }
       }
@@ -3267,13 +3301,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zvol heslo o alespoň 12 znacích. Nesmí to být běžné heslo ze seznamů úniků."
+            "value" : "Zvol silné, jedinečné heslo. Pravidla hesla ověříme při vytvoření účtu."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose a password with at least 12 characters. Avoid common leaked passwords."
+            "value" : "Choose a strong, unique password. Password requirements are checked when creating your account."
           }
         }
       }
@@ -3584,23 +3618,6 @@
         }
       }
     },
-    "reservations.confirmBody" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zaplatíš Apple Pay přímo v aplikaci. Po potvrzení platby se termíny rezervují."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You'll pay with Apple Pay in the app. After payment the slots are booked."
-          }
-        }
-      }
-    },
     "reservations.confirmAction" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3614,6 +3631,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Confirm booking"
+          }
+        }
+      }
+    },
+    "reservations.confirmBody" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaplatíš Apple Pay přímo v aplikaci. Po potvrzení platby se termíny rezervují."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You'll pay with Apple Pay in the app. After payment the slots are booked."
           }
         }
       }
@@ -4872,57 +4906,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Please check your email address."
-          }
-        }
-      }
-    },
-    "validation.passwordLength" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Heslo musí mít alespoň 12 znaků."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Password must be at least 12 characters."
-          }
-        }
-      }
-    },
-    "validation.passwordMatch" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hesla se neshodují."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Passwords do not match."
-          }
-        }
-      }
-    },
-    "validation.username" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uživatelské jméno: 3–30 znaků, jen písmena, číslice, tečka nebo podtržítko."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Username: 3–30 characters, letters, numbers, dot or underscore only."
           }
         }
       }

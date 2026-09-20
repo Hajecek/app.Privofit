@@ -11,6 +11,7 @@ enum Brand {
     static let night = Color(hex: 0x0B1210)
     static let fog = Color(hex: 0xE8F0E4)
     static let danger = Color("Danger")
+    static let alert = Color(hex: 0xDC2F2A)
     static let sky = Color(hex: 0x3E8FD6)
     enum Space { static let xs: CGFloat = 8
         static let sm: CGFloat = 12
@@ -112,6 +113,16 @@ enum BrandChrome {
         UINavigationBar.appearance().compactAppearance = appearance
         UINavigationBar.appearance().compactScrollEdgeAppearance = appearance
         UINavigationBar.appearance().isTranslucent = true
+    }
+}
+enum SystemFeedback {
+    static func denied() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.prepare()
+        generator.notificationOccurred(.error)
+    }
+    static func success() {
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 }
 struct StatusBadge: View {

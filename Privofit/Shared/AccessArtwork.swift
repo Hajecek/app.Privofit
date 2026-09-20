@@ -52,7 +52,13 @@ struct AccessToken: View {
 struct DoorPortal: View {
     let opened: Bool
     var checking = false
+    var denied = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private var leaf: [Color] {
+        denied
+            ? [Color(hex: 0xF7C9C6), Color(hex: 0xE07068), Color(hex: 0xC4332E)]
+            : [Color(hex: 0xEDF6B1), Brand.lime, Color(hex: 0xA9D02A)]
+    }
     var body: some View {
         GeometryReader { geometry in
             let height = min(geometry.size.height - 24, 330)
@@ -65,7 +71,7 @@ struct DoorPortal: View {
                     .overlay { Image(systemName: "figure.strengthtraining.traditional").font(.system(size: 66, weight: .ultraLight)).foregroundStyle(Brand.lime.opacity(opened ? 0.8 : 0)) }
                     .frame(width: width, height: height)
                 RoundedRectangle(cornerRadius: 21)
-                    .fill(LinearGradient(colors: [Color(hex: 0xEDF6B1), Brand.lime, Color(hex: 0xA9D02A)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .fill(LinearGradient(colors: leaf, startPoint: .topLeading, endPoint: .bottomTrailing))
                     .overlay {
                         ZStack {
                             RoundedRectangle(cornerRadius: 15).strokeBorder(Brand.ink.opacity(0.12)).padding(12)
@@ -77,9 +83,21 @@ struct DoorPortal: View {
                     .rotation3DEffect(.degrees(opened && !reduceMotion ? -74 : 0), axis: (x: 0, y: 1, z: 0), anchor: .leading, perspective: 0.5)
                     .opacity(opened && reduceMotion ? 0.12 : 1)
                     .animation(reduceMotion ? .linear(duration: 0.1) : .spring(response: 0.95, dampingFraction: 0.82).delay(0.55), value: opened)
-                if checking { ProgressView().tint(Brand.ink).padding(12).background(Brand.lime, in: Circle()).offset(y: height * 0.36) }
+                if checking { ProgressView().tint(Brand.ink).padding(12).background(denied ? Color(hex: 0xF7C9C6) : Brand.lime, in: Circle()).offset(y: height * 0.36) }
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
         }.accessibilityHidden(true)
+    }
+}
+struct AccessDeniedShake: GeometryEffect {
+    var progress: CGFloat
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        let decay = 1 - progress
+        let x = sin(progress * .pi * 6) * 18 * decay
+        return ProjectionTransform(CGAffineTransform(translationX: x, y: 0))
     }
 }
 struct SectionHeading: View {

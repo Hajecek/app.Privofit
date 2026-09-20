@@ -225,11 +225,13 @@ door.confirmAction|Připravit otevření|Prepare entry
 door.confirmHint|V dalším kroku otevření potvrdíš.|Confirm opening in the next step.
 door.reconcile|Ověřit stav požadavku|Check request status
 door.confirmTitle|Stojíš před dveřmi?|Are you at the door?
-door.confirmBody|Potvrzením požádáš o jednorázové otevření. Nejdřív ověříme oprávnění.|Confirm to request one opening. We will verify your permission first.
+door.confirmBody|Potvrzením požádáš o jednorázové otevření. Nejdřív ověříme oprávnění a identitu.|Confirm to request one opening. We will verify your permission and identity first.
 door.ready.body|Otevření vyžaduje potvrzení a platné oprávnění ze serveru.|Opening requires confirmation and valid server permission.
 door.success.body|Server potvrdil otevření. Můžeš vstoupit. Aktuální fyzický stav dál nesledujeme.|The server confirmed opening. You may enter. We are not continuously monitoring the physical door.
 door.cooldown.body|Krátká pauza chrání před opakovaným požadavkem. Nejde o dobu odemčení dveří.|A brief pause prevents repeated requests. This is not the door unlock duration.
 door.failure.body|Zkontroluj členství a připojení. Pokud potíže trvají, kontaktuj podporu.|Check your membership and connection. Contact support if the issue persists.
+door.failure.denied.body|Teď nemáš platný vstup. Zkontroluj rezervaci nebo členství.|You don't have valid entry right now. Check your booking or membership.
+door.biometry.failed|Ověření se nepovedlo. Dveře zůstávají zavřené.|Identity check failed. The door stays closed.
 door.uncertain.body|Neposíláme další příkaz. Nejprve ověř stav na serveru; dveře nemusí být otevřené.|We will not send another command. Check the server status first; the door may not be open.
 door.wait|Nezavírej prosím tuto obrazovku.|Please keep this screen open.
 settings.title|Nastavení|Settings
@@ -286,7 +288,7 @@ redesign.registration.2.title|Klíč máš jen ty.|The key is yours.
 redesign.registration.2.body|Zabezpeč svůj účet heslem. A můžeš začít.|Protect your account with a password. You're nearly there.
 redesign.digitalPass|DIGITÁLNÍ ČLENSKÁ KARTA|DIGITAL MEMBER PASS
 redesign.entry.1|Postav se před vstup do fitka.|Stand at the gym entrance.
-redesign.entry.2|Potvrď otevření v aplikaci.|Confirm entry in the app.
+redesign.entry.2|Potvrď otevření a ověř se Face ID nebo Touch ID.|Confirm entry and verify with Face ID or Touch ID.
 redesign.entry.3|Počkej na potvrzení. A pojď dovnitř.|Wait for confirmation. Then step inside.
 redesign.backToOverview|Zpět do přehledu|Back to overview
 redesign.doorReadyBody|Potvrď otevření. Oprávnění bezpečně ověříme za tebe.|Confirm entry. We'll securely check your access.

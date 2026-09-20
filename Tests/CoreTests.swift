@@ -199,6 +199,7 @@ struct ValidationTests {
         await model.login(identifier: "alex", password: "sample"); model.finishOnboarding(); model.preferences.biometrics = true
         let door = DoorModel(app: model, isActive: { true }); await door.restorePending(); await door.open()
         #expect(service.openCount == 0)
+        #expect(door.state.isFailure)
         if case .failed = door.state {} else { Issue.record("Expected unavailable biometry failure") }
     }
 }
