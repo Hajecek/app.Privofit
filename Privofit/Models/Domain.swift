@@ -47,6 +47,12 @@ struct BookingPayment: Equatable, Sendable {
     var checkoutURL: URL?
     var reservations: [Reservation]
 }
+struct ApplePayToken: Equatable, Sendable {
+    var transactionIdentifier: String
+    var paymentData: Data
+    var displayName: String?
+    var network: String?
+}
 struct InboxItem: Codable, Identifiable, Equatable, Sendable {
     let id: String
     let title: String

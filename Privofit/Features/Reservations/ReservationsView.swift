@@ -13,6 +13,7 @@ struct ReservationsView: View {
     @State private var error: String?
     @State private var completed = false
     @State private var checkoutID = UUID()
+    @State private var applePay = ApplePayCheckout()
     private var calendar: Calendar { .current }
     private var week: [Date] { ReservationCalendar.week(containing: date, calendar: calendar) }
     private var daySlots: [AvailableSlot] { ReservationCalendar.slots(on: date, from: slots, calendar: calendar) }
@@ -36,8 +37,10 @@ struct ReservationsView: View {
             .sheet(isPresented: $showCheckout) {
                 BookingCheckoutSheet(slots: sortedCart, busy: mutating, error: error) { slot in
                     removeFromCart(slot)
-                } pay: {
-                    Task { await payAndReserve() }
+                } pay: { quote in
+                    Task { await payAndReserve(quote: quote, applePay: true) }
+                } demoPay: {
+                    Task { await payAndReserve(quote: nil, applePay: false) }
                 }
             }
             .confirmationDialog(L10n.tr("reservations.cancelConfirm"), isPresented: Binding(get: { cancellation != nil }, set: { if !$0 { cancellation = nil } }), titleVisibility: .visible, presenting: cancellation) { item in
@@ -91,7 +94,7 @@ struct ReservationsView: View {
                 Spacer()
                 Button(L10n.tr("reservations.clearCart")) { clearCart() }.font(.subheadline)
             }
-            PrimaryButton(title: L10n.tr("reservations.checkout"), symbol: "creditcard", busy: mutating) {
+            PrimaryButton(title: L10n.tr("reservations.checkout"), symbol: "wallet.pass", busy: mutating) {
                 error = nil
                 showCheckout = true
             }
@@ -201,23 +204,35 @@ struct ReservationsView: View {
             error = nil
         } catch { self.error = FriendlyError.message(error); app.handle(error) }
     }
-    private func payAndReserve() async {
+    private func payAndReserve(quote: BookingQuote?, applePay useApplePay: Bool) async {
         guard !mutating, app.phase == .authenticated, !cart.isEmpty else { return }
         mutating = true; error = nil
         defer { mutating = false }
         let requestID = checkoutID
+        let slots = sortedCart.map(\.id)
         do {
-            let payment = try await app.service.payAndReserve(slotIDs: sortedCart.map(\.id), requestID: requestID)
+            let payment: BookingPayment
+            if useApplePay {
+                guard let quote else { throw AppFailure.unavailable }
+                payment = try await applePay.pay(quote: quote) { token in
+                    try await app.service.payAndReserve(slotIDs: slots, requestID: requestID, applePay: token)
+                }
+            } else {
+                payment = try await app.service.payAndReserve(slotIDs: slots, requestID: requestID, applePay: ApplePayCheckout.demoToken())
+            }
             if payment.status == .paid {
                 cart = []
                 showCheckout = false
                 completed = true
+                checkoutID = UUID()
                 await load()
-            } else if let url = payment.checkoutURL {
-                await UIApplication.shared.open(url)
             } else {
                 self.error = L10n.tr("reservations.uncertain")
             }
+        } catch let failure as AppFailure where failure == .cancelled {
+            return
+        } catch let failure as AppFailure where failure == .unavailable {
+            self.error = L10n.tr("reservations.applePayFailed")
         } catch {
             app.handle(error)
             await load()
@@ -236,11 +251,13 @@ struct BookingCheckoutSheet: View {
     var busy = false
     var error: String?
     var onRemove: (AvailableSlot) -> Void
-    var pay: () -> Void
+    var pay: (BookingQuote) -> Void
+    var demoPay: () -> Void
     @State private var quote: BookingQuote?
     @State private var quoteError: String?
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
+    private var canPay: Bool { !slots.isEmpty && quote != nil && !busy }
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -277,8 +294,20 @@ struct BookingCheckoutSheet: View {
                     }
                     if app.isDemo { Text(L10n.tr("reservations.payDemo")).font(.footnote).foregroundStyle(.secondary) }
                     if let message = error ?? quoteError { FailureView(message: message) }
-                    PrimaryButton(title: payTitle, symbol: "creditcard", busy: busy) { pay() }
-                        .disabled(slots.isEmpty || quote == nil)
+                    if let quote, ApplePayCheckout.canMakePayments {
+                        ApplePayButton(enabled: canPay) { pay(quote) }
+                            .frame(height: 58)
+                            .accessibilityLabel(payTitle)
+                    } else if !app.isDemo {
+                        Text(L10n.tr("reservations.applePayUnavailable")).font(.footnote).foregroundStyle(.secondary)
+                    }
+                    if app.isDemo {
+                        Button(L10n.tr("reservations.payDemoAction")) { demoPay() }
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity).frame(minHeight: 44)
+                            .disabled(!canPay)
+                    }
+                    if busy { ProgressView().frame(maxWidth: .infinity) }
                 }.padding(24)
             }
             .brandBackground()

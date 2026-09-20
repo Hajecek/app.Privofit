@@ -67,8 +67,9 @@ import Foundation
         let chosen = try resolvedSlots(slotIDs)
         return BookingQuote(slots: chosen, pricePerSlot: 350, currencyCode: "CZK")
     }
-    func payAndReserve(slotIDs: [String], requestID: UUID) async throws -> BookingPayment {
+    func payAndReserve(slotIDs: [String], requestID: UUID, applePay: ApplePayToken) async throws -> BookingPayment {
         try check(); try await delay()
+        guard !applePay.transactionIdentifier.isEmpty else { throw AppFailure.unavailable }
         if let previous = checkouts[requestID] { return previous }
         checkoutCount += 1
         var reserved: [Reservation] = []

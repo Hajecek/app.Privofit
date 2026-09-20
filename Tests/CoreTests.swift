@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import PassKit
 @testable import Privofit
 
 struct ValidationTests {
@@ -136,11 +137,17 @@ struct ValidationTests {
         #expect(quote.slots.count == 2)
         #expect(quote.total == Decimal(700))
         let request = UUID()
-        let paid = try await service.payAndReserve(slotIDs: pick.map(\.id), requestID: request)
+        let token = ApplePayCheckout.demoToken()
+        let paid = try await service.payAndReserve(slotIDs: pick.map(\.id), requestID: request, applePay: token)
         #expect(paid.status == .paid)
         #expect(paid.reservations.count == 2)
-        _ = try await service.payAndReserve(slotIDs: pick.map(\.id), requestID: request)
+        _ = try await service.payAndReserve(slotIDs: pick.map(\.id), requestID: request, applePay: token)
         #expect(service.checkoutCount == 1)
+        let applePay = ApplePayCheckout.paymentRequest(quote: quote, merchantID: "merchant.cz.privofit.app", merchantName: "Privofit")
+        #expect(applePay.currencyCode == "CZK")
+        #expect(applePay.countryCode == "CZ")
+        #expect(applePay.merchantIdentifier == "merchant.cz.privofit.app")
+        #expect(applePay.paymentSummaryItems.last?.amount == NSDecimalNumber(decimal: quote.total))
         let bookings = try await service.reservations()
         #expect(bookings.count == 2)
     }

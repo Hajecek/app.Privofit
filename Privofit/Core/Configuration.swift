@@ -18,6 +18,7 @@ enum Configuration {
     static var apiURL: URL? { httpsURL("APIBaseURL") }
     static var googleClientID: String? { value("GoogleClientID") }
     static var googleRedirect: String? { value("GoogleRedirectURI") }
+    static var applePayMerchantID: String? { value("ApplePayMerchantID") }
 }
 enum InputValidator {
     static func identifier(_ value: String) -> Bool { !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }

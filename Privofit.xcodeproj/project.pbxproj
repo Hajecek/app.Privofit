@@ -40,6 +40,7 @@
 		BFE38718A619E1581CF1A120 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4862D33DE376A26F2E066A /* NotificationsView.swift */; };
 		C861788B14502A8277AE833D /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = BD3E9A05CB60C6B468231F6A /* FirebaseMessaging */; };
 		C96D5F28FCE77F3C8B141C7B /* AppIconBadgeSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19B5DA490002A5547E65FD00 /* AppIconBadgeSync.swift */; };
+		74585B2F79E85269727F9C71 /* ApplePayCheckout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD96657D4A33320F61DB5C5 /* ApplePayCheckout.swift */; };
 		CA883CF2C5A8D64E25E94740 /* BackendContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2617AAB567A5F591B6D5A4DF /* BackendContract.swift */; };
 		D1C1CF310BC5BE7508A92A63 /* ReservationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0887D096BBDAFDAC4AAFE296 /* ReservationsView.swift */; };
 		366F479E360392D3C55FE845 /* ReservationCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F916276D5ED1C6E6FF63F5D1 /* ReservationCalendar.swift */; };
@@ -75,6 +76,7 @@
 		0A07735BC4E9085AAAE46C3B /* PrivofitUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PrivofitUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0C31496AF991DF673C5B3EBC /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Configuration.swift; path = Privofit/Core/Configuration.swift; sourceTree = "<group>"; };
 		19B5DA490002A5547E65FD00 /* AppIconBadgeSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppIconBadgeSync.swift; path = Privofit/Services/AppIconBadgeSync.swift; sourceTree = "<group>"; };
+		4BD96657D4A33320F61DB5C5 /* ApplePayCheckout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ApplePayCheckout.swift; path = Privofit/Services/ApplePayCheckout.swift; sourceTree = "<group>"; };
 		19DDB4F3C574AE3C87065513 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Privofit/Resources/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1A8A4C8A3ABF3E0F702B16A0 /* PrivofitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PrivofitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1BD05ADE79F64D53CED39A22 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DesignSystem.swift; path = Privofit/DesignSystem/DesignSystem.swift; sourceTree = "<group>"; };
@@ -233,6 +235,7 @@
 				E437786ACD35FBCF7BD3A24D /* MockGymService.swift */,
 				4D4F5F240848EB1C6AAEEABB /* NotificationPreferences.swift */,
 				19B5DA490002A5547E65FD00 /* AppIconBadgeSync.swift */,
+				4BD96657D4A33320F61DB5C5 /* ApplePayCheckout.swift */,
 			);
 			name = Services;
 			sourceTree = "<group>";
@@ -396,6 +399,9 @@
 							com.apple.SignInWithApple = {
 								enabled = 1;
 							};
+							com.apple.ApplePay = {
+								enabled = 1;
+							};
 						};
 					};
 				};
@@ -505,6 +511,7 @@
 				6D171BAA0075310D17B81544 /* MockGymService.swift in Sources */,
 				7E84C0A0E474DA42A7617077 /* NotificationPreferences.swift in Sources */,
 				C96D5F28FCE77F3C8B141C7B /* AppIconBadgeSync.swift in Sources */,
+				74585B2F79E85269727F9C71 /* ApplePayCheckout.swift in Sources */,
 				D591A7941D15E5EDBBFA43A8 /* AccessArtwork.swift in Sources */,
 				1714C4AB0172B23022418743 /* MemberPass.swift in Sources */,
 				9A9D1001748FBD66974E49BB /* Previews.swift in Sources */,

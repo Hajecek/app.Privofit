@@ -1,4 +1,4 @@
 #include "Base.xcconfig"
 APP_ENVIRONMENT = production
 APS_ENVIRONMENT = production
-// Override API_BASE_URL and public OAuth configuration here.
+// Override API_BASE_URL, Apple Pay merchant ID and public OAuth configuration here.

@@ -3265,6 +3265,74 @@
         }
       }
     },
+    "reservations.applePay.itemMany" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "rezervované termíny"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "booked sessions"
+          }
+        }
+      }
+    },
+    "reservations.applePay.itemOne" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezervace termínu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session booking"
+          }
+        }
+      }
+    },
+    "reservations.applePayFailed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Pay se nepodařilo otevřít. Na zařízení s kartou v Peněžence to zkus znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Pay couldn’t be opened. Try again on a device with a card in Wallet."
+          }
+        }
+      }
+    },
+    "reservations.applePayUnavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Pay na tomto zařízení není k dispozici. Přidej kartu v aplikaci Peněženka."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Pay isn’t available on this device. Add a card in the Wallet app."
+          }
+        }
+      }
+    },
     "reservations.available" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3424,13 +3492,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Po zaplacení se termíny rezervují. Platbu potvrdí server."
+            "value" : "Zaplatíš Apple Pay přímo v aplikaci. Po potvrzení platby se termíny rezervují."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "After payment the slots are booked. The server confirms the payment."
+            "value" : "You'll pay with Apple Pay in the app. After payment the slots are booked."
           }
         }
       }
@@ -3679,13 +3747,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zaplatit a rezervovat"
+            "value" : "Zaplatit Apple Pay"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pay and book"
+            "value" : "Pay with Apple Pay"
           }
         }
       }
@@ -3696,13 +3764,30 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ukázková platba. Žádné peníze se nestrhnou, termíny se jen rezervují v demu."
+            "value" : "V demu se Apple Pay otevře na zařízení s kartou, ale nic nestrhne. V simulátoru můžeš platbu ověřit bez karty."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Demo payment. No money is charged; slots are only booked in the demo."
+            "value" : "In demo, Apple Pay opens on a device with a card but nothing is charged. In Simulator you can verify the booking without a card."
+          }
+        }
+      }
+    },
+    "reservations.payDemoAction" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ověřit platbu v demu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verify payment in demo"
           }
         }
       }

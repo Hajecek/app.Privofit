@@ -8,3 +8,4 @@ SUPPORT_URL =
 TERMS_URL =
 PRIVACY_URL =
 CHECKOUT_URL =
+APPLE_PAY_MERCHANT_ID = merchant.cz.privofit.app

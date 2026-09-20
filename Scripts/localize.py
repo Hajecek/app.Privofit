@@ -146,14 +146,19 @@ reservations.date|Datum tréninku|Workout date
 reservations.noSlots|V tento den nejsou dostupné termíny.|No time slots available on this day.
 reservations.reserve|Rezervovat|Book session
 reservations.detail|Tvůj další trénink|Your next workout
-reservations.confirmBody|Po zaplacení se termíny rezervují. Platbu potvrdí server.|After payment the slots are booked. The server confirms the payment.
+reservations.confirmBody|Zaplatíš Apple Pay přímo v aplikaci. Po potvrzení platby se termíny rezervují.|You'll pay with Apple Pay in the app. After payment the slots are booked.
 reservations.confirmed|Změna byla potvrzena serverem|Change confirmed by the server
 reservations.selectHint|Označ všechny termíny, které chceš, a zaplať je najednou.|Mark every slot you want, then pay for them together.
 reservations.checkout|Potvrdit a zaplatit|Confirm and pay
 reservations.checkoutHint|Vybrané termíny zaplatíš v dalším kroku.|You'll pay for the selected slots next.
 reservations.checkoutTitle|Shrnutí rezervace|Booking summary
-reservations.pay|Zaplatit a rezervovat|Pay and book
-reservations.payDemo|Ukázková platba. Žádné peníze se nestrhnou, termíny se jen rezervují v demu.|Demo payment. No money is charged; slots are only booked in the demo.
+reservations.pay|Zaplatit Apple Pay|Pay with Apple Pay
+reservations.payDemo|V demu se Apple Pay otevře na zařízení s kartou, ale nic nestrhne. V simulátoru můžeš platbu ověřit bez karty.|In demo, Apple Pay opens on a device with a card but nothing is charged. In Simulator you can verify the booking without a card.
+reservations.payDemoAction|Ověřit platbu v demu|Verify payment in demo
+reservations.applePayUnavailable|Apple Pay na tomto zařízení není k dispozici. Přidej kartu v aplikaci Peněženka.|Apple Pay isn’t available on this device. Add a card in the Wallet app.
+reservations.applePayFailed|Apple Pay se nepodařilo otevřít. Na zařízení s kartou v Peněžence to zkus znovu.|Apple Pay couldn’t be opened. Try again on a device with a card in Wallet.
+reservations.applePay.itemOne|Rezervace termínu|Session booking
+reservations.applePay.itemMany|rezervované termíny|booked sessions
 reservations.paid|Platba prošla. Termíny jsou rezervované.|Payment succeeded. Your slots are booked.
 reservations.cartOne|1 vybraný termín|1 selected slot
 reservations.cartMany|vybrané termíny|selected slots
