@@ -294,6 +294,8 @@ redesign.backToOverview|Zpět do přehledu|Back to overview
 redesign.doorReadyBody|Potvrď otevření. Oprávnění bezpečně ověříme za tebe.|Confirm entry. We'll securely check your access.
 redesign.reminderTitle|Tvůj trénink se blíží.|Your workout is coming up.
 redesign.reminderExample|Ukázka připomenutí rezervace|Sample booking reminder
+home.book|Rezervovat|Book
+home.sessionEmpty|Vyber si termín a prostor bude tvůj.|Pick a time and the space is yours.
 """
 entries={}
 for row in rows.strip().splitlines():

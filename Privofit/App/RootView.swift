@@ -82,12 +82,24 @@ struct MainTabs: View {
         TabView(selection: $app.tab) {
             Tab(L10n.tr("tab.dashboard"), systemImage: "square.grid.2x2", value: AppTab.dashboard) { NavigationStack { DashboardView() } }
             Tab(L10n.tr("tab.reservations"), systemImage: "calendar", value: AppTab.reservations) { NavigationStack { ReservationsView() } }
-            Tab(L10n.tr("tab.door"), systemImage: "door.left.hand.open", value: AppTab.door) { NavigationStack { DoorEntryView() } }
+            Tab(L10n.tr("tab.door"), systemImage: "door.left.hand.open", value: AppTab.door) {
+                Color.clear.brandBackground()
+            }
             Tab(L10n.tr("tab.membership"), systemImage: "creditcard", value: AppTab.membership) { NavigationStack { MembershipView() } }
             Tab(L10n.tr("tab.profile"), systemImage: "person.crop.circle", value: AppTab.profile) { NavigationStack { ProfileView() } }
         }
         .clearTopChrome()
-        .fullScreenCover(isPresented: $app.showDoor) {
+        .onChange(of: app.tab) { previous, tab in
+            guard tab == .door else { return }
+            let restore = previous == .door ? AppTab.dashboard : previous
+            Task { @MainActor in
+                app.tab = restore
+                app.requestDoor()
+            }
+        }
+        .fullScreenCover(isPresented: $app.showDoor, onDismiss: {
+            if app.tab == .door { app.tab = .dashboard }
+        }) {
             DoorView(model: DoorModel(app: app)).environment(app)
                 .overlay { if app.locked || app.phase != .authenticated { Brand.night.ignoresSafeArea().overlay { ProgressView() } } }
                 .onChange(of: app.locked) { _, locked in if locked { app.showDoor = false } }

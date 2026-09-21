@@ -1,43 +1,5 @@
 import SwiftUI
 
-struct DoorEntryView: View {
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(L10n.tr("door.entry.title")).font(.largeTitle.weight(.bold)).tracking(-1)
-                        Text(L10n.tr("door.entry.body")).font(.subheadline).foregroundStyle(.secondary)
-                    }
-                }.padding(.top, 12)
-                DoorHero()
-                BrandCard {
-                    VStack(alignment: .leading, spacing: 20) {
-                        EntryInstruction(number: 1, title: L10n.tr("redesign.entry.1"), symbol: "location")
-                        Divider()
-                        EntryInstruction(number: 2, title: L10n.tr("redesign.entry.2"), symbol: "hand.tap")
-                        Divider()
-                        EntryInstruction(number: 3, title: L10n.tr("redesign.entry.3"), symbol: "door.left.hand.open")
-                    }
-                }
-                Label(L10n.tr("door.security"), systemImage: "lock.shield").font(.caption).foregroundStyle(.secondary)
-            }.padding(24).frame(maxWidth: 600).frame(maxWidth: .infinity)
-        }.brandBackground().navigationTitle(L10n.tr("tab.door")).mainToolbar()
-    }
-}
-private struct EntryInstruction: View {
-    let number: Int
-    let title: String
-    let symbol: String
-    var body: some View {
-        HStack(spacing: 14) {
-            Text(number.formatted()).font(.caption.weight(.bold)).frame(width: 30, height: 30).background(Color.primary.opacity(0.06), in: Circle())
-            Text(title).font(.subheadline)
-            Spacer(minLength: 0)
-            Image(systemName: symbol).foregroundStyle(.secondary)
-        }
-    }
-}
 struct DoorView: View {
     @State var model: DoorModel
     @Environment(\.dismiss) private var dismiss

@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "cs",
   "strings" : {
-    "" : {
-
-    },
     "–" : {
 
     },
@@ -13,6 +10,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ – %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %@" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
           }
         }
       }
@@ -1724,6 +1731,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "About your gym"
+          }
+        }
+      }
+    },
+    "home.book" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezervovat"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Book"
+          }
+        }
+      }
+    },
+    "home.sessionEmpty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vyber si termín a prostor bude tvůj."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a time and the space is yours."
           }
         }
       }
