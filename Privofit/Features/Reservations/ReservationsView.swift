@@ -124,12 +124,21 @@ struct ReservationsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 12) {
+                    if app.gyms.isEmpty {
+                        Text(L10n.tr("reservations.gym.empty"))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, 8)
+                    }
                     ForEach(app.gyms) { gym in
                         Button { pick(gym) } label: {
                             HStack(spacing: 14) {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(gym.name).font(.headline)
-                                    Text(gym.address).font(.subheadline).foregroundStyle(.secondary)
+                                    if !gym.address.isEmpty {
+                                        Text(gym.address).font(.subheadline).foregroundStyle(.secondary)
+                                    }
                                 }
                                 Spacer(minLength: 8)
                                 if gym.id == app.selectedGymID {
@@ -142,9 +151,11 @@ struct ReservationsView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                }.padding(24)
+                }
+                .padding(24)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .brandBackground()
+            .background(Color("Background").ignoresSafeArea())
             .navigationTitle(L10n.tr("reservations.gym.choose"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -154,6 +165,8 @@ struct ReservationsView: View {
             }
         }
         .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(Color("Background"))
     }
     private var selectedGym: GymPlace? { app.gyms.first { $0.id == app.selectedGymID } }
     private func pick(_ gym: GymPlace) {
@@ -347,11 +360,20 @@ struct ReservationsView: View {
             lastError = error
             app.handle(error, surface: false)
         }
+        var gymID = app.selectedGymID ?? ""
         do {
             let places = try await app.service.gyms()
             guard !Task.isCancelled, app.phase == .authenticated else { return }
             await app.resolveGym(from: places)
-            let available = try await app.service.availableSlots(gymID: app.selectedGymID ?? places.first?.id ?? "")
+            gymID = app.selectedGymID ?? places.first?.id ?? ""
+        } catch is CancellationError {
+            return
+        } catch {
+            lastError = error
+            app.handle(error, surface: false)
+        }
+        do {
+            let available = try await app.service.availableSlots(gymID: gymID)
             guard !Task.isCancelled, app.phase == .authenticated else { return }
             app.slots = available
             cart.removeAll { booked in !available.contains(where: { $0.id == booked.id }) }

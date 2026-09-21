@@ -226,6 +226,9 @@ struct ValidationTests {
         let nearSmichov = GymLocator.nearest(MockGymService.places, to: 50.071, longitude: 14.406)
         #expect(nearSmichov?.id == "smichov")
         let nearKarlin = GymLocator.nearest(MockGymService.places, to: 50.094, longitude: 14.450)
+        let unknown = GymPlace(id: "unknown", name: "Bez polohy", address: "", latitude: 0, longitude: 0)
+        #expect(GymLocator.nearest(MockGymService.places + [unknown], to: 50.071, longitude: 14.406)?.id == "smichov")
+        #expect(GymLocator.nearest([unknown], to: 50.07, longitude: 14.4) == nil)
         #expect(nearKarlin?.id == "karlin")
     }
     @Test func streakCountsWeeksWithAtLeastOneSession() {

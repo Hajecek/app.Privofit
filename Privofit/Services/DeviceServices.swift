@@ -241,7 +241,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
 enum GymLocator {
     static func nearest(_ places: [GymPlace], to latitude: Double, longitude: Double) -> GymPlace? {
-        places.min { meters($0, latitude: latitude, longitude: longitude) < meters($1, latitude: latitude, longitude: longitude) }
+        let located = places.filter(hasCoordinates)
+        return located.min { meters($0, latitude: latitude, longitude: longitude) < meters($1, latitude: latitude, longitude: longitude) }
+    }
+    static func hasCoordinates(_ place: GymPlace) -> Bool {
+        abs(place.latitude) > 0.01 || abs(place.longitude) > 0.01
     }
     static func meters(_ place: GymPlace, latitude: Double, longitude: Double) -> Double {
         CLLocation(latitude: place.latitude, longitude: place.longitude)

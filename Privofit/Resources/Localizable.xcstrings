@@ -4554,6 +4554,23 @@
         }
       }
     },
+    "reservations.gym.empty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Žádné fitko se nenačetlo."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No gyms loaded."
+          }
+        }
+      }
+    },
     "reservations.gym.nearest" : {
       "extractionState" : "manual",
       "localizations" : {
