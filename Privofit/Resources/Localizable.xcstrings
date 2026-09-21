@@ -1,19 +1,6 @@
 {
   "sourceLanguage" : "cs",
   "strings" : {
-    "–" : {
-
-    },
-    "%@ – %@" : {
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ – %2$@"
-          }
-        }
-      }
-    },
     "%@ · %@" : {
       "localizations" : {
         "cs" : {
@@ -39,16 +26,6 @@
     },
     "%lld / 4" : {
 
-    },
-    "%lld %@ · %@" : {
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld %2$@ · %3$@"
-          }
-        }
-      }
     },
     "%lld× %@" : {
       "localizations" : {
