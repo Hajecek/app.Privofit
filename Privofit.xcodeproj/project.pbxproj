@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		01C725773039843E2C03DE39 /* Configuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C31496AF991DF673C5B3EBC /* Configuration.swift */; };
+		0789B2383061EE970076D891 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 0789B2373061EE970076D891 /* GoogleService-Info.plist */; };
 		0B33E41BD4CAD098214A0A3B /* AppleSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 946F578C2D00A3CDFFCC3196 /* AppleSignIn.swift */; };
 		0C4F5D9488212EF4F544FEA3 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A090070EA1B94233F426286B /* ProfileView.swift */; };
 		1714C4AB0172B23022418743 /* MemberPass.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA244782E6892144D6125930 /* MemberPass.swift */; };
@@ -71,6 +72,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0789B2373061EE970076D891 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		0887D096BBDAFDAC4AAFE296 /* ReservationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ReservationsView.swift; path = Privofit/Features/Reservations/ReservationsView.swift; sourceTree = "<group>"; };
 		0A07735BC4E9085AAAE46C3B /* PrivofitUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PrivofitUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0C31496AF991DF673C5B3EBC /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Configuration.swift; path = Privofit/Core/Configuration.swift; sourceTree = "<group>"; };
@@ -308,6 +310,7 @@
 				5A349263041B6A939BD7831F /* UITests */,
 				A024F06580C79B7582C3806A /* Resources */,
 				C23108729D1809B8323E9806 /* Configuration */,
+				0789B2373061EE970076D891 /* GoogleService-Info.plist */,
 				FBDC4F23F93125BBEEAE800C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -437,6 +440,7 @@
 			files = (
 				51317818E10039D7963F0E4E /* Assets.xcassets in Resources */,
 				EABBBF032F29CB7748257C12 /* Localizable.xcstrings in Resources */,
+				0789B2383061EE970076D891 /* GoogleService-Info.plist in Resources */,
 				4C716E84398A4FB716A17469 /* PrivacyInfo.xcprivacy in Resources */,
 				26A494A91B81DD299C44DDB6 /* InfoPlist.strings in Resources */,
 			);
