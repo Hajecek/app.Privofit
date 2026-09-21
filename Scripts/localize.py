@@ -296,6 +296,25 @@ redesign.reminderTitle|Tvůj trénink se blíží.|Your workout is coming up.
 redesign.reminderExample|Ukázka připomenutí rezervace|Sample booking reminder
 home.book|Rezervovat|Book
 home.sessionEmpty|Vyber si termín a prostor bude tvůj.|Pick a time and the space is yours.
+home.hi|Ahoj,|Hi,
+home.line.morning|Ještě je klid. Tvůj prostor čeká.|It's still quiet. Your space is waiting.
+home.line.day|Dnes je dobrý den na trénink.|Today is a good day to train.
+home.line.evening|Večer patří tobě.|The evening is yours.
+home.line.now|Právě teď máš prostor.|You have the space right now.
+home.line.today|Dnes máš trénink v|You have a session at
+home.now|Právě teď|Right now
+home.sessionHint|Jeden termín a prostor je jen tvůj.|One booking and the space is yours.
+home.doorHint|Vstup na jeden dotyk|Entry in one tap
+home.bookHint|Vyber si volný čas|Pick an open time
+home.entry.one|zbývající vstup|entry left
+home.entry.many|zbývajících vstupů|entries left
+home.week|Tento týden|This week
+home.week.empty|zatím volno|still open
+home.week.one|trénink|session
+home.week.many|tréninky|sessions
+home.private.title|Jen ty.|Just you.
+home.private.body|Žádný dav. Žádné čekání na stroje.|No crowd. No waiting for machines.
+home.inbox|Nová zpráva|New message
 """
 entries={}
 for row in rows.strip().splitlines():

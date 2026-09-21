@@ -132,6 +132,9 @@ struct ValidationTests {
         #expect(ReservationCalendar.upcoming([booking], now: start.addingTimeInterval(10_000)).isEmpty)
         #expect(ReservationCalendar.groupedByDayPart([slot], calendar: calendar).map(\.0) == [.evening])
         #expect(ReservationCalendar.durationMinutes(from: slot.start, to: slot.end) == 60)
+        #expect(ReservationCalendar.durationMinutes(from: slot.start, to: slot.occupiedUntil) == 75)
+        #expect(GymMoney.czk(150) == "150 Kč")
+        #expect(GymMoney.czk(1990) == "1 990 Kč")
         #expect(!ReservationCalendar.isPastDay(wednesday, now: wednesday, calendar: calendar))
         let grid = ReservationCalendar.monthGrid(containing: wednesday, calendar: calendar)
         #expect(grid.count == 35 || grid.count == 42)
@@ -157,7 +160,7 @@ struct ValidationTests {
         calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
         let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 18, hour: 9))!
         let first = AvailableSlot(id: "a", start: now.addingTimeInterval(3600), end: now.addingTimeInterval(7200), room: "PRIVOFIT / 01")
-        let second = AvailableSlot(id: "b", start: now.addingTimeInterval(8000), end: now.addingTimeInterval(11600), room: "PRIVOFIT / 01")
+        let second = AvailableSlot(id: "b", start: now.addingTimeInterval(8100), end: now.addingTimeInterval(11700), room: "PRIVOFIT / 01")
         let clash = AvailableSlot(id: "c", start: now.addingTimeInterval(5400), end: now.addingTimeInterval(9000), room: "PRIVOFIT / 01")
         #expect(!ReservationCalendar.conflicts(first, reservations: [], cart: [second]))
         #expect(ReservationCalendar.conflicts(clash, reservations: [], cart: [first]))

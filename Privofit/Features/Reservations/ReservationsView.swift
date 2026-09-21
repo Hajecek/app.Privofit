@@ -14,7 +14,7 @@ struct ReservationsView: View {
     @State private var completed = false
     @State private var checkoutID = UUID()
     @State private var applePay = ApplePayCheckout()
-    private var calendar: Calendar { .current }
+    private var calendar: Calendar { GymClock.calendar }
     private var daySlots: [AvailableSlot] { ReservationCalendar.slots(on: date, from: slots, calendar: calendar) }
     private var dayBookings: [Reservation] { ReservationCalendar.reservations(on: date, from: app.reservations, calendar: calendar) }
     private var upcoming: [Reservation] { ReservationCalendar.upcoming(app.reservations) }
@@ -499,8 +499,8 @@ struct CheckoutDayCard: View {
                     ForEach(Array(slots.enumerated()), id: \.element.id) { index, slot in
                         HStack(alignment: .top, spacing: 12) {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(ReservationCalendar.timeRange(slot.start, slot.end)).font(.headline.monospacedDigit())
-                                Text("\(ReservationCalendar.durationMinutes(from: slot.start, to: slot.end)) \(L10n.tr("reservations.minutes")) · \(slot.room)")
+                                Text(ReservationCalendar.occupiedRange(slot.start, slot.end, bufferMinutes: slot.bufferMinutes)).font(.headline.monospacedDigit())
+                                Text(ReservationCalendar.bookingDetail(room: slot.room, price: slot.price, currency: slot.currencyCode))
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer(minLength: 8)
@@ -538,10 +538,10 @@ struct NextSessionHero: View {
                 .font(.caption.weight(.semibold))
             HStack(alignment: .bottom, spacing: 16) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(reservation.start.formatted(.dateTime.weekday(.wide).day().month(.wide))).font(.subheadline.weight(.medium))
-                    Text(ReservationCalendar.timeRange(reservation.start, reservation.end))
+                    Text(GymClock.format(reservation.start, Date.FormatStyle().weekday(.wide).day().month(.wide))).font(.subheadline.weight(.medium))
+                    Text(ReservationCalendar.occupiedRange(reservation.start, reservation.end, bufferMinutes: reservation.bufferMinutes))
                         .font(.largeTitle.weight(.bold)).tracking(-0.8).monospacedDigit()
-                    Text("\(ReservationCalendar.durationMinutes(from: reservation.start, to: reservation.end)) \(L10n.tr("reservations.minutes")) · \(reservation.room)")
+                    Text(ReservationCalendar.bookingDetail(room: reservation.room, price: reservation.price, currency: reservation.currencyCode))
                         .font(.subheadline)
                 }
                 Spacer(minLength: 0)
@@ -574,9 +574,9 @@ struct BookedSessionCard: View {
                         Text(style == .past ? L10n.tr("reservations.pastBadge") : L10n.tr("reservations.confirmedBadge"))
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(style == .past ? .secondary : Color("AccentColor"))
-                        Text(ReservationCalendar.timeRange(reservation.start, reservation.end))
+                        Text(ReservationCalendar.occupiedRange(reservation.start, reservation.end, bufferMinutes: reservation.bufferMinutes))
                             .font(.title3.bold()).monospacedDigit()
-                        Text("\(ReservationCalendar.durationMinutes(from: reservation.start, to: reservation.end)) \(L10n.tr("reservations.minutes")) · \(reservation.room)")
+                        Text(ReservationCalendar.bookingDetail(room: reservation.room, price: reservation.price, currency: reservation.currencyCode))
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer(minLength: 0)
@@ -598,9 +598,9 @@ struct DateBadge: View {
     var muted = false
     var body: some View {
         VStack(spacing: 2) {
-            Text(date.formatted(.dateTime.weekday(.abbreviated))).font(.caption2.weight(.semibold)).textCase(.uppercase)
-            Text(date.formatted(.dateTime.day())).font(.title.bold()).monospacedDigit()
-            Text(date.formatted(.dateTime.month(.abbreviated))).font(.caption2.weight(.medium))
+            Text(GymClock.format(date, Date.FormatStyle().weekday(.abbreviated))).font(.caption2.weight(.semibold)).textCase(.uppercase)
+            Text(GymClock.format(date, Date.FormatStyle().day())).font(.title.bold()).monospacedDigit()
+            Text(GymClock.format(date, Date.FormatStyle().month(.abbreviated))).font(.caption2.weight(.medium))
         }
         .foregroundStyle(muted ? Color.primary.opacity(0.55) : Brand.ink)
         .frame(width: 64)
@@ -618,7 +618,7 @@ struct MonthCalendar: View {
     var canGoBack = true
     var onBack: () -> Void
     var onForward: () -> Void
-    private var calendar: Calendar { .current }
+    private var calendar: Calendar { GymClock.calendar }
     private var days: [CalendarDay] { ReservationCalendar.monthGrid(containing: date, calendar: calendar) }
     private var columns: [GridItem] { Array(repeating: GridItem(.flexible(), spacing: 4), count: 7) }
     var body: some View {
@@ -724,9 +724,9 @@ struct SlotRow: View {
                         .font(.title2)
                         .foregroundStyle(overlapping ? Brand.danger : selected ? Color("AccentColor") : Color.primary.opacity(0.35))
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("\(slot.start.formatted(date: .omitted, time: .shortened)) – \(slot.end.formatted(date: .omitted, time: .shortened))")
+                        Text(ReservationCalendar.occupiedRange(slot.start, slot.end, bufferMinutes: slot.bufferMinutes))
                             .font(.headline)
-                        Text("\(ReservationCalendar.durationMinutes(from: slot.start, to: slot.end)) \(L10n.tr("reservations.minutes")) · \(slot.room)")
+                        Text(ReservationCalendar.bookingDetail(room: slot.room, price: slot.price, currency: slot.currencyCode))
                             .font(.caption).foregroundStyle(.secondary)
                         if overlapping {
                             Text(L10n.tr("reservations.overlap")).font(.caption).foregroundStyle(Brand.danger)
@@ -753,16 +753,16 @@ struct ReservationSummary: View {
                 if hidesDay {
                     Text(relativeDay).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                 }
-                Text(ReservationCalendar.timeRange(reservation.start, reservation.end)).font(.title3.bold()).monospacedDigit()
-                Text("\(ReservationCalendar.durationMinutes(from: reservation.start, to: reservation.end)) \(L10n.tr("reservations.minutes")) · \(reservation.room)")
+                Text(ReservationCalendar.occupiedRange(reservation.start, reservation.end, bufferMinutes: reservation.bufferMinutes)).font(.title3.bold()).monospacedDigit()
+                Text(ReservationCalendar.bookingDetail(room: reservation.room, price: reservation.price, currency: reservation.currencyCode))
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
         }.accessibilityElement(children: .combine)
     }
     private var relativeDay: String {
-        if Calendar.current.isDateInToday(reservation.start) { return L10n.tr("reservations.today") }
-        if Calendar.current.isDateInTomorrow(reservation.start) { return L10n.tr("reservations.tomorrow") }
-        return reservation.start.formatted(.dateTime.weekday(.wide).day().month())
+        if GymClock.calendar.isDateInToday(reservation.start) { return L10n.tr("reservations.today") }
+        if GymClock.calendar.isDateInTomorrow(reservation.start) { return L10n.tr("reservations.tomorrow") }
+        return GymClock.format(reservation.start, Date.FormatStyle().weekday(.wide).day().month())
     }
 }

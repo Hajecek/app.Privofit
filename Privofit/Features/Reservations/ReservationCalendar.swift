@@ -1,9 +1,29 @@
 import Foundation
 
+enum GymClock {
+    static let timeZone = TimeZone(identifier: "Europe/Prague") ?? .gmt
+    static let locale = Locale(identifier: "cs_CZ")
+    static var calendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        calendar.locale = locale
+        calendar.firstWeekday = 2
+        return calendar
+    }
+    static func occupancyEnd(_ end: Date, bufferMinutes: Int) -> Date {
+        end.addingTimeInterval(TimeInterval(max(0, bufferMinutes) * 60))
+    }
+    static func format(_ date: Date, _ style: Date.FormatStyle) -> String {
+        var style = style.locale(locale)
+        style.timeZone = timeZone
+        return date.formatted(style)
+    }
+}
+
 enum DayPart: String, CaseIterable, Sendable {
     case morning, afternoon, evening
 
-    func contains(_ date: Date, calendar: Calendar = .current) -> Bool {
+    func contains(_ date: Date, calendar: Calendar = GymClock.calendar) -> Bool {
         let hour = calendar.component(.hour, from: date)
         switch self {
         case .morning: return hour < 12
@@ -19,11 +39,11 @@ struct CalendarDay: Equatable, Hashable, Sendable {
 }
 
 enum ReservationCalendar {
-    static func startOfDay(_ date: Date, calendar: Calendar = .current) -> Date {
+    static func startOfDay(_ date: Date, calendar: Calendar = GymClock.calendar) -> Date {
         calendar.startOfDay(for: date)
     }
 
-    static func week(containing date: Date, calendar: Calendar = .current) -> [Date] {
+    static func week(containing date: Date, calendar: Calendar = GymClock.calendar) -> [Date] {
         let start = startOfDay(date, calendar: calendar)
         let weekday = calendar.component(.weekday, from: start)
         let delta = (weekday - calendar.firstWeekday + 7) % 7
@@ -31,30 +51,30 @@ enum ReservationCalendar {
         return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: first) }.map { startOfDay($0, calendar: calendar) }
     }
 
-    static func shiftWeek(_ date: Date, by weeks: Int, calendar: Calendar = .current) -> Date {
+    static func shiftWeek(_ date: Date, by weeks: Int, calendar: Calendar = GymClock.calendar) -> Date {
         calendar.date(byAdding: .weekOfYear, value: weeks, to: date) ?? date
     }
 
-    static func monthStart(_ date: Date, calendar: Calendar = .current) -> Date {
+    static func monthStart(_ date: Date, calendar: Calendar = GymClock.calendar) -> Date {
         let components = calendar.dateComponents([.year, .month], from: date)
         return calendar.date(from: components).map { startOfDay($0, calendar: calendar) } ?? startOfDay(date, calendar: calendar)
     }
 
-    static func shiftMonth(_ date: Date, by months: Int, calendar: Calendar = .current) -> Date {
+    static func shiftMonth(_ date: Date, by months: Int, calendar: Calendar = GymClock.calendar) -> Date {
         calendar.date(byAdding: .month, value: months, to: monthStart(date, calendar: calendar)) ?? date
     }
 
-    static func isCurrentMonth(_ date: Date, now: Date = Date(), calendar: Calendar = .current) -> Bool {
+    static func isCurrentMonth(_ date: Date, now: Date = Date(), calendar: Calendar = GymClock.calendar) -> Bool {
         calendar.isDate(date, equalTo: now, toGranularity: .month)
     }
 
-    static func weekdaySymbols(calendar: Calendar = .current) -> [String] {
+    static func weekdaySymbols(calendar: Calendar = GymClock.calendar) -> [String] {
         let symbols = calendar.veryShortStandaloneWeekdaySymbols
         let start = calendar.firstWeekday - 1
         return Array(symbols[start...]) + Array(symbols[..<start])
     }
 
-    static func monthGrid(containing date: Date, calendar: Calendar = .current) -> [CalendarDay] {
+    static func monthGrid(containing date: Date, calendar: Calendar = GymClock.calendar) -> [CalendarDay] {
         let start = monthStart(date, calendar: calendar)
         let weekday = calendar.component(.weekday, from: start)
         let pad = (weekday - calendar.firstWeekday + 7) % 7
@@ -70,13 +90,13 @@ enum ReservationCalendar {
         }
     }
 
-    static func groupedByDay(_ items: [Reservation], descending: Bool = false, calendar: Calendar = .current) -> [(Date, [Reservation])] {
+    static func groupedByDay(_ items: [Reservation], descending: Bool = false, calendar: Calendar = GymClock.calendar) -> [(Date, [Reservation])] {
         let groups = Dictionary(grouping: items) { startOfDay($0.start, calendar: calendar) }
         let keys = descending ? groups.keys.sorted(by: >) : groups.keys.sorted()
         return keys.map { day in (day, groups[day]!.sorted { $0.start < $1.start }) }
     }
 
-    static func groupedSlots(_ slots: [AvailableSlot], calendar: Calendar = .current) -> [(Date, [AvailableSlot])] {
+    static func groupedSlots(_ slots: [AvailableSlot], calendar: Calendar = GymClock.calendar) -> [(Date, [AvailableSlot])] {
         Dictionary(grouping: slots) { startOfDay($0.start, calendar: calendar) }
             .sorted { $0.key < $1.key }
             .map { day, items in (day, items.sorted { $0.start < $1.start }) }
@@ -91,27 +111,35 @@ enum ReservationCalendar {
     }
 
     static func timeRange(_ start: Date, _ end: Date) -> String {
-        "\(start.formatted(date: .omitted, time: .shortened)) – \(end.formatted(date: .omitted, time: .shortened))"
+        let style = Date.FormatStyle(date: .omitted, time: .shortened)
+        return "\(GymClock.format(start, style)) – \(GymClock.format(end, style))"
+    }
+    static func occupiedRange(_ start: Date, _ end: Date, bufferMinutes: Int) -> String {
+        timeRange(start, GymClock.occupancyEnd(end, bufferMinutes: bufferMinutes))
+    }
+    static func bookingDetail(room: String, price: Decimal?, currency: String = "CZK") -> String {
+        if let label = GymMoney.label(price, code: currency) { return "\(room) · \(label)" }
+        return room
     }
 
-    static func isPastDay(_ date: Date, now: Date = Date(), calendar: Calendar = .current) -> Bool {
+    static func isPastDay(_ date: Date, now: Date = Date(), calendar: Calendar = GymClock.calendar) -> Bool {
         startOfDay(date, calendar: calendar) < startOfDay(now, calendar: calendar)
     }
 
-    static func slots(on day: Date, from slots: [AvailableSlot], calendar: Calendar = .current) -> [AvailableSlot] {
+    static func slots(on day: Date, from slots: [AvailableSlot], calendar: Calendar = GymClock.calendar) -> [AvailableSlot] {
         slots.filter { calendar.isDate($0.start, inSameDayAs: day) }.sorted { $0.start < $1.start }
     }
 
-    static func reservations(on day: Date, from items: [Reservation], calendar: Calendar = .current) -> [Reservation] {
+    static func reservations(on day: Date, from items: [Reservation], calendar: Calendar = GymClock.calendar) -> [Reservation] {
         items.filter { calendar.isDate($0.start, inSameDayAs: day) }.sorted { $0.start < $1.start }
     }
 
     static func upcoming(_ items: [Reservation], now: Date = Date()) -> [Reservation] {
-        items.filter { $0.end > now }.sorted { $0.start < $1.start }
+        items.filter { $0.occupiedUntil > now }.sorted { $0.start < $1.start }
     }
 
     static func past(_ items: [Reservation], now: Date = Date()) -> [Reservation] {
-        items.filter { $0.end <= now }.sorted { $0.start > $1.start }
+        items.filter { $0.occupiedUntil <= now }.sorted { $0.start > $1.start }
     }
 
     static func next(_ items: [Reservation], now: Date = Date()) -> Reservation? {
@@ -119,37 +147,37 @@ enum ReservationCalendar {
     }
 
     static func current(_ items: [Reservation], now: Date = Date()) -> Reservation? {
-        items.first { $0.start <= now && $0.end >= now }
+        items.first { $0.start <= now && $0.occupiedUntil >= now }
     }
 
     static func overlaps(_ slot: AvailableSlot, with items: [Reservation]) -> Bool {
-        items.contains { $0.start < slot.end && slot.start < $0.end }
+        items.contains { $0.start < slot.occupiedUntil && slot.start < $0.occupiedUntil }
     }
 
     static func overlaps(_ slot: AvailableSlot, with slots: [AvailableSlot]) -> Bool {
-        slots.contains { $0.id != slot.id && $0.start < slot.end && slot.start < $0.end }
+        slots.contains { $0.id != slot.id && $0.start < slot.occupiedUntil && slot.start < $0.occupiedUntil }
     }
 
     static func conflicts(_ slot: AvailableSlot, reservations: [Reservation], cart: [AvailableSlot]) -> Bool {
         overlaps(slot, with: reservations) || overlaps(slot, with: cart)
     }
 
-    static func groupedByDayPart(_ slots: [AvailableSlot], calendar: Calendar = .current) -> [(DayPart, [AvailableSlot])] {
+    static func groupedByDayPart(_ slots: [AvailableSlot], calendar: Calendar = GymClock.calendar) -> [(DayPart, [AvailableSlot])] {
         DayPart.allCases.compactMap { part in
             let items = slots.filter { part.contains($0.start, calendar: calendar) }
             return items.isEmpty ? nil : (part, items)
         }
     }
 
-    static func hasAvailability(_ slots: [AvailableSlot], on day: Date, calendar: Calendar = .current) -> Bool {
+    static func hasAvailability(_ slots: [AvailableSlot], on day: Date, calendar: Calendar = GymClock.calendar) -> Bool {
         slots.contains { calendar.isDate($0.start, inSameDayAs: day) }
     }
 
-    static func hasReservation(_ items: [Reservation], on day: Date, calendar: Calendar = .current) -> Bool {
+    static func hasReservation(_ items: [Reservation], on day: Date, calendar: Calendar = GymClock.calendar) -> Bool {
         items.contains { calendar.isDate($0.start, inSameDayAs: day) }
     }
 
-    static func hasSelection(_ slots: [AvailableSlot], on day: Date, calendar: Calendar = .current) -> Bool {
+    static func hasSelection(_ slots: [AvailableSlot], on day: Date, calendar: Calendar = GymClock.calendar) -> Bool {
         slots.contains { calendar.isDate($0.start, inSameDayAs: day) }
     }
 
@@ -157,7 +185,7 @@ enum ReservationCalendar {
         max(0, Int(end.timeIntervalSince(start) / 60))
     }
 
-    static func clampedDay(_ date: Date, now: Date = Date(), calendar: Calendar = .current) -> Date {
+    static func clampedDay(_ date: Date, now: Date = Date(), calendar: Calendar = GymClock.calendar) -> Date {
         max(startOfDay(date, calendar: calendar), startOfDay(now, calendar: calendar))
     }
 }

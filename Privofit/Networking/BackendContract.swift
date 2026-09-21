@@ -60,7 +60,8 @@ struct BackendContract: Sendable {
             guard let price = Decimal(string: dto.pricePerSlot, locale: Locale(identifier: "en_US_POSIX")) else {
                 throw AppFailure.invalidResponse
             }
-            return BookingQuote(slots: dto.slots, pricePerSlot: price, currencyCode: dto.currencyCode)
+            let total = dto.total.flatMap { Decimal(string: $0, locale: Locale(identifier: "en_US_POSIX")) } ?? price * Decimal(dto.slots.count)
+            return BookingQuote(slots: dto.slots, pricePerSlot: price, currencyCode: dto.currencyCode, total: total)
         })
     }
     func payAndReserve(_ slotIDs: [String], requestID: UUID, applePay: ApplePayToken) throws -> Endpoint<BookingPayment> {
@@ -189,6 +190,7 @@ private struct QuoteDTO: Decodable {
     var slots: [AvailableSlot]
     var pricePerSlot: String
     var currencyCode: String
+    var total: String?
 }
 private struct PaymentDTO: Decodable {
     var id: String

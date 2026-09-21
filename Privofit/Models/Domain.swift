@@ -24,21 +24,82 @@ struct Reservation: Codable, Identifiable, Equatable, Sendable {
     let end: Date
     let room: String
     let canCancel: Bool
+    var bufferMinutes: Int
+    var price: Decimal?
+    var currencyCode: String
+    init(id: String, start: Date, end: Date, room: String, canCancel: Bool, bufferMinutes: Int = 15, price: Decimal? = nil, currencyCode: String = "CZK") {
+        self.id = id; self.start = start; self.end = end; self.room = room; self.canCancel = canCancel
+        self.bufferMinutes = bufferMinutes; self.price = price; self.currencyCode = currencyCode
+    }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        start = try c.decode(Date.self, forKey: .start)
+        end = try c.decode(Date.self, forKey: .end)
+        room = try c.decode(String.self, forKey: .room)
+        canCancel = try c.decode(Bool.self, forKey: .canCancel)
+        bufferMinutes = try c.decodeIfPresent(Int.self, forKey: .bufferMinutes) ?? 15
+        currencyCode = try c.decodeIfPresent(String.self, forKey: .currencyCode) ?? "CZK"
+        price = GymMoney.decode(c, key: .price)
+    }
+    var occupiedUntil: Date { GymClock.occupancyEnd(end, bufferMinutes: bufferMinutes) }
 }
 struct AvailableSlot: Codable, Identifiable, Equatable, Sendable {
     let id: String
     let start: Date
     let end: Date
     let room: String
+    var bufferMinutes: Int
+    var price: Decimal?
+    var currencyCode: String
+    init(id: String, start: Date, end: Date, room: String, bufferMinutes: Int = 15, price: Decimal? = nil, currencyCode: String = "CZK") {
+        self.id = id; self.start = start; self.end = end; self.room = room
+        self.bufferMinutes = bufferMinutes; self.price = price; self.currencyCode = currencyCode
+    }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        start = try c.decode(Date.self, forKey: .start)
+        end = try c.decode(Date.self, forKey: .end)
+        room = try c.decode(String.self, forKey: .room)
+        bufferMinutes = try c.decodeIfPresent(Int.self, forKey: .bufferMinutes) ?? 15
+        currencyCode = try c.decodeIfPresent(String.self, forKey: .currencyCode) ?? "CZK"
+        price = GymMoney.decode(c, key: .price)
+    }
+    var occupiedUntil: Date { GymClock.occupancyEnd(end, bufferMinutes: bufferMinutes) }
+}
+enum GymMoney {
+    static func czk(_ value: Decimal, code: String = "CZK") -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "cs_CZ")
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        formatter.minimumFractionDigits = 0
+        formatter.groupingSeparator = " "
+        formatter.usesGroupingSeparator = true
+        let amount = formatter.string(from: value as NSDecimalNumber) ?? "0"
+        if code == "CZK" || code == "Kč" { return "\(amount) Kč" }
+        return "\(amount) \(code)"
+    }
+    static func label(_ price: Decimal?, code: String = "CZK") -> String? {
+        guard let price else { return nil }
+        return czk(price, code: code)
+    }
+    static func decode<Key: CodingKey>(_ c: KeyedDecodingContainer<Key>, key: Key) -> Decimal? {
+        if let value = try? c.decode(Decimal.self, forKey: key) { return value }
+        if let raw = try? c.decode(String.self, forKey: key) {
+            return Decimal(string: raw.replacingOccurrences(of: ",", with: "."), locale: Locale(identifier: "en_US_POSIX"))
+        }
+        if let value = try? c.decode(Double.self, forKey: key) { return Decimal(value) }
+        return nil
+    }
 }
 struct BookingQuote: Equatable, Sendable {
     var slots: [AvailableSlot]
     var pricePerSlot: Decimal
     var currencyCode: String
-    var total: Decimal { pricePerSlot * Decimal(slots.count) }
-    func formatted(_ value: Decimal) -> String {
-        value.formatted(.currency(code: currencyCode).locale(Locale(identifier: "cs_CZ")))
-    }
+    var total: Decimal
+    func formatted(_ value: Decimal) -> String { GymMoney.czk(value, code: currencyCode) }
 }
 struct BookingPayment: Equatable, Sendable {
     enum Status: String, Sendable { case paid, pending, failed }

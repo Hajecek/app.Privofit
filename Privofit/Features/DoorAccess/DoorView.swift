@@ -43,13 +43,13 @@ struct DoorView: View {
                         .opacity(appeared ? 1 : 0)
                     stateContent.font(.subheadline).multilineTextAlignment(.center).frame(maxWidth: 420)
                     if let booking = ReservationCalendar.current(app.reservations), !failing {
-                        HStack { Image(systemName: "calendar"); Text(booking.start, style: .time); Text("–"); Text(booking.end, style: .time) }
+                        HStack { Image(systemName: "calendar"); Text(ReservationCalendar.occupiedRange(booking.start, booking.end, bufferMinutes: booking.bufferMinutes)) }
                             .font(.subheadline.weight(.medium)).padding(12).background(Brand.ink.opacity(0.05), in: Capsule())
                     }
 
                 }.padding(.horizontal, 28).padding(.bottom, 24).frame(maxWidth: 600).frame(maxWidth: .infinity)
             }.background(canvas.ignoresSafeArea()).foregroundStyle(onCanvas)
-                .safeAreaInset(edge: .bottom, spacing: 0) { footer }
+                .safeAreaInset(edge: .bottom, spacing: 8) { footer }
                 .navigationTitle(L10n.tr("tab.door")).navigationBarTitleDisplayMode(.inline)
                 .clearTopChrome()
                 .toolbar {
@@ -87,32 +87,67 @@ struct DoorView: View {
             .overlay { if phase != .active { Brand.night.ignoresSafeArea().overlay { BrandMark(size: 36) } } }
     }
     private var footer: some View {
-        VStack(spacing: 8) {
-                    if model.state.canSend && model.prepared {
-                        Button { confirm = true } label: {
-                            HStack {
-                                Image(systemName: failing ? "arrow.clockwise" : "lock.open")
-                                Text(L10n.tr(failing ? "common.retry" : "door.confirmAction"))
-                                Spacer()
-                                Image(systemName: "arrow.right")
-                            }
-                                .font(.headline).padding(22).frame(maxWidth: .infinity)
-                                .foregroundStyle(failing ? Brand.alert : Brand.lime)
-                                .background(failing ? Color(hex: 0xFFF6F1) : Brand.ink, in: RoundedRectangle(cornerRadius: 22))
-                        }.buttonStyle(.plain).accessibilityHint(L10n.tr("door.confirmHint")).accessibilityIdentifier("door.prepare")
-                    }
-                    if model.state == .accepted || model.state == .uncertain {
-                        Button(L10n.tr("door.reconcile")) { Task { await model.reconcile() } }
-                            .buttonStyle(.borderedProminent).tint(Brand.ink).foregroundStyle(Brand.lime).controlSize(.large)
-                            .disabled(!model.prepared).accessibilityIdentifier("door.reconcile")
-                    }
-                    if model.state == .confirmed || model.state == .cooldown {
-                        Button(L10n.tr("redesign.backToOverview")) { dismiss() }.font(.headline).frame(minHeight: 52)
-                    }
-                    if case .denied = model.state { Button(L10n.tr("tab.membership")) { app.tab = .membership; dismiss() }.frame(minHeight: 44) }
-                    ConfiguredLink(title: L10n.tr("profile.support"), key: "SupportURL").font(.subheadline)
-        }.padding(.horizontal, 28).padding(.top, 14).padding(.bottom, 8)
-            .frame(maxWidth: .infinity).background(canvas)
+        VStack(spacing: 10) {
+            if model.state == .accepted || model.state == .uncertain {
+                Button(L10n.tr("door.reconcile")) { Task { await model.reconcile() } }
+                    .font(.headline)
+                    .disabled(!model.prepared)
+                    .accessibilityIdentifier("door.reconcile")
+            }
+            if case .denied = model.state {
+                Button(L10n.tr("tab.membership")) { app.tab = .membership; dismiss() }.font(.headline)
+            }
+            dock
+            ConfiguredLink(title: L10n.tr("profile.support"), key: "SupportURL").font(.caption).opacity(0.7)
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 4)
+        .padding(.bottom, 6)
+        .frame(maxWidth: .infinity)
+    }
+    @ViewBuilder private var dock: some View {
+        if model.state.canSend && model.prepared {
+            Button { confirm = true } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: failing ? "arrow.clockwise" : "lock.open")
+                    Text(L10n.tr(failing ? "common.retry" : "door.confirmAction"))
+                    Spacer(minLength: 8)
+                    Image(systemName: "arrow.right")
+                }
+                .font(.headline)
+                .padding(.horizontal, 22)
+                .padding(.vertical, 18)
+                .frame(maxWidth: .infinity)
+                .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(L10n.tr("door.confirmHint"))
+            .accessibilityIdentifier("door.prepare")
+            .liquidGlassBar()
+        } else if model.state == .confirmed || model.state == .cooldown {
+            Button { dismiss() } label: {
+                HStack {
+                    Text(L10n.tr("redesign.backToOverview")).font(.headline)
+                    Spacer()
+                    Image(systemName: "arrow.down.right")
+                }
+                .padding(.horizontal, 22)
+                .padding(.vertical, 18)
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.plain)
+            .liquidGlassBar()
+        } else if model.state.busy {
+            HStack(spacing: 12) {
+                ProgressView().tint(onCanvas)
+                Text(L10n.tr("door.wait")).font(.headline)
+                Spacer()
+            }
+            .padding(.horizontal, 22)
+            .padding(.vertical, 18)
+            .frame(maxWidth: .infinity)
+            .liquidGlassBar()
+        }
     }
     @ViewBuilder private var stateContent: some View {
         switch model.state {

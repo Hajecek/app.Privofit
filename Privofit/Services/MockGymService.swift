@@ -40,7 +40,7 @@ import Foundation
                 if calendar.component(.weekday, from: day) == 7, hour >= 17 { return nil }
                 guard let start = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day),
                       start > now else { return nil }
-                return AvailableSlot(id: "demo-slot-\(stamp.string(from: start))", start: start, end: start.addingTimeInterval(3600), room: "PRIVOFIT / 01")
+                return AvailableSlot(id: "demo-slot-\(stamp.string(from: start))", start: start, end: start.addingTimeInterval(3600), room: "PRIVOFIT / 01", price: 350)
             }
         }
     }
@@ -59,13 +59,13 @@ import Foundation
         try check(); try await delay()
         if let existing = bookings.first(where: { $0.id == slotID }) { return existing }
         guard let slot = cachedSlots.first(where: { $0.id == slotID }) else { throw AppFailure.unavailable }
-        let reservation = Reservation(id: slot.id, start: slot.start, end: slot.end, room: slot.room, canCancel: true)
+        let reservation = Reservation(id: slot.id, start: slot.start, end: slot.end, room: slot.room, canCancel: true, bufferMinutes: slot.bufferMinutes, price: slot.price, currencyCode: slot.currencyCode)
         bookings.append(reservation); return reservation
     }
     func quoteReservations(slotIDs: [String]) async throws -> BookingQuote {
         try check(); try await delay()
         let chosen = try resolvedSlots(slotIDs)
-        return BookingQuote(slots: chosen, pricePerSlot: 350, currencyCode: "CZK")
+        return BookingQuote(slots: chosen, pricePerSlot: 350, currencyCode: "CZK", total: 350 * Decimal(chosen.count))
     }
     func payAndReserve(slotIDs: [String], requestID: UUID, applePay: ApplePayToken) async throws -> BookingPayment {
         try check(); try await delay()

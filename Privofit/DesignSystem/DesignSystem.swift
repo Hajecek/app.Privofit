@@ -153,6 +153,22 @@ struct NativeGlass: ViewModifier {
         else { content.background(.ultraThinMaterial, in: Capsule()) }
     }
 }
+struct LiquidGlassBar: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    var corner: CGFloat = 28
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
+        if reduceTransparency {
+            content.background(.thinMaterial, in: shape)
+        } else {
+            content.glassEffect(.regular.interactive(), in: shape)
+        }
+    }
+}
+extension View {
+    func nativeGlass() -> some View { modifier(NativeGlass()) }
+    func liquidGlassBar(corner: CGFloat = 28) -> some View { modifier(LiquidGlassBar(corner: corner)) }
+}
 struct Avatar: View {
     let name: String
     var size: CGFloat = 32
