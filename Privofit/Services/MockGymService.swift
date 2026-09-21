@@ -14,7 +14,16 @@ import Foundation
     func deleteAccount() async throws { try check(); try await delay(); signedIn = false; bookings = [] }
     func gymInfo() async throws -> GymInfo { .init(name: "PRIVOFIT", description: L10n.tr("gym.demo.description"), openingHours: L10n.tr("gym.demo.hours"), announcements: [L10n.tr("demo.notice")]) }
     func offers() async throws -> [MembershipOffer] { [.init(id: "demo-pass", name: L10n.tr("offer.name"), description: L10n.tr("offer.description"), priceDescription: L10n.tr("offer.price"))] }
-    func visits() async throws -> [Visit] { try check(); return [.init(id: "demo-visit", date: Date().addingTimeInterval(-86400 * 2), room: "PRIVOFIT / 01")] }
+    func visits() async throws -> [Visit] {
+        try check()
+        let calendar = GymClock.calendar
+        let today = calendar.startOfDay(for: Date())
+        return (1...4).compactMap { offset in
+            guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
+            let date = calendar.date(bySettingHour: 18, minute: 0, second: 0, of: day) ?? day
+            return Visit(id: "demo-visit-\(offset)", date: date, room: "PRIVOFIT / 01")
+        }
+    }
     let appleConfigured = false
     var signedIn = false
     var accountStatus: AccountStatus = .active
@@ -25,7 +34,7 @@ import Foundation
     private var operations: [UUID: DoorReceipt] = [:]
     private var checkouts: [UUID: BookingPayment] = [:]
     private var cachedSlots: [AvailableSlot] = MockGymService.demoSlots()
-    static func demoSlots(now: Date = Date(), calendar: Calendar = .current) -> [AvailableSlot] {
+    static func demoSlots(now: Date = Date(), calendar: Calendar = GymClock.calendar) -> [AvailableSlot] {
         let hours = [6, 8, 10, 12, 16, 17, 18, 19]
         let today = calendar.startOfDay(for: now)
         let stamp = DateFormatter()

@@ -28,6 +28,14 @@ struct RootView: View {
             if app.phase == .authenticated, let token = app.notifications.deliveryToken { await app.uploadPushToken(token) }
         }
         .task(id: app.phase) {
+            guard app.phase == .authenticated else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(20))
+                if Task.isCancelled { break }
+                await app.refreshReservations()
+            }
+        }
+        .task(id: app.phase) {
             guard !app.isDemo else { return }
             switch app.phase {
             case .authenticated, .restricted: break

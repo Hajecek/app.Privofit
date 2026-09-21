@@ -190,12 +190,13 @@ struct MainToolbarModifier: ViewModifier {
             .navigationBarTitleDisplayMode(.inline)
             .clearTopChrome()
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItemGroup(placement: .topBarLeading) {
                     Button { app.tab = .dashboard } label: {
                         BrandMark(size: 28, showsName: false)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Privofit")
+                    LiveFloorButton()
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
@@ -215,6 +216,129 @@ struct MainToolbarModifier: ViewModifier {
 }
 extension View {
     func mainToolbar() -> some View { modifier(MainToolbarModifier()) }
+}
+
+struct LiveFloorButton: View {
+    @Environment(AppModel.self) private var app
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var presented = false
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+            let presence = GymPresence.resolve(app.reservations, now: context.date)
+            Button {
+                if app.isGuest {
+                    app.showGuestGate = true
+                    return
+                }
+                presented = true
+                Task { await app.refreshReservations() }
+            } label: {
+                HStack(spacing: 6) {
+                    LivePulse(tint: tint(presence), active: !app.isGuest && !reduceMotion)
+                    Text(L10n.tr("home.live.kicker"))
+                        .font(.caption.weight(.bold))
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .foregroundStyle(foreground(presence))
+                .background(background(presence), in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("home.live")
+            .accessibilityLabel(accessibilityText(presence))
+        }
+        .popover(isPresented: $presented) {
+            LiveFloorDetail()
+                .presentationCompactAdaptation(.popover)
+        }
+    }
+
+    private func tint(_ presence: GymPresence) -> Color {
+        if app.isGuest || (app.loading && app.reservations.isEmpty) { return .secondary }
+        if case .occupied = presence { return Brand.alert }
+        return Brand.ink
+    }
+
+    private func foreground(_ presence: GymPresence) -> Color {
+        if case .occupied = presence, !app.isGuest { return Brand.fog }
+        return Brand.ink
+    }
+
+    private func background(_ presence: GymPresence) -> Color {
+        if app.isGuest || (app.loading && app.reservations.isEmpty) { return Color.primary.opacity(0.08) }
+        if case .occupied = presence { return Brand.ink }
+        return Brand.lime
+    }
+
+    private func accessibilityText(_ presence: GymPresence) -> String {
+        "\(L10n.tr("home.live.kicker")). \(statusTitle(presence))"
+    }
+
+    private func statusTitle(_ presence: GymPresence) -> String {
+        if app.isGuest { return L10n.tr("home.live.guest") }
+        if case .occupied = presence { return L10n.tr("home.live.occupied") }
+        return L10n.tr("home.live.free")
+    }
+}
+
+struct LiveFloorDetail: View {
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        let presence = GymPresence.resolve(app.reservations)
+        VStack(alignment: .leading, spacing: 10) {
+            Text(L10n.tr("home.live.kicker"))
+                .font(.caption.weight(.bold))
+                .tracking(1.1)
+                .foregroundStyle(.secondary)
+            Text(title(presence))
+                .font(.title3.weight(.bold))
+            if case .occupied(let reservation) = presence {
+                Text(ReservationCalendar.timeRange(reservation.start, reservation.end))
+                    .font(.headline.monospacedDigit())
+                Text(reservation.room)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(22)
+        .frame(width: 280, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func title(_ presence: GymPresence) -> String {
+        if case .occupied = presence { return L10n.tr("home.live.occupied") }
+        return L10n.tr("home.live.free")
+    }
+}
+
+private struct LivePulse: View {
+    var tint: Color
+    var active: Bool
+    @State private var expanded = false
+
+    var body: some View {
+        Circle()
+            .fill(tint)
+            .frame(width: 8, height: 8)
+            .background {
+                Circle()
+                    .stroke(tint.opacity(0.35), lineWidth: 4)
+                    .scaleEffect(active && expanded ? 2.1 : 1)
+                    .opacity(active && expanded ? 0 : 0.9)
+            }
+            .frame(width: 22, height: 22)
+            .onAppear { restart(active) }
+            .onChange(of: active) { _, isActive in restart(isActive) }
+            .accessibilityHidden(true)
+    }
+
+    private func restart(_ isActive: Bool) {
+        guard isActive else { expanded = false; return }
+        expanded = false
+        withAnimation(.easeOut(duration: 1.25).repeatForever(autoreverses: false)) { expanded = true }
+    }
 }
 
 // Shared semantic scales; SF adapts to Dynamic Type and the system language.

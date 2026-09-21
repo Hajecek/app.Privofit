@@ -140,6 +140,7 @@ struct ValidationTests {
         #expect(grid.count == 35 || grid.count == 42)
         #expect(grid.contains { $0.inMonth && calendar.isDate($0.date, inSameDayAs: wednesday) })
         #expect(ReservationCalendar.weekdaySymbols(calendar: calendar).count == 7)
+        #expect(ReservationCalendar.shortWeekdayLabels(calendar: calendar).count == 7)
         let grouped = ReservationCalendar.groupedByDay([booking], calendar: calendar)
         #expect(grouped.count == 1)
         #expect(grouped[0].1.count == 1)
@@ -204,5 +205,48 @@ struct ValidationTests {
         #expect(service.openCount == 0)
         #expect(door.state.isFailure)
         if case .failed = door.state {} else { Issue.record("Expected unavailable biometry failure") }
+    }
+    @Test func presenceFollowsReservedSlot() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+        calendar.locale = Locale(identifier: "cs_CZ")
+        let start = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 12))!
+        let booking = Reservation(id: "mine", start: start, end: start.addingTimeInterval(3600), room: "PRIVOFIT / 01", canCancel: true)
+        let during = start.addingTimeInterval(20 * 60)
+        if case .occupied(let active) = GymPresence.resolve([booking], now: during) {
+            #expect(active.id == "mine")
+        } else {
+            Issue.record("Expected an active reservation")
+        }
+        let before = GymPresence.resolve([booking], now: start.addingTimeInterval(-60))
+        #expect(before == .vacant)
+        let afterSession = GymPresence.resolve([booking], now: booking.end.addingTimeInterval(60))
+        #expect(afterSession == .vacant)
+        #expect(GymPresence.resolve([], now: during) == .vacant)
+    }
+    @Test func streakCountsFinishedDaysAndKeepsYesterday() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+        calendar.locale = Locale(identifier: "cs_CZ")
+        calendar.firstWeekday = 2
+        let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 15))!
+        let monday = calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 18))!
+        let tuesday = calendar.date(from: DateComponents(year: 2026, month: 9, day: 15, hour: 18))!
+        let tonight = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 18))!
+        let visits = [
+            Visit(id: "m", date: monday, room: "PRIVOFIT / 01"),
+            Visit(id: "t", date: tuesday, room: "PRIVOFIT / 01")
+        ]
+        let planned = Reservation(id: "later", start: tonight, end: tonight.addingTimeInterval(3600), room: "PRIVOFIT / 01", canCancel: true)
+        let summary = TrainingStreak.summary(reservations: [planned], visits: visits, now: now, calendar: calendar)
+        #expect(summary.length == 2)
+        #expect(!summary.todayTrained)
+        #expect(summary.week.contains { calendar.isDate($0.date, inSameDayAs: now) && $0.planned && !$0.trained })
+
+        let earlier = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 9))!
+        let done = Reservation(id: "done", start: earlier, end: earlier.addingTimeInterval(3600), room: "PRIVOFIT / 01", canCancel: true)
+        let continued = TrainingStreak.summary(reservations: [done], visits: visits, now: now, calendar: calendar)
+        #expect(continued.todayTrained)
+        #expect(continued.length == 3)
     }
 }

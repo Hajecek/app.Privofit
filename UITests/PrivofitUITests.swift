@@ -23,18 +23,24 @@ import XCTest
         let password = app.secureTextFields.firstMatch
         password.tap(); password.typeText("demo-password")
         let submit = app.buttons["login.submit"]; scrollTo(submit, in: app);         submit.tap()
-        XCTAssertTrue(app.buttons["door.launch"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.descendants(matching: .any)["dashboard"].waitForExistence(timeout: 8))
+    }
+    private func openDoor(_ app: XCUIApplication) {
+        let tab = app.tabBars.buttons["Vstup"]
+        if tab.waitForExistence(timeout: 3) { tab.tap(); return }
+        app.buttons["Vstup"].tap()
     }
     func testGuestOnboardingAndProtectedDoor() {
         let app = launch(); let guest = app.buttons["auth.guest"]
         scrollTo(guest, in: app); guest.tap(); finishOnboarding(app)
-        XCTAssertTrue(app.buttons["door.launch"].waitForExistence(timeout: 5)); app.buttons["door.launch"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["dashboard"].waitForExistence(timeout: 5))
+        openDoor(app)
         XCTAssertTrue(app.staticTexts["Tenhle prostor je pro členy."].waitForExistence(timeout: 3))
         XCTAssertFalse(app.staticTexts["Dveře jsou otevřené."].exists)
     }
     func testLoginAndMockDoorSuccess() {
         let app = launch(); login(app)
-        app.buttons["door.launch"].tap()
+        openDoor(app)
         let prepare = app.buttons["door.prepare"]; scrollTo(prepare, in: app); prepare.tap()
         app.buttons["Otevřít dveře"].tap()
         XCTAssertTrue(app.staticTexts["Dveře jsou otevřené."].waitForExistence(timeout: 5))
@@ -42,7 +48,7 @@ import XCTest
     }
     func testDeniedDoor() {
         let app = launch(["--deny-door"]); login(app)
-        app.buttons["door.launch"].tap()
+        openDoor(app)
         let prepare = app.buttons["door.prepare"]; scrollTo(prepare, in: app); prepare.tap(); app.buttons["Otevřít dveře"].tap()
         XCTAssertTrue(app.staticTexts["Vstup nebyl povolen."].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["Dveře jsou otevřené."].exists)
@@ -57,6 +63,6 @@ import XCTest
         app.buttons["onboarding.next"].tap(); app.buttons["onboarding.next"].tap(); app.tap()
         XCTAssertTrue(app.staticTexts["Biometrie není dostupná"].waitForExistence(timeout: 5))
         app.buttons["onboarding.skip"].tap(); app.buttons["onboarding.next"].tap()
-        XCTAssertTrue(app.buttons["door.launch"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["dashboard"].waitForExistence(timeout: 5))
     }
 }

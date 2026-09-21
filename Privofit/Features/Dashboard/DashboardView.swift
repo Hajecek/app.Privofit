@@ -2,32 +2,34 @@ import SwiftUI
 
 struct DashboardView: View {
     @Environment(AppModel.self) private var app
+    @Environment(\.colorScheme) private var scheme
     private var next: Reservation? { ReservationCalendar.next(app.reservations) }
     private var current: Reservation? { ReservationCalendar.current(app.reservations) }
-    private var weekCount: Int {
-        let days = Set(ReservationCalendar.week(containing: Date()))
-        return ReservationCalendar.upcoming(app.reservations).filter { days.contains(GymClock.calendar.startOfDay(for: $0.start)) }.count
-    }
+    private var streak: TrainingStreak.Summary { TrainingStreak.summary(reservations: app.reservations, visits: app.visits) }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
                 if app.isDemo || app.isGuest { StatusBadge(title: L10n.tr(app.isDemo ? "demo.badge" : "guest.badge"), symbol: "info.circle") }
                 if let error = app.error, !app.isGuest { FailureView(message: error) { Task { await load() } } }
-                if app.loading { SkeletonCard() }
-                sessionHero
-                quickActions
+                if app.loading && app.reservations.isEmpty && app.visits.isEmpty && !app.isGuest { SkeletonCard() }
+                bookAction
+                if let session = current ?? next { sessionRow(session) }
                 if app.isGuest {
                     guestCard
-                    privateCard
-                } else {
-                    mosaic
-                    if let item = app.inbox.first { inboxCard(item) }
-                    privateCard
+                } else if !app.loading || !app.visits.isEmpty || !app.reservations.isEmpty {
+                    streakCard
                 }
             }.padding(24).frame(maxWidth: 680).frame(maxWidth: .infinity)
-        }.brandBackground().navigationTitle(L10n.tr("tab.dashboard")).navigationBarTitleDisplayMode(.inline).mainToolbar()
-            .task { await load() }.refreshable { await load() }.accessibilityIdentifier("dashboard")
+        }
+        .brandBackground()
+        .navigationTitle(L10n.tr("tab.dashboard"))
+        .navigationBarTitleDisplayMode(.inline)
+        .mainToolbar()
+        .task { await load() }
+        .refreshable { await load() }
+        .accessibilityIdentifier("dashboard")
     }
 
     private var header: some View {
@@ -60,155 +62,108 @@ struct DashboardView: View {
         return L10n.tr(hour < 11 ? "home.line.morning" : hour < 18 ? "home.line.day" : "home.line.evening")
     }
 
-    private var sessionHero: some View {
-        Button {
-            if app.isGuest { app.showGuestGate = true; return }
-            app.reservationSection = (current ?? next) == nil ? .slots : .mine
-            app.tab = .reservations
-        } label: {
-            VStack(alignment: .leading, spacing: 16) {
-                Label(current != nil ? L10n.tr("home.now") : L10n.tr("reservations.nextSession"), systemImage: current != nil ? "bolt.fill" : "calendar")
-                    .font(.caption.weight(.semibold))
-                if let session = current ?? next {
-                    Text(ReservationCalendar.occupiedRange(session.start, session.end, bufferMinutes: session.bufferMinutes))
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
-                        .tracking(-0.6)
-                        .monospacedDigit()
-                    HStack {
-                        Text("\(dayLabel(session.start)) · \(session.room)")
-                        if current == nil {
-                            Spacer(minLength: 8)
-                            Text(session.start, style: .relative).opacity(0.8)
-                        }
-                    }.font(.subheadline.weight(.medium))
-                } else {
-                    Text(L10n.tr("home.sessionEmpty")).font(.title3.weight(.semibold)).multilineTextAlignment(.leading)
-                    Text(L10n.tr("home.sessionHint")).font(.subheadline).opacity(0.78)
-                }
-            }
-            .padding(24)
-            .frame(maxWidth: .infinity, minHeight: 168, alignment: .leading)
-            .foregroundStyle(current != nil ? Brand.ink : Brand.fog)
-            .background {
-                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .fill(current != nil
-                          ? AnyShapeStyle(Brand.lime)
-                          : AnyShapeStyle(LinearGradient(colors: [Color(hex: 0x24352C), Brand.ink], startPoint: .topLeading, endPoint: .bottomTrailing)))
-            }
-            .overlay(alignment: .topTrailing) {
-                Circle().stroke((current != nil ? Brand.ink : Brand.lime).opacity(0.12), lineWidth: 28)
-                    .frame(width: 140, height: 140).offset(x: 36, y: -48)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityHint(L10n.tr("redesign.allBookings"))
-    }
-
-    private var quickActions: some View {
-        HStack(spacing: 12) {
-            Button(action: app.requestDoor) {
-                VStack(alignment: .leading, spacing: 18) {
-                    Image(systemName: "door.left.hand.open").font(.title2.weight(.semibold))
-                    Spacer(minLength: 0)
-                    Text(L10n.tr("door.open")).font(.headline)
-                    Text(L10n.tr("home.doorHint")).font(.caption).opacity(0.7)
-                }
-                .padding(20)
-                .frame(maxWidth: .infinity, minHeight: 148, alignment: .leading)
-                .foregroundStyle(Brand.ink)
-                .background(Brand.lime, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("door.launch")
-            Button {
-                if app.isGuest { app.showGuestGate = true; return }
-                app.reservationSection = .slots
-                app.tab = .reservations
-            } label: {
-                VStack(alignment: .leading, spacing: 18) {
-                    Image(systemName: "calendar.badge.plus").font(.title2.weight(.semibold))
-                    Spacer(minLength: 0)
-                    Text(L10n.tr("home.book")).font(.headline)
-                    Text(L10n.tr("home.bookHint")).font(.caption).opacity(0.55)
-                }
-                .padding(20)
-                .frame(maxWidth: .infinity, minHeight: 148, alignment: .leading)
-                .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(Color.primary.opacity(0.08)))
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private var mosaic: some View {
-        HStack(spacing: 12) {
-            Button { app.tab = .membership } label: {
-                VStack(alignment: .leading, spacing: 10) {
-                    Image(systemName: "creditcard.fill").font(.title3)
-                    Spacer(minLength: 4)
-                    if let entries = app.membership?.remainingEntries {
-                        Text(entries.formatted())
-                            .font(.system(size: 44, weight: .bold, design: .rounded))
-                            .monospacedDigit()
-                        Text(entries == 1 ? L10n.tr("home.entry.one") : L10n.tr("home.entry.many")).font(.subheadline.weight(.medium))
-                    } else {
-                        Text(L10n.tr("membership.status.\(app.membership?.status.rawValue ?? "inactive")"))
-                            .font(.title3.weight(.bold))
-                        Text(L10n.tr("tab.membership")).font(.subheadline)
-                    }
-                }
-                .padding(20)
-                .frame(maxWidth: .infinity, minHeight: 168, alignment: .leading)
-                .foregroundStyle(Brand.fog)
-                .background {
-                    RoundedRectangle(cornerRadius: 26, style: .continuous)
-                        .fill(LinearGradient(colors: [Color(hex: 0x1B3A4A), Color(hex: 0x101714)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.tr("tab.membership"))
-            Button {
-                app.reservationSection = .mine
-                app.tab = .reservations
-            } label: {
-                VStack(alignment: .leading, spacing: 10) {
-                    Image(systemName: "flame.fill").font(.title3)
-                    Spacer(minLength: 4)
-                    Text(weekCount.formatted())
-                        .font(.system(size: 44, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                    Text(L10n.tr("home.week")).font(.subheadline.weight(.medium))
-                    Text(weekCount == 0 ? L10n.tr("home.week.empty") : (weekCount == 1 ? L10n.tr("home.week.one") : L10n.tr("home.week.many")))
-                        .font(.caption).opacity(0.7)
-                }
-                .padding(20)
-                .frame(maxWidth: .infinity, minHeight: 168, alignment: .leading)
-                .foregroundStyle(Brand.ink)
-                .background(Color(hex: 0xD6E4C8), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private var privateCard: some View {
-        Button(action: app.requestDoor) {
-            HStack(alignment: .center, spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(L10n.tr("home.private.title")).font(.title2.weight(.bold))
-                    Text(L10n.tr("home.private.body")).font(.subheadline).opacity(0.72)
+    private var bookAction: some View {
+        Button(action: openBooking) {
+            HStack(spacing: 16) {
+                Image(systemName: "calendar.badge.plus")
+                    .font(.title2.weight(.semibold))
+                    .frame(width: 52, height: 52)
+                    .background(Brand.ink.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L10n.tr("home.bookTitle")).font(.title3.weight(.bold))
+                    Text(L10n.tr("home.bookHint")).font(.subheadline).opacity(0.7)
                 }
                 Spacer(minLength: 8)
-                Image(systemName: "sparkles").font(.title2)
+                Image(systemName: "arrow.up.right")
+                    .font(.headline.weight(.semibold))
             }
-            .padding(22)
+            .padding(18)
+            .frame(maxWidth: .infinity, minHeight: 96, alignment: .leading)
             .foregroundStyle(Brand.ink)
-            .background {
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(LinearGradient(colors: [Brand.lime, Color(hex: 0xA8D400)], startPoint: .leading, endPoint: .trailing))
+            .background(Brand.lime, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("home.book")
+    }
+
+    private func sessionRow(_ session: Reservation) -> some View {
+        Button {
+            if app.isGuest { app.showGuestGate = true; return }
+            app.reservationSection = .mine
+            app.tab = .reservations
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: current != nil ? "bolt.fill" : "clock")
+                    .font(.body.weight(.semibold))
+                    .frame(width: 36, height: 36)
+                    .background(Brand.lime.opacity(0.2), in: Circle())
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(current != nil ? L10n.tr("home.now") : L10n.tr("reservations.nextSession"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(ReservationCalendar.occupiedRange(session.start, session.end, bufferMinutes: session.bufferMinutes))
+                        .font(.headline.monospacedDigit())
+                    Text("\(dayLabel(session.start)) · \(session.room)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 8)
             }
         }
         .buttonStyle(.plain)
+        .padding(16)
+        .background(Brand.surface(scheme), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.primary.opacity(0.06)))
+    }
+
+    private var streakCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .firstTextBaseline) {
+                Label(L10n.tr("home.streak.title"), systemImage: "flame.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(scheme == .dark ? Brand.lime : Brand.ink)
+                Spacer(minLength: 8)
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(streak.length.formatted())
+                        .font(.system(size: 42, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                    Text(L10n.tr("home.streak.unit"))
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            HStack(spacing: 0) {
+                ForEach(Array(zip(streak.week, weekdayLabels)), id: \.0.id) { mark, label in
+                    dayMark(mark, label: label)
+                }
+            }
+            Text(streakHint)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .foregroundStyle(scheme == .dark ? Brand.fog : Brand.ink)
+        .background(streakFill, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(streakAccessibility)
+    }
+
+    private func dayMark(_ mark: TrainingStreak.Mark, label: String) -> some View {
+        let today = GymClock.calendar.isDateInToday(mark.date)
+        let fill = scheme == .dark ? Brand.lime : Brand.ink
+        return VStack(spacing: 8) {
+            Text(label)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(today ? .primary : .secondary)
+            ZStack {
+                Circle().strokeBorder(mark.planned || mark.trained ? fill.opacity(mark.trained ? 1 : 0.85) : Color.primary.opacity(0.16), lineWidth: today ? 2 : 1.5)
+                if mark.trained { Circle().fill(fill).padding(3.5) }
+            }
+            .frame(width: 18, height: 18)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private var guestCard: some View {
@@ -221,24 +176,32 @@ struct DashboardView: View {
         }
     }
 
-    private func inboxCard(_ item: InboxItem) -> some View {
-        Button { app.showInbox = true } label: {
-            BrandCard {
-                VStack(alignment: .leading, spacing: 8) {
-                    Label(L10n.tr("home.inbox"), systemImage: "bell.fill").font(.caption.weight(.semibold)).foregroundStyle(Color("AccentColor"))
-                    Text(item.title).font(.headline)
-                    Text(item.body).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
-                }
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(L10n.tr("notifications.title"))
+    private var weekdayLabels: [String] { ReservationCalendar.shortWeekdayLabels() }
+
+    private var streakFill: Color {
+        scheme == .dark ? Color(hex: 0x1C2A22) : Color(hex: 0xD6E4C8)
+    }
+
+    private var streakHint: String {
+        if streak.todayTrained { return L10n.tr("home.streak.today") }
+        if streak.length > 0 { return L10n.tr("home.streak.keep") }
+        return L10n.tr("home.streak.start")
+    }
+
+    private var streakAccessibility: String {
+        "\(L10n.tr("home.streak.title")) \(streak.length.formatted()) \(L10n.tr("home.streak.unit")). \(streakHint)"
     }
 
     private func dayLabel(_ date: Date) -> String {
         if GymClock.calendar.isDateInToday(date) { return L10n.tr("reservations.today") }
         if GymClock.calendar.isDateInTomorrow(date) { return L10n.tr("reservations.tomorrow") }
         return GymClock.format(date, Date.FormatStyle().weekday(.wide).day().month(.wide))
+    }
+
+    private func openBooking() {
+        if app.isGuest { app.showGuestGate = true; return }
+        app.reservationSection = .slots
+        app.tab = .reservations
     }
 
     private func load() async {

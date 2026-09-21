@@ -188,4 +188,70 @@ enum ReservationCalendar {
     static func clampedDay(_ date: Date, now: Date = Date(), calendar: Calendar = GymClock.calendar) -> Date {
         max(startOfDay(date, calendar: calendar), startOfDay(now, calendar: calendar))
     }
+
+    static func shortWeekdayLabels(calendar: Calendar = GymClock.calendar) -> [String] {
+        let symbols = calendar.shortStandaloneWeekdaySymbols
+        let start = calendar.firstWeekday - 1
+        return (Array(symbols[start...]) + Array(symbols[..<start])).map { $0.uppercased() }
+    }
+}
+
+enum GymPresence: Equatable {
+    case vacant
+    case occupied(Reservation)
+
+    static func resolve(_ reservations: [Reservation], now: Date = Date()) -> GymPresence {
+        let active = reservations.filter { $0.start <= now && $0.end > now }.sorted { $0.start < $1.start }
+        if let current = active.first { return .occupied(current) }
+        return .vacant
+    }
+}
+
+enum TrainingStreak {
+    struct Mark: Equatable, Identifiable {
+        var date: Date
+        var trained: Bool
+        var planned: Bool
+        var id: Date { date }
+    }
+    struct Summary: Equatable {
+        var length: Int
+        var todayTrained: Bool
+        var week: [Mark]
+    }
+
+    static func summary(reservations: [Reservation], visits: [Visit], now: Date = Date(), calendar: Calendar = GymClock.calendar) -> Summary {
+        let today = calendar.startOfDay(for: now)
+        let week = ReservationCalendar.week(containing: now, calendar: calendar).map { day in
+            let trained = didTrain(on: day, reservations: reservations, visits: visits, now: now, calendar: calendar)
+            return Mark(date: day, trained: trained, planned: !trained && hasPlan(on: day, reservations: reservations, now: now, calendar: calendar))
+        }
+        let todayTrained = didTrain(on: today, reservations: reservations, visits: visits, now: now, calendar: calendar)
+        let length = run(from: today, todayTrained: todayTrained, reservations: reservations, visits: visits, now: now, calendar: calendar)
+        return Summary(length: length, todayTrained: todayTrained, week: week)
+    }
+
+    private static func didTrain(on day: Date, reservations: [Reservation], visits: [Visit], now: Date, calendar: Calendar) -> Bool {
+        if visits.contains(where: { calendar.isDate($0.date, inSameDayAs: day) && $0.date <= now }) { return true }
+        return reservations.contains { calendar.isDate($0.start, inSameDayAs: day) && $0.start <= now }
+    }
+
+    private static func hasPlan(on day: Date, reservations: [Reservation], now: Date, calendar: Calendar) -> Bool {
+        reservations.contains { calendar.isDate($0.start, inSameDayAs: day) && $0.start > now }
+    }
+
+    private static func run(from today: Date, todayTrained: Bool, reservations: [Reservation], visits: [Visit], now: Date, calendar: Calendar) -> Int {
+        var cursor = today
+        if !todayTrained {
+            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else { return 0 }
+            cursor = yesterday
+        }
+        var count = 0
+        while didTrain(on: cursor, reservations: reservations, visits: visits, now: now, calendar: calendar) {
+            count += 1
+            guard count < 400, let previous = calendar.date(byAdding: .day, value: -1, to: cursor) else { break }
+            cursor = previous
+        }
+        return count
+    }
 }

@@ -11,6 +11,7 @@ enum ReservationSection: Hashable { case slots, mine }
     private(set) var member: Member?
     var membership: Membership?
     var reservations: [Reservation] = []
+    var visits: [Visit] = []
     var inbox: [InboxItem] = []
     var tab: AppTab = .dashboard
     var reservationSection: ReservationSection = .slots
@@ -105,7 +106,7 @@ enum ReservationSection: Hashable { case slots, mine }
     func logout() async {
         guard !busy else { return }; busy = true; epoch += 1
         showDoor = false; showInbox = false
-        phase = .signedOut; member = nil; membership = nil; reservations = []; inbox = []; locked = false; tab = .dashboard
+        phase = .signedOut; member = nil; membership = nil; reservations = []; visits = []; inbox = []; locked = false; tab = .dashboard
         AppDelegate.shared?.updateAuthentication(isLoggedIn: false)
         await service.logout(); busy = false
     }
@@ -141,6 +142,8 @@ enum ReservationSection: Hashable { case slots, mine }
             guard current == epoch, phase == .authenticated else { return }
             if let bookings = await fetchKeepingSession({ try await service.reservations() }) { reservations = bookings }
             guard current == epoch, phase == .authenticated else { return }
+            if let history = await fetchKeepingSession({ try await service.visits() }) { visits = history }
+            guard current == epoch, phase == .authenticated else { return }
             if let messages = await fetchKeepingSession({ try await service.inbox() }) { inbox = messages }
             guard current == epoch, phase == .authenticated else { return }
             error = nil
@@ -166,7 +169,7 @@ enum ReservationSection: Hashable { case slots, mine }
             showDoor = false; showInbox = false
             busy = true
             Task { await service.logout(); busy = false }
-            epoch += 1; member = nil; membership = nil; reservations = []; inbox = []; locked = false; phase = .sessionExpired
+            epoch += 1; member = nil; membership = nil; reservations = []; visits = []; inbox = []; locked = false; phase = .sessionExpired
             AppDelegate.shared?.updateAuthentication(isLoggedIn: false)
             error = FriendlyError.message(failure)
             return
@@ -177,6 +180,17 @@ enum ReservationSection: Hashable { case slots, mine }
     func unlock() async {
         do { try await biometrics.authenticate(reason: L10n.tr("biometry.reason")); locked = false }
         catch { self.error = FriendlyError.message(error) }
+    }
+    func refreshReservations() async {
+        guard phase == .authenticated, !locked else { return }
+        let current = epoch
+        do {
+            let bookings = try await service.reservations()
+            guard current == epoch, phase == .authenticated else { return }
+            reservations = bookings
+        } catch {
+            if current == epoch { handle(error, surface: false) }
+        }
     }
     func refreshInbox() async {
         guard phase == .authenticated, !locked else { return }
