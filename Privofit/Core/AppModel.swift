@@ -291,13 +291,12 @@ enum ReservationSection: Hashable { case slots, mine }
         catch { handle(error, surface: false) }
     }
     func uploadPushToken(_ token: String, kind: String? = nil) async {
-        if kind == "fcm" {
-            notifications.fcmToken = token
-            notifications.deviceToken = token
-        } else if kind == "apns" {
+        if kind == "apns" {
             notifications.apnsToken = token
-            if notifications.fcmToken == nil { notifications.deviceToken = token }
-        } else {
+            return
+        }
+        if kind == "fcm" || kind == nil {
+            notifications.fcmToken = token
             notifications.deviceToken = token
         }
         await sendPushRegistration()
@@ -307,7 +306,7 @@ enum ReservationSection: Hashable { case slots, mine }
         await sendPushRegistration()
     }
     private func sendPushRegistration() async {
-        guard phase == .authenticated, !isDemo, let token = notifications.deliveryToken else { return }
+        guard phase == .authenticated, !isDemo, let token = notifications.fcmToken, !token.isEmpty else { return }
         do {
             try await service.registerPush(token: token, preferences: NotificationPreferencesStore.shared.apiPayload())
             notifications.registrationError = nil

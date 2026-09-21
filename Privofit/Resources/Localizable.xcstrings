@@ -862,13 +862,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "V dalším kroku otevření potvrdíš."
+            "value" : "Klepnutím spustíš ověření vstupu."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Confirm opening in the next step."
+            "value" : "Tap to start entry verification."
           }
         }
       }
@@ -3676,13 +3676,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Potvrď otevření. Oprávnění bezpečně ověříme za tebe."
+            "value" : "Klepni na obrazovku. Ověříme oprávnění a otevřeme vstup."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Confirm entry. We'll securely check your access."
+            "value" : "Tap the screen. We'll check your access and open the door."
           }
         }
       }

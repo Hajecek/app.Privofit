@@ -116,6 +116,11 @@ enum BrandChrome {
     }
 }
 enum SystemFeedback {
+    static func tap() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.prepare()
+        generator.impactOccurred()
+    }
     static func denied() {
         let generator = UINotificationFeedbackGenerator()
         generator.prepare()

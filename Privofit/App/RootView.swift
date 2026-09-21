@@ -24,7 +24,7 @@ struct RootView: View {
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: app.phase)
         .task { await app.boot() }
         .task(id: app.phase) {
-            if app.phase == .authenticated, let token = app.notifications.deliveryToken { await app.uploadPushToken(token) }
+            if app.phase == .authenticated, let token = app.notifications.fcmToken { await app.uploadPushToken(token, kind: "fcm") }
         }
         .task(id: app.phase) {
             guard !app.isDemo else { return }

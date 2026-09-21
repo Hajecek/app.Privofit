@@ -104,7 +104,11 @@ struct BackendContract: Sendable {
         return Endpoint(path: path, method: .get, retryAfterRefresh: true, decode: { try APIJSON.decode($0) })
     }
     func push(_ token: String, preferences: PushNotificationPreferences) throws -> Endpoint<EmptyResponse> {
-        try APIJSON.postEmpty("devices/push", body: PushBody(token: token, preferences: preferences))
+        try APIJSON.postEmpty("devices/push", body: PushBody(token: token, preferences: preferences, environment: Self.pushEnvironment))
+    }
+    private static var pushEnvironment: String {
+        let raw = (Bundle.main.object(forInfoDictionaryKey: "AppEnvironment") as? String)?.lowercased() ?? ""
+        return raw == "development" ? "development" : "production"
     }
     private func missing(_ name: String) -> AppFailure { .notConfigured("BackendContract / \(name)") }
 }
@@ -192,7 +196,7 @@ private struct ReserveBody: Encodable { var slotID: String; var requestID: UUID 
 private struct QuoteBody: Encodable { var slotIDs: [String] }
 private struct RequestIDBody: Encodable { var requestID: UUID }
 private struct OpenDoorBody: Encodable { var doorID: String; var requestID: UUID }
-private struct PushBody: Encodable { var token: String; var preferences: PushNotificationPreferences }
+private struct PushBody: Encodable { var token: String; var preferences: PushNotificationPreferences; var environment: String }
 private struct QuoteDTO: Decodable {
     var slots: [AvailableSlot]
     var pricePerSlot: String

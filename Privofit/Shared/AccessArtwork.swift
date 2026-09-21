@@ -49,6 +49,35 @@ struct AccessToken: View {
             .accessibilityHidden(true)
     }
 }
+struct VerifyWaves: View {
+    var tint: Color
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var body: some View {
+        Group {
+            if reduceMotion {
+                ZStack {
+                    Circle().stroke(tint.opacity(0.28), lineWidth: 1.5).frame(width: 210, height: 210)
+                    Circle().stroke(tint.opacity(0.14), lineWidth: 1.5).frame(width: 270, height: 270)
+                }
+            } else {
+                TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+                    let time = timeline.date.timeIntervalSinceReferenceDate
+                    ZStack {
+                        ForEach(0..<3, id: \.self) { index in
+                            let phase = (time / 1.7 + Double(index) / 3).truncatingRemainder(dividingBy: 1)
+                            Circle()
+                                .stroke(tint.opacity(0.55 * (1 - phase)), lineWidth: 2)
+                                .frame(width: 148, height: 148)
+                                .scaleEffect(0.5 + phase * 1.75)
+                        }
+                    }
+                }
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
 struct DoorPortal: View {
     let opened: Bool
     var checking = false

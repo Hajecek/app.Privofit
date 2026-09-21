@@ -43,14 +43,13 @@ import XCTest
         let app = launch(); login(app)
         openDoor(app)
         let prepare = app.buttons["door.prepare"]; scrollTo(prepare, in: app); prepare.tap()
-        app.buttons["Otevřít dveře"].tap()
         XCTAssertTrue(app.staticTexts["Dveře jsou otevřené."].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["SIMULACE · žádné skutečné dveře"].exists)
     }
     func testDeniedDoor() {
         let app = launch(["--deny-door"]); login(app)
         openDoor(app)
-        let prepare = app.buttons["door.prepare"]; scrollTo(prepare, in: app); prepare.tap(); app.buttons["Otevřít dveře"].tap()
+        let prepare = app.buttons["door.prepare"]; scrollTo(prepare, in: app); prepare.tap()
         XCTAssertTrue(app.staticTexts["Vstup nebyl povolen."].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["Dveře jsou otevřené."].exists)
     }

@@ -63,6 +63,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     static weak var shared: AppDelegate?
     private var firebaseReady = false
     private var authenticated = false
+    /// FCM token bez reálného APNS push nedoručí. Stejně jako Skrbla a Provikart se bere až potom.
+    private var hasRealAPNSToken = false
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         Self.shared = self
@@ -93,7 +95,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         let token = deviceToken.map { String(format: "%02x", $0) }.joined()
-        print("[FCM] APNS token přijat (\(deviceToken.count) B)")
+        print("[FCM] APNS token přijat (\(deviceToken.count) B), předávám FCM…")
+        hasRealAPNSToken = true
         NotificationCenter.default.post(name: .privofitPushToken, object: token, userInfo: ["kind": "apns"])
 
         guard firebaseReady else { return }
@@ -104,17 +107,18 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                     print("[FCM] Chyba při načtení tokenu: \(error.localizedDescription)")
                     return
                 }
-                if let token {
-                    print("[FCM] ✅ FCM token přijat")
-                    NotificationCenter.default.post(name: .privofitPushToken, object: token, userInfo: ["kind": "fcm"])
-                }
+                guard let token, !token.isEmpty else { return }
+                print("[FCM] ✅ FCM token přijat")
+                NotificationCenter.default.post(name: .privofitPushToken, object: token, userInfo: ["kind": "fcm"])
                 AppDelegate.shared?.syncNotificationTopics()
             }
         }
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        hasRealAPNSToken = false
         print("[FCM] ⚠️ APNS registrace selhala (pravděpodobně simulátor): \(error.localizedDescription)")
+        print("[FCM] FCM token, který doručí push, vznikne jen na reálném zařízení.")
         NotificationCenter.default.post(name: .privofitPushFailure, object: nil)
     }
 
@@ -168,9 +172,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     }
 
     nonisolated func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        // Na backend neposíláme tady – ukládáme až po přihlášení.
-        guard let fcmToken else { return }
+        // Token bez navázaného APNS z Firebase Console nedoručí. Uložení řeší až přihlášená appka.
+        guard let fcmToken, !fcmToken.isEmpty, messaging.apnsToken != nil else { return }
         DispatchQueue.main.async {
+            guard AppDelegate.shared?.hasRealAPNSToken == true else { return }
             NotificationCenter.default.post(name: .privofitPushToken, object: fcmToken, userInfo: ["kind": "fcm"])
         }
     }
@@ -180,7 +185,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         if isLoggedIn {
             syncNotificationTopics()
             if let token = currentDeliveryToken() {
-                NotificationCenter.default.post(name: .privofitPushToken, object: token, userInfo: ["kind": firebaseReady ? "fcm" : "apns"])
+                NotificationCenter.default.post(name: .privofitPushToken, object: token, userInfo: ["kind": "fcm"])
             }
         } else {
             authenticated = false
@@ -191,13 +196,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     func syncNotificationPreferences() {
         syncNotificationTopics()
         if authenticated, let token = currentDeliveryToken() {
-            NotificationCenter.default.post(name: .privofitPushToken, object: token, userInfo: ["kind": firebaseReady ? "fcm" : "apns"])
+            NotificationCenter.default.post(name: .privofitPushToken, object: token, userInfo: ["kind": "fcm"])
         }
     }
 
     private func currentDeliveryToken() -> String? {
-        if firebaseReady, let token = Messaging.messaging().fcmToken, !token.isEmpty { return token }
-        return nil
+        guard firebaseReady, hasRealAPNSToken, Messaging.messaging().apnsToken != nil,
+              let token = Messaging.messaging().fcmToken, !token.isEmpty else { return nil }
+        return token
     }
 
     private func syncNotificationTopics() {
