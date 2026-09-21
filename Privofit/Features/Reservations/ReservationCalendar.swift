@@ -218,6 +218,8 @@ enum TrainingStreak {
         var length: Int
         var todayTrained: Bool
         var week: [Mark]
+        /// Poslední den týdne a v tomhle týdnu ještě žádný trénink, zatímco starší týdny sérii drží.
+        var atRisk: Bool
     }
 
     static func summary(reservations: [Reservation], visits: [Visit], now: Date = Date(), calendar: Calendar = GymClock.calendar) -> Summary {
@@ -227,8 +229,8 @@ enum TrainingStreak {
             return Mark(date: day, trained: trained, planned: !trained && hasPlan(on: day, reservations: reservations, now: now, calendar: calendar))
         }
         let todayTrained = didTrain(on: today, reservations: reservations, visits: visits, now: now, calendar: calendar)
-        let length = run(from: today, todayTrained: todayTrained, reservations: reservations, visits: visits, now: now, calendar: calendar)
-        return Summary(length: length, todayTrained: todayTrained, week: week)
+        let progress = run(week: week, reservations: reservations, visits: visits, now: now, calendar: calendar)
+        return Summary(length: progress.length, todayTrained: todayTrained, week: week, atRisk: progress.atRisk)
     }
 
     private static func didTrain(on day: Date, reservations: [Reservation], visits: [Visit], now: Date, calendar: Calendar) -> Bool {
@@ -240,18 +242,28 @@ enum TrainingStreak {
         reservations.contains { calendar.isDate($0.start, inSameDayAs: day) && $0.start > now }
     }
 
-    private static func run(from today: Date, todayTrained: Bool, reservations: [Reservation], visits: [Visit], now: Date, calendar: Calendar) -> Int {
-        var cursor = today
-        if !todayTrained {
-            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else { return 0 }
-            cursor = yesterday
+    /// Série je počet týdnů v řadě, ve kterých byl aspoň jeden trénink. Rozjetý týden bez návštěvy ji ještě nepřeruší.
+    private static func run(week: [Mark], reservations: [Reservation], visits: [Visit], now: Date, calendar: Calendar) -> (length: Int, atRisk: Bool) {
+        guard let weekStart = week.first?.date else { return (0, false) }
+        let trainedThisWeek = week.contains(where: \.trained)
+        var cursor = weekStart
+        if !trainedThisWeek {
+            guard let previous = calendar.date(byAdding: .weekOfYear, value: -1, to: cursor) else { return (0, false) }
+            cursor = calendar.startOfDay(for: previous)
         }
         var count = 0
-        while didTrain(on: cursor, reservations: reservations, visits: visits, now: now, calendar: calendar) {
+        while weekIsTrained(cursor, reservations: reservations, visits: visits, now: now, calendar: calendar) {
             count += 1
-            guard count < 400, let previous = calendar.date(byAdding: .day, value: -1, to: cursor) else { break }
-            cursor = previous
+            guard count < 104, let previous = calendar.date(byAdding: .weekOfYear, value: -1, to: cursor) else { break }
+            cursor = calendar.startOfDay(for: previous)
         }
-        return count
+        let atRisk = !trainedThisWeek && count > 0 && week.last.map { calendar.isDate(now, inSameDayAs: $0.date) } == true
+        return (count, atRisk)
+    }
+
+    private static func weekIsTrained(_ weekStart: Date, reservations: [Reservation], visits: [Visit], now: Date, calendar: Calendar) -> Bool {
+        ReservationCalendar.week(containing: weekStart, calendar: calendar).contains {
+            didTrain(on: $0, reservations: reservations, visits: visits, now: now, calendar: calendar)
+        }
     }
 }

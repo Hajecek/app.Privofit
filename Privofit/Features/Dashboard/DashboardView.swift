@@ -34,10 +34,6 @@ struct DashboardView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(Date.now, format: .dateTime.weekday(.wide).day().month(.abbreviated))
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 11).padding(.vertical, 6)
-                .background(Brand.lime.opacity(0.2), in: Capsule())
             Text(L10n.tr("home.hi"))
                 .font(.title3.weight(.medium))
                 .foregroundStyle(.secondary)
@@ -50,6 +46,10 @@ struct DashboardView: View {
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            Text(Date.now, format: .dateTime.weekday(.abbreviated).day().month(.abbreviated))
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(.tertiary)
+                .padding(.top, 2)
         }.padding(.top, 6)
     }
 
@@ -127,7 +127,7 @@ struct DashboardView: View {
                     Text(streak.length.formatted())
                         .font(.system(size: 42, weight: .bold, design: .rounded))
                         .monospacedDigit()
-                    Text(L10n.tr("home.streak.unit"))
+                    Text(streakUnit)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                 }
@@ -182,14 +182,23 @@ struct DashboardView: View {
         scheme == .dark ? Color(hex: 0x1C2A22) : Color(hex: 0xD6E4C8)
     }
 
+    private var streakUnit: String {
+        switch streak.length {
+        case 1: return L10n.tr("home.streak.unit.one")
+        case 2, 3, 4: return L10n.tr("home.streak.unit.few")
+        default: return L10n.tr("home.streak.unit.other")
+        }
+    }
+
     private var streakHint: String {
-        if streak.todayTrained { return L10n.tr("home.streak.today") }
+        if streak.week.contains(where: \.trained) { return L10n.tr("home.streak.today") }
+        if streak.atRisk { return L10n.tr("home.streak.risk") }
         if streak.length > 0 { return L10n.tr("home.streak.keep") }
         return L10n.tr("home.streak.start")
     }
 
     private var streakAccessibility: String {
-        "\(L10n.tr("home.streak.title")) \(streak.length.formatted()) \(L10n.tr("home.streak.unit")). \(streakHint)"
+        "\(L10n.tr("home.streak.title")) \(streak.length.formatted()) \(streakUnit). \(streakHint)"
     }
 
     private func dayLabel(_ date: Date) -> String {

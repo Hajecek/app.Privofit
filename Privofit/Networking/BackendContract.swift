@@ -19,6 +19,9 @@ struct BackendContract: Sendable {
     func gymInfo() throws -> Endpoint<GymInfo> {
         Endpoint(path: "gym", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decode($0) })
     }
+    func live() throws -> Endpoint<LiveStamp> {
+        Endpoint(path: "live", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decode($0) })
+    }
     func offers() throws -> Endpoint<[MembershipOffer]> {
         Endpoint(path: "memberships/plans", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decode($0) })
     }
@@ -48,8 +51,12 @@ struct BackendContract: Sendable {
     func reservations() throws -> Endpoint<[Reservation]> {
         Endpoint(path: "reservations", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decodeList($0) })
     }
-    func slots() throws -> Endpoint<[AvailableSlot]> {
-        Endpoint(path: "reservations/slots", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decodeList($0) })
+    func gyms() -> Endpoint<[GymPlace]> {
+        Endpoint(path: "gyms", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decodeList($0) })
+    }
+    func slots(gymID: String) -> Endpoint<[AvailableSlot]> {
+        let query = gymID.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? gymID
+        return Endpoint(path: "reservations/slots?gymID=\(query)", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decodeList($0) })
     }
     func reserve(_ slot: String, requestID: UUID) throws -> Endpoint<Reservation> {
         try APIJSON.post("reservations", body: ReserveBody(slotID: slot, requestID: requestID))

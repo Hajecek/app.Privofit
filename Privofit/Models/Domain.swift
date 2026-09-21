@@ -52,9 +52,11 @@ struct AvailableSlot: Codable, Identifiable, Equatable, Sendable {
     var bufferMinutes: Int
     var price: Decimal?
     var currencyCode: String
-    init(id: String, start: Date, end: Date, room: String, bufferMinutes: Int = 15, price: Decimal? = nil, currencyCode: String = "CZK") {
+    var gymID: String
+    init(id: String, start: Date, end: Date, room: String, bufferMinutes: Int = 15, price: Decimal? = nil, currencyCode: String = "CZK", gymID: String = "vinohrady") {
         self.id = id; self.start = start; self.end = end; self.room = room
         self.bufferMinutes = bufferMinutes; self.price = price; self.currencyCode = currencyCode
+        self.gymID = gymID
     }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -65,6 +67,7 @@ struct AvailableSlot: Codable, Identifiable, Equatable, Sendable {
         bufferMinutes = try c.decodeIfPresent(Int.self, forKey: .bufferMinutes) ?? 15
         currencyCode = try c.decodeIfPresent(String.self, forKey: .currencyCode) ?? "CZK"
         price = GymMoney.decode(c, key: .price)
+        gymID = try c.decodeIfPresent(String.self, forKey: .gymID) ?? ""
     }
     var occupiedUntil: Date { GymClock.occupancyEnd(end, bufferMinutes: bufferMinutes) }
 }
@@ -189,11 +192,30 @@ struct GoogleCredential: Sendable {
     let clientID: String
     let nonce: String
 }
-struct GymInfo: Codable, Sendable {
+struct GymInfo: Codable, Equatable, Sendable {
     let name: String
     let description: String
     let openingHours: String
     let announcements: [String]
+}
+struct LiveStamp: Decodable, Sendable {
+    var revision: String
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let value = try? container.decode(String.self, forKey: .revision) {
+            revision = value
+        } else {
+            revision = String(try container.decode(Int.self, forKey: .revision))
+        }
+    }
+    private enum CodingKeys: String, CodingKey { case revision }
+}
+struct GymPlace: Codable, Identifiable, Equatable, Sendable {
+    let id: String
+    var name: String
+    var address: String
+    var latitude: Double
+    var longitude: Double
 }
 struct MembershipOffer: Codable, Identifiable, Sendable {
     let id: String

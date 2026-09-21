@@ -13,6 +13,7 @@ import Foundation
     func changePassword(current: String, new: String) async throws { try check(); try await delay() }
     func deleteAccount() async throws { try check(); try await delay(); signedIn = false; bookings = [] }
     func gymInfo() async throws -> GymInfo { .init(name: "PRIVOFIT", description: L10n.tr("gym.demo.description"), openingHours: L10n.tr("gym.demo.hours"), announcements: [L10n.tr("demo.notice")]) }
+    func liveRevision() async throws -> String { "demo" }
     func offers() async throws -> [MembershipOffer] { [.init(id: "demo-pass", name: L10n.tr("offer.name"), description: L10n.tr("offer.description"), priceDescription: L10n.tr("offer.price"))] }
     func visits() async throws -> [Visit] {
         try check()
@@ -42,14 +43,23 @@ import Foundation
         stamp.locale = Locale(identifier: "en_US_POSIX")
         stamp.timeZone = calendar.timeZone
         stamp.dateFormat = "yyyyMMddHH"
-        return (0..<14).flatMap { offset -> [AvailableSlot] in
-            guard let day = calendar.date(byAdding: .day, value: offset, to: today) else { return [] }
-            if calendar.component(.weekday, from: day) == 1 { return [] }
-            return hours.compactMap { hour in
-                if calendar.component(.weekday, from: day) == 7, hour >= 17 { return nil }
-                guard let start = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day),
-                      start > now else { return nil }
-                return AvailableSlot(id: "demo-slot-\(stamp.string(from: start))", start: start, end: start.addingTimeInterval(3600), room: "PRIVOFIT / 01", price: 350)
+        return places.flatMap { place in
+            (0..<14).flatMap { offset -> [AvailableSlot] in
+                guard let day = calendar.date(byAdding: .day, value: offset, to: today) else { return [] }
+                if calendar.component(.weekday, from: day) == 1 { return [] }
+                return hours.compactMap { hour in
+                    if calendar.component(.weekday, from: day) == 7, hour >= 17 { return nil }
+                    guard let start = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day),
+                          start > now else { return nil }
+                    return AvailableSlot(
+                        id: "demo-slot-\(place.id)-\(stamp.string(from: start))",
+                        start: start,
+                        end: start.addingTimeInterval(3600),
+                        room: place.name,
+                        price: 350,
+                        gymID: place.id
+                    )
+                }
             }
         }
     }
@@ -63,7 +73,16 @@ import Foundation
     func logout() async { signedIn = false }
     func membership() async throws -> Membership { try check(); try await delay(); return .init(title: "Tvůj prostor", validUntil: Date().addingTimeInterval(86400 * 30), remainingEntries: 8, isActive: !inactiveMembership, validFrom: Date().addingTimeInterval(-86400 * 2), status: inactiveMembership ? .inactive : .active) }
     func reservations() async throws -> [Reservation] { try check(); return bookings }
-    func availableSlots() async throws -> [AvailableSlot] { try check(); return cachedSlots.filter { slot in !bookings.contains(where: { $0.id == slot.id }) } }
+    func gyms() async throws -> [GymPlace] { Self.places }
+    func availableSlots(gymID: String) async throws -> [AvailableSlot] {
+        try check()
+        return cachedSlots.filter { slot in slot.gymID == gymID && !bookings.contains(where: { $0.id == slot.id }) }
+    }
+    static let places: [GymPlace] = [
+        .init(id: "vinohrady", name: "PRIVOFIT Vinohrady", address: "Vinohradská 12, Praha", latitude: 50.0755, longitude: 14.4378),
+        .init(id: "karlin", name: "PRIVOFIT Karlín", address: "Sokolovská 80, Praha", latitude: 50.0930, longitude: 14.4490),
+        .init(id: "smichov", name: "PRIVOFIT Smíchov", address: "Nádražní 20, Praha", latitude: 50.0702, longitude: 14.4048)
+    ]
     func reserve(slotID: String, requestID: UUID) async throws -> Reservation {
         try check(); try await delay()
         if let existing = bookings.first(where: { $0.id == slotID }) { return existing }

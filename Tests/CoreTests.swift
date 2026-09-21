@@ -55,10 +55,10 @@ struct ValidationTests {
         model.finishOnboarding(); #expect(model.phase == .restricted(.blocked))
         model.requestDoor(); #expect(!model.showDoor)
     }
-    @Test func unauthorizedClearsPrivateState() async {
+    @Test func unauthorizedKeepsTheSignedInSession() async {
         let model = app(); await model.login(identifier: "alex", password: "sample"); model.finishOnboarding()
         model.handle(AppFailure.unauthorized)
-        #expect(model.phase == .sessionExpired); #expect(model.member == nil)
+        #expect(model.phase == .authenticated); #expect(model.member != nil)
     }
     @Test func cancelledRequestDoesNotSurfaceError() {
         let model = app()
@@ -169,7 +169,7 @@ struct ValidationTests {
         let service = MockGymService()
         let model = app(service)
         await model.login(identifier: "alex", password: "sample")
-        let slots = try await service.availableSlots()
+        let slots = try await service.availableSlots(gymID: "vinohrady")
         let pick = Array(slots.prefix(2))
         #expect(pick.count == 2)
         let quote = try await service.quoteReservations(slotIDs: pick.map(\.id))
@@ -223,8 +223,12 @@ struct ValidationTests {
         let afterSession = GymPresence.resolve([booking], now: booking.end.addingTimeInterval(60))
         #expect(afterSession == .vacant)
         #expect(GymPresence.resolve([], now: during) == .vacant)
+        let nearSmichov = GymLocator.nearest(MockGymService.places, to: 50.071, longitude: 14.406)
+        #expect(nearSmichov?.id == "smichov")
+        let nearKarlin = GymLocator.nearest(MockGymService.places, to: 50.094, longitude: 14.450)
+        #expect(nearKarlin?.id == "karlin")
     }
-    @Test func streakCountsFinishedDaysAndKeepsYesterday() {
+    @Test func streakCountsWeeksWithAtLeastOneSession() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
         calendar.locale = Locale(identifier: "cs_CZ")
@@ -239,14 +243,45 @@ struct ValidationTests {
         ]
         let planned = Reservation(id: "later", start: tonight, end: tonight.addingTimeInterval(3600), room: "PRIVOFIT / 01", canCancel: true)
         let summary = TrainingStreak.summary(reservations: [planned], visits: visits, now: now, calendar: calendar)
-        #expect(summary.length == 2)
+        #expect(summary.length == 1)
         #expect(!summary.todayTrained)
+        #expect(!summary.atRisk)
         #expect(summary.week.contains { calendar.isDate($0.date, inSameDayAs: now) && $0.planned && !$0.trained })
 
         let earlier = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 9))!
         let done = Reservation(id: "done", start: earlier, end: earlier.addingTimeInterval(3600), room: "PRIVOFIT / 01", canCancel: true)
         let continued = TrainingStreak.summary(reservations: [done], visits: visits, now: now, calendar: calendar)
         #expect(continued.todayTrained)
-        #expect(continued.length == 3)
+        #expect(continued.length == 1)
+    }
+
+    @Test func streakSurvivesRestDaysInsideTheWeek() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+        calendar.locale = Locale(identifier: "cs_CZ")
+        calendar.firstWeekday = 2
+        let lastWeek = calendar.date(from: DateComponents(year: 2026, month: 9, day: 7, hour: 18))!
+        let wednesday = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 15))!
+        let held = TrainingStreak.summary(reservations: [], visits: [Visit(id: "last", date: lastWeek, room: "PRIVOFIT / 01")], now: wednesday, calendar: calendar)
+        #expect(held.length == 1)
+        #expect(!held.atRisk)
+
+        let sunday = calendar.date(from: DateComponents(year: 2026, month: 9, day: 20, hour: 15))!
+        let closing = TrainingStreak.summary(reservations: [], visits: [Visit(id: "last", date: lastWeek, room: "PRIVOFIT / 01")], now: sunday, calendar: calendar)
+        #expect(closing.length == 1)
+        #expect(closing.atRisk)
+
+        let older = calendar.date(from: DateComponents(year: 2026, month: 9, day: 1, hour: 18))!
+        let thisWeek = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 10))!
+        let gapped = TrainingStreak.summary(
+            reservations: [],
+            visits: [
+                Visit(id: "old", date: older, room: "PRIVOFIT / 01"),
+                Visit(id: "now", date: thisWeek, room: "PRIVOFIT / 01")
+            ],
+            now: wednesday,
+            calendar: calendar
+        )
+        #expect(gapped.length == 1)
     }
 }

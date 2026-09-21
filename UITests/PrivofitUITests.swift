@@ -14,6 +14,7 @@ import XCTest
         let next = app.buttons["onboarding.next"]
         XCTAssertTrue(next.waitForExistence(timeout: 5)); scrollTo(next, in: app); next.tap()
         scrollTo(app.buttons["onboarding.skip"], in: app); app.buttons["onboarding.skip"].tap()
+        scrollTo(app.buttons["onboarding.skip"], in: app); app.buttons["onboarding.skip"].tap()
         XCTAssertFalse(next.isEnabled) // Injected unavailable biometrics.
         app.buttons["onboarding.skip"].tap(); scrollTo(next, in: app); next.tap()
     }
@@ -61,6 +62,7 @@ import XCTest
         }
         let guest = app.buttons["auth.guest"]; scrollTo(guest, in: app); guest.tap()
         app.buttons["onboarding.next"].tap(); app.buttons["onboarding.next"].tap(); app.tap()
+        app.buttons["onboarding.skip"].tap()
         XCTAssertTrue(app.staticTexts["Biometrie není dostupná"].waitForExistence(timeout: 5))
         app.buttons["onboarding.skip"].tap(); app.buttons["onboarding.next"].tap()
         XCTAssertTrue(app.descendants(matching: .any)["dashboard"].waitForExistence(timeout: 5))

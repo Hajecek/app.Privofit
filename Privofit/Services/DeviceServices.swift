@@ -5,6 +5,7 @@ import UIKit
 import Observation
 import FirebaseCore
 import FirebaseMessaging
+import CoreLocation
 
 @MainActor protocol BiometricAuthenticating {
     func authenticate(reason: String) async throws
@@ -68,6 +69,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         firebaseReady = configureFirebaseIfPossible()
         if firebaseReady {
             Messaging.messaging().delegate = self
+            syncNotificationTopics()
             print("[FCM] Firebase připraven")
         } else {
             print("[FCM] Chybí GoogleService-Info.plist – FCM token až po přidání Firebase projektu Privofit")
@@ -119,7 +121,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         let userInfo = notification.request.content.userInfo
+        if Self.isLiveSync(userInfo) {
+            NotificationCenter.default.post(name: .privofitPushReceived, object: nil, userInfo: userInfo as? [String: Any])
+            completionHandler([])
+            return
+        }
         guard NotificationPreferencesStore.shouldPresent(userInfo: userInfo) else {
+            if Self.isAccountSync(userInfo) {
+                NotificationCenter.default.post(name: .privofitPushReceived, object: nil, userInfo: userInfo as? [String: Any])
+            }
             completionHandler([])
             return
         }
@@ -142,15 +152,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
         let allowed = NotificationPreferencesStore.shouldPresent(userInfo: userInfo)
-        if allowed {
+        let type = Self.payloadType(userInfo)
+        let sync = type.hasSuffix(".sync")
+        if sync || allowed {
             NotificationCenter.default.post(
                 name: .privofitPushReceived,
                 object: nil,
                 userInfo: userInfo as? [String: Any]
             )
-            if application.applicationState != .active {
-                AppIconBadgeSync.increment()
-            }
+        }
+        if allowed && !sync && application.applicationState != .active {
+            AppIconBadgeSync.increment()
         }
         completionHandler(.newData)
     }
@@ -207,5 +219,95 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             FirebaseApp.configure()
         }
         return FirebaseApp.app() != nil
+    }
+
+    nonisolated private static func payloadType(_ userInfo: [AnyHashable: Any]) -> String {
+        if let value = userInfo["type"] as? String, !value.isEmpty { return value }
+        if let data = userInfo["data"] as? [AnyHashable: Any], let value = data["type"] as? String {
+            return value
+        }
+        return ""
+    }
+
+    nonisolated private static func isLiveSync(_ userInfo: [AnyHashable: Any]) -> Bool {
+        payloadType(userInfo) == "live.sync"
+    }
+
+    nonisolated private static func isAccountSync(_ userInfo: [AnyHashable: Any]) -> Bool {
+        let type = payloadType(userInfo)
+        return type.hasSuffix(".sync")
+    }
+}
+
+enum GymLocator {
+    static func nearest(_ places: [GymPlace], to latitude: Double, longitude: Double) -> GymPlace? {
+        places.min { meters($0, latitude: latitude, longitude: longitude) < meters($1, latitude: latitude, longitude: longitude) }
+    }
+    static func meters(_ place: GymPlace, latitude: Double, longitude: Double) -> Double {
+        CLLocation(latitude: place.latitude, longitude: place.longitude)
+            .distance(from: CLLocation(latitude: latitude, longitude: longitude))
+    }
+}
+
+@MainActor final class LocationService: NSObject, CLLocationManagerDelegate {
+    private let manager = CLLocationManager()
+    private var authWait: CheckedContinuation<Void, Never>?
+    private var fixWait: CheckedContinuation<CLLocationCoordinate2D?, Never>?
+    private(set) var coordinate: CLLocationCoordinate2D?
+
+    override init() {
+        super.init()
+        manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+    }
+
+    func requestAccess() async -> CLLocationCoordinate2D? {
+        if manager.authorizationStatus == .notDetermined {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                authWait = continuation
+                manager.requestWhenInUseAuthorization()
+            }
+        }
+        return await currentIfAuthorized()
+    }
+
+    func currentIfAuthorized() async -> CLLocationCoordinate2D? {
+        guard Self.allowed(manager.authorizationStatus) else { return coordinate }
+        return await withCheckedContinuation { continuation in
+            fixWait?.resume(returning: nil)
+            fixWait = continuation
+            manager.requestLocation()
+        }
+    }
+
+    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let status = manager.authorizationStatus
+        Task { @MainActor in
+            guard status != .notDetermined, let wait = authWait else { return }
+            authWait = nil
+            wait.resume()
+        }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        let coordinate = locations.last?.coordinate
+        Task { @MainActor in
+            self.coordinate = coordinate
+            guard let wait = fixWait else { return }
+            fixWait = nil
+            wait.resume(returning: coordinate)
+        }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        Task { @MainActor in
+            guard let wait = fixWait else { return }
+            fixWait = nil
+            wait.resume(returning: coordinate)
+        }
+    }
+
+    private static func allowed(_ status: CLAuthorizationStatus) -> Bool {
+        status == .authorizedWhenInUse || status == .authorizedAlways
     }
 }

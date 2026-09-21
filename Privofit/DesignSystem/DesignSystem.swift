@@ -220,8 +220,6 @@ extension View {
 
 struct LiveFloorButton: View {
     @Environment(AppModel.self) private var app
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var presented = false
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 30)) { context in
@@ -231,51 +229,28 @@ struct LiveFloorButton: View {
                     app.showGuestGate = true
                     return
                 }
-                presented = true
+                app.showFloor = true
                 Task { await app.refreshReservations() }
             } label: {
-                HStack(spacing: 6) {
-                    LivePulse(tint: tint(presence), active: !app.isGuest && !reduceMotion)
-                    Text(L10n.tr("home.live.kicker"))
-                        .font(.caption.weight(.bold))
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .foregroundStyle(foreground(presence))
-                .background(background(presence), in: Capsule())
+                Circle()
+                    .fill(mark(presence))
+                    .frame(width: 12, height: 12)
+                    .frame(width: 32, height: 32)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("home.live")
             .accessibilityLabel(accessibilityText(presence))
         }
-        .popover(isPresented: $presented) {
-            LiveFloorDetail()
-                .presentationCompactAdaptation(.popover)
-        }
     }
 
-    private func tint(_ presence: GymPresence) -> Color {
-        if app.isGuest || (app.loading && app.reservations.isEmpty) { return .secondary }
+    private func mark(_ presence: GymPresence) -> Color {
+        if app.isGuest || (app.loading && app.reservations.isEmpty) { return Color.primary.opacity(0.28) }
         if case .occupied = presence { return Brand.alert }
-        return Brand.ink
-    }
-
-    private func foreground(_ presence: GymPresence) -> Color {
-        if case .occupied = presence, !app.isGuest { return Brand.fog }
-        return Brand.ink
-    }
-
-    private func background(_ presence: GymPresence) -> Color {
-        if app.isGuest || (app.loading && app.reservations.isEmpty) { return Color.primary.opacity(0.08) }
-        if case .occupied = presence { return Brand.ink }
-        return Brand.lime
+        return Brand.limeDeep
     }
 
     private func accessibilityText(_ presence: GymPresence) -> String {
-        "\(L10n.tr("home.live.kicker")). \(statusTitle(presence))"
-    }
-
-    private func statusTitle(_ presence: GymPresence) -> String {
         if app.isGuest { return L10n.tr("home.live.guest") }
         if case .occupied = presence { return L10n.tr("home.live.occupied") }
         return L10n.tr("home.live.free")
@@ -284,60 +259,84 @@ struct LiveFloorButton: View {
 
 struct LiveFloorDetail: View {
     @Environment(AppModel.self) private var app
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        let presence = GymPresence.resolve(app.reservations)
-        VStack(alignment: .leading, spacing: 10) {
-            Text(L10n.tr("home.live.kicker"))
-                .font(.caption.weight(.bold))
-                .tracking(1.1)
-                .foregroundStyle(.secondary)
-            Text(title(presence))
-                .font(.title3.weight(.bold))
-            if case .occupied(let reservation) = presence {
-                Text(ReservationCalendar.timeRange(reservation.start, reservation.end))
+        Group {
+            switch GymPresence.resolve(app.reservations) {
+            case .vacant: vacant
+            case .occupied(let reservation): occupied(reservation)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .brandBackground()
+        .navigationTitle(L10n.tr("home.live.window"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button(L10n.tr("common.close")) { dismiss() }
+            }
+        }
+    }
+
+    private var vacant: some View {
+        VStack(spacing: 22) {
+            VStack(spacing: 12) {
+                Circle()
+                    .strokeBorder(Brand.ink.opacity(0.18), lineWidth: 2)
+                    .frame(width: 64, height: 64)
+                    .overlay {
+                        Circle()
+                            .fill(Brand.ink.opacity(0.1))
+                            .frame(width: 12, height: 12)
+                    }
+                Text(L10n.tr("home.live.free"))
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                Text(L10n.tr("home.live.freeHint"))
+                    .font(.body)
+                    .foregroundStyle(Brand.ink.opacity(0.68))
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 32)
+            .frame(maxWidth: .infinity)
+            .foregroundStyle(Brand.ink)
+            .background(Brand.lime, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+            if let next = ReservationCalendar.next(app.reservations) {
+                VStack(spacing: 4) {
+                    Text(L10n.tr("reservations.nextSession"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(ReservationCalendar.timeRange(next.start, next.end))
+                        .font(.headline.monospacedDigit())
+                    Text(next.room)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(24)
+        .frame(maxHeight: .infinity, alignment: .center)
+    }
+
+    private func occupied(_ reservation: Reservation) -> some View {
+        VStack(alignment: .leading, spacing: 22) {
+            HStack(spacing: 14) {
+                Circle().fill(Brand.alert).frame(width: 18, height: 18)
+                Text(L10n.tr("home.live.occupied"))
+                    .font(.title2.weight(.bold))
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Label(ReservationCalendar.timeRange(reservation.start, reservation.end), systemImage: "clock")
                     .font(.headline.monospacedDigit())
-                Text(reservation.room)
+                Label(reservation.room, systemImage: "location")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
+            Spacer(minLength: 0)
         }
-        .padding(22)
-        .frame(width: 280, alignment: .leading)
-        .accessibilityElement(children: .combine)
-    }
-
-    private func title(_ presence: GymPresence) -> String {
-        if case .occupied = presence { return L10n.tr("home.live.occupied") }
-        return L10n.tr("home.live.free")
-    }
-}
-
-private struct LivePulse: View {
-    var tint: Color
-    var active: Bool
-    @State private var expanded = false
-
-    var body: some View {
-        Circle()
-            .fill(tint)
-            .frame(width: 8, height: 8)
-            .background {
-                Circle()
-                    .stroke(tint.opacity(0.35), lineWidth: 4)
-                    .scaleEffect(active && expanded ? 2.1 : 1)
-                    .opacity(active && expanded ? 0 : 0.9)
-            }
-            .frame(width: 22, height: 22)
-            .onAppear { restart(active) }
-            .onChange(of: active) { _, isActive in restart(isActive) }
-            .accessibilityHidden(true)
-    }
-
-    private func restart(_ isActive: Bool) {
-        guard isActive else { expanded = false; return }
-        expanded = false
-        withAnimation(.easeOut(duration: 1.25).repeatForever(autoreverses: false)) { expanded = true }
+        .padding(28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 

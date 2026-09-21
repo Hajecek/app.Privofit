@@ -24,7 +24,7 @@
     "%lld" : {
 
     },
-    "%lld / 4" : {
+    "%lld / 5" : {
 
     },
     "%lld× %@" : {
@@ -1848,6 +1848,91 @@
         }
       }
     },
+    "home.line.day" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dnes je dobrý den na trénink."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today is a good day to train."
+          }
+        }
+      }
+    },
+    "home.line.evening" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Večer patří tobě."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The evening is yours."
+          }
+        }
+      }
+    },
+    "home.line.morning" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ještě je klid. Tvůj prostor čeká."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It's still quiet. Your space is waiting."
+          }
+        }
+      }
+    },
+    "home.line.now" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Právě teď máš prostor."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have the space right now."
+          }
+        }
+      }
+    },
+    "home.line.today" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dnes máš trénink v"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have a session at"
+          }
+        }
+      }
+    },
     "home.live.closed" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1878,6 +1963,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nobody is there right now"
+          }
+        }
+      }
+    },
+    "home.live.freeHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prostor je volný."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The space is open."
           }
         }
       }
@@ -1984,6 +2086,23 @@
         }
       }
     },
+    "home.live.window" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stav fitka"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gym status"
+          }
+        }
+      }
+    },
     "home.live.yours" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1997,176 +2116,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "It's yours right now"
-          }
-        }
-      }
-    },
-    "home.streak.keep" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dnes ještě můžeš navázat."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You can still keep it going today."
-          }
-        }
-      }
-    },
-    "home.streak.start" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "První trénink sérii spustí."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The first session starts your streak."
-          }
-        }
-      }
-    },
-    "home.streak.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Série"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Streak"
-          }
-        }
-      }
-    },
-    "home.streak.today" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dnes už máš trénink."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You've already trained today."
-          }
-        }
-      }
-    },
-    "home.streak.unit" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "v řadě"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "in a row"
-          }
-        }
-      }
-    },
-    "home.line.day" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dnes je dobrý den na trénink."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Today is a good day to train."
-          }
-        }
-      }
-    },
-    "home.line.evening" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Večer patří tobě."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The evening is yours."
-          }
-        }
-      }
-    },
-    "home.line.morning" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ještě je klid. Tvůj prostor čeká."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "It's still quiet. Your space is waiting."
-          }
-        }
-      }
-    },
-    "home.line.now" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Právě teď máš prostor."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You have the space right now."
-          }
-        }
-      }
-    },
-    "home.line.today" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dnes máš trénink v"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You have a session at"
           }
         }
       }
@@ -2252,6 +2201,142 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "One booking and the space is yours."
+          }
+        }
+      }
+    },
+    "home.streak.keep" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na tenhle týden stačí jeden trénink."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One session is enough this week."
+          }
+        }
+      }
+    },
+    "home.streak.risk" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dnes ji ještě udržíš."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today still keeps it going."
+          }
+        }
+      }
+    },
+    "home.streak.start" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeden trénink v týdnu sérii spustí."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One session this week starts your streak."
+          }
+        }
+      }
+    },
+    "home.streak.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Série"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Streak"
+          }
+        }
+      }
+    },
+    "home.streak.today" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tenhle týden už máš trénink."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've already trained this week."
+          }
+        }
+      }
+    },
+    "home.streak.unit.few" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "týdny v řadě"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "weeks in a row"
+          }
+        }
+      }
+    },
+    "home.streak.unit.one" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "týden v řadě"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "week in a row"
+          }
+        }
+      }
+    },
+    "home.streak.unit.other" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "týdnů v řadě"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "weeks in a row"
           }
         }
       }
@@ -3136,6 +3221,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ready when you are."
+          }
+        }
+      }
+    },
+    "onboarding.location.action" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Povolit polohu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow location"
+          }
+        }
+      }
+    },
+    "onboarding.location.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podle polohy vybereme fitko, které máš nejblíž. Později ho můžeš změnit."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We use your location to pick the nearest gym. You can change it later."
+          }
+        }
+      }
+    },
+    "onboarding.location.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nejbližší fitko"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nearest gym"
           }
         }
       }
@@ -4397,6 +4533,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "View my bookings"
+          }
+        }
+      }
+    },
+    "reservations.gym.choose" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vyber fitko"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a gym"
+          }
+        }
+      }
+    },
+    "reservations.gym.nearest" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nejbližší"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nearest"
           }
         }
       }

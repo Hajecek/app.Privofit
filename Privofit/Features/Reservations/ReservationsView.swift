@@ -3,7 +3,6 @@ import UIKit
 
 struct ReservationsView: View {
     @Environment(AppModel.self) private var app
-    @State private var slots: [AvailableSlot] = []
     @State private var cart: [AvailableSlot] = []
     @State private var showCheckout = false
     @State private var cancellation: Reservation?
@@ -13,8 +12,10 @@ struct ReservationsView: View {
     @State private var error: String?
     @State private var completed = false
     @State private var checkoutID = UUID()
-    @State private var applePay = ApplePayCheckout()
+    @State private var showGyms = false
+    @State private var checkout = ApplePayCheckout()
     private var calendar: Calendar { GymClock.calendar }
+    private var slots: [AvailableSlot] { app.slots }
     private var daySlots: [AvailableSlot] { ReservationCalendar.slots(on: date, from: slots, calendar: calendar) }
     private var dayBookings: [Reservation] { ReservationCalendar.reservations(on: date, from: app.reservations, calendar: calendar) }
     private var upcoming: [Reservation] { ReservationCalendar.upcoming(app.reservations) }
@@ -41,6 +42,10 @@ struct ReservationsView: View {
                 }
             }
             .task { await load() }.refreshable { await load() }
+            .onChange(of: app.slots) { _, available in
+                cart.removeAll { booked in !available.contains(where: { $0.id == booked.id }) }
+            }
+            .sheet(isPresented: $showGyms) { gymSheet }
             .confirmationDialog(L10n.tr("reservations.cancelConfirm"), isPresented: Binding(get: { cancellation != nil }, set: { if !$0 { cancellation = nil } }), titleVisibility: .visible, presenting: cancellation) { item in
                 Button(L10n.tr("reservations.cancel"), role: .destructive) { Task { await cancel(item) } }
                 Button(L10n.tr("common.notNow"), role: .cancel) { cancellation = nil }
@@ -79,10 +84,90 @@ struct ReservationsView: View {
         .pickerStyle(.segmented)
         .accessibilityIdentifier("reservations.panes")
     }
+    private var gymSelector: some View {
+        Button { showGyms = true } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "mappin.and.ellipse")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Brand.ink)
+                    .frame(width: 44, height: 44)
+                    .background(Brand.lime, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 8) {
+                        Text(selectedGym?.name ?? L10n.tr("reservations.gym.choose"))
+                            .font(.headline)
+                        if app.gymSuggestedByLocation {
+                            Text(L10n.tr("reservations.gym.nearest"))
+                                .font(.caption2.weight(.bold))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Brand.lime.opacity(0.35), in: Capsule())
+                        }
+                    }
+                    if let address = selectedGym?.address {
+                        Text(address).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(14)
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.primary.opacity(0.08)))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("reservations.gym")
+    }
+    private var gymSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(app.gyms) { gym in
+                        Button { pick(gym) } label: {
+                            HStack(spacing: 14) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(gym.name).font(.headline)
+                                    Text(gym.address).font(.subheadline).foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 8)
+                                if gym.id == app.selectedGymID {
+                                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Brand.limeDeep)
+                                }
+                            }
+                            .padding(16)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(gym.id == app.selectedGymID ? Brand.lime.opacity(0.28) : Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }.padding(24)
+            }
+            .brandBackground()
+            .navigationTitle(L10n.tr("reservations.gym.choose"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.tr("common.close")) { showGyms = false }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+    private var selectedGym: GymPlace? { app.gyms.first { $0.id == app.selectedGymID } }
+    private func pick(_ gym: GymPlace) {
+        showGyms = false
+        guard gym.id != app.selectedGymID else { return }
+        cart = []
+        app.chooseGym(gym.id)
+        Task { await load() }
+    }
     private var slotsPane: some View {
         VStack(alignment: .leading, spacing: 24) {
             Text(L10n.tr("reservations.plan")).font(.title2.bold())
             Text(L10n.tr("reservations.selectHint")).font(.subheadline).foregroundStyle(.secondary)
+            gymSelector
             MonthCalendar(
                 date: $date,
                 slots: slots,
@@ -263,9 +348,12 @@ struct ReservationsView: View {
             app.handle(error, surface: false)
         }
         do {
-            let available = try await app.service.availableSlots()
+            let places = try await app.service.gyms()
             guard !Task.isCancelled, app.phase == .authenticated else { return }
-            slots = available
+            await app.resolveGym(from: places)
+            let available = try await app.service.availableSlots(gymID: app.selectedGymID ?? places.first?.id ?? "")
+            guard !Task.isCancelled, app.phase == .authenticated else { return }
+            app.slots = available
             cart.removeAll { booked in !available.contains(where: { $0.id == booked.id }) }
         } catch is CancellationError {
             return
@@ -287,7 +375,7 @@ struct ReservationsView: View {
             let payment: BookingPayment
             if useApplePay {
                 guard let quote else { throw AppFailure.unavailable }
-                payment = try await applePay.pay(quote: quote) { token in
+                payment = try await checkout.pay(quote: quote) { token in
                     try await app.service.payAndReserve(slotIDs: slots, requestID: requestID, applePay: token)
                 }
             } else {
@@ -620,47 +708,59 @@ struct MonthCalendar: View {
     var onForward: () -> Void
     private var calendar: Calendar { GymClock.calendar }
     private var days: [CalendarDay] { ReservationCalendar.monthGrid(containing: date, calendar: calendar) }
-    private var columns: [GridItem] { Array(repeating: GridItem(.flexible(), spacing: 4), count: 7) }
+    private var columns: [GridItem] { Array(repeating: GridItem(.flexible(), spacing: 6), count: 7) }
     var body: some View {
         BrandCard {
-            VStack(spacing: 16) {
-                HStack {
-                    Button(action: onBack) { Image(systemName: "chevron.left") }
-                        .frame(width: 44, height: 44).disabled(!canGoBack)
-                        .accessibilityLabel(L10n.tr("reservations.previousMonth"))
-                    Spacer()
-                    VStack(spacing: 2) {
-                        Text(date.formatted(.dateTime.month(.wide).year())).font(.headline)
+            VStack(spacing: 18) {
+                HStack(spacing: 8) {
+                    monthButton(systemName: "chevron.left", label: L10n.tr("reservations.previousMonth"), enabled: canGoBack, action: onBack)
+                    Spacer(minLength: 8)
+                    VStack(spacing: 4) {
+                        Text(date.formatted(.dateTime.month(.wide).year()))
+                            .font(.title3.weight(.bold))
                         if !calendar.isDateInToday(date) {
                             Button(L10n.tr("reservations.todayJump")) { date = ReservationCalendar.clampedDay(Date(), calendar: calendar) }
                                 .font(.caption.weight(.semibold))
+                                .foregroundStyle(Brand.ink)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(Brand.lime, in: Capsule())
                         }
                     }
-                    Spacer()
-                    Button(action: onForward) { Image(systemName: "chevron.right") }
-                        .frame(width: 44, height: 44)
-                        .accessibilityLabel(L10n.tr("reservations.nextMonth"))
+                    Spacer(minLength: 8)
+                    monthButton(systemName: "chevron.right", label: L10n.tr("reservations.nextMonth"), enabled: true, action: onForward)
                 }
-                HStack(spacing: 4) {
-                    ForEach(Array(ReservationCalendar.weekdaySymbols(calendar: calendar).enumerated()), id: \.offset) { _, symbol in
-                        Text(symbol).font(.caption.weight(.semibold)).foregroundStyle(.secondary).frame(maxWidth: .infinity)
+                HStack(spacing: 0) {
+                    ForEach(Array(ReservationCalendar.shortWeekdayLabels(calendar: calendar).enumerated()), id: \.offset) { _, symbol in
+                        Text(symbol).font(.caption2.weight(.bold)).foregroundStyle(.secondary).frame(maxWidth: .infinity)
                     }
                 }
-                LazyVGrid(columns: columns, spacing: 4) {
+                LazyVGrid(columns: columns, spacing: 8) {
                     ForEach(days, id: \.date) { day in
                         dayButton(day)
                     }
                 }
-                HStack(spacing: 16) {
-                    legend(color: Color.primary.opacity(0.28), title: L10n.tr("reservations.legend.free"))
+                HStack(spacing: 14) {
+                    legend(color: Brand.limeDeep, title: L10n.tr("reservations.legend.free"))
                     legend(color: Color("AccentColor"), title: L10n.tr("reservations.legend.mine"))
-                    legend(color: Brand.limeDeep, title: L10n.tr("reservations.legend.selected"))
+                    legend(color: Brand.ink, title: L10n.tr("reservations.legend.selected"))
                 }
                 .font(.caption2)
                 .foregroundStyle(.secondary)
             }
         }
         .accessibilityIdentifier("reservations.calendar")
+    }
+    private func monthButton(systemName: String, label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.body.weight(.semibold))
+                .frame(width: 40, height: 40)
+                .background(Color.primary.opacity(enabled ? 0.06 : 0.03), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .accessibilityLabel(label)
     }
     private func dayButton(_ day: CalendarDay) -> some View {
         let selected = calendar.isDate(day.date, inSameDayAs: date)
@@ -669,21 +769,21 @@ struct MonthCalendar: View {
         return Button {
             date = ReservationCalendar.clampedDay(day.date, calendar: calendar)
         } label: {
-            VStack(spacing: 4) {
+            VStack(spacing: 5) {
                 Text(day.date, format: .dateTime.day())
-                    .font(.body.weight(today || selected ? .bold : .regular))
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: 28)
-                Circle().fill(dotColor(for: day.date, selected: selected)).frame(width: 6, height: 6)
+                    .font(.subheadline.weight(today || selected ? .bold : .medium))
+                    .frame(width: 36, height: 36)
+                    .foregroundStyle(foreground(selected: selected, past: past, inMonth: day.inMonth))
+                    .background(selected ? Brand.lime : Color.clear, in: Circle())
+                    .overlay {
+                        if today && !selected {
+                            Circle().strokeBorder(Brand.limeDeep, lineWidth: 1.5)
+                        }
+                    }
+                Circle().fill(dotColor(for: day.date)).frame(width: 5, height: 5)
             }
-            .padding(.vertical, 6)
-            .foregroundStyle(foreground(selected: selected, past: past, inMonth: day.inMonth))
-            .background(selected ? Brand.lime : Color.clear, in: RoundedRectangle(cornerRadius: 12))
-            .overlay {
-                if today && !selected {
-                    RoundedRectangle(cornerRadius: 12).strokeBorder(Brand.limeDeep.opacity(0.7), lineWidth: 1)
-                }
-            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 2)
         }
         .buttonStyle(.plain)
         .disabled(past)
@@ -697,10 +797,10 @@ struct MonthCalendar: View {
         if past || !inMonth { return Color.primary.opacity(0.35) }
         return Color.primary
     }
-    private func dotColor(for day: Date, selected: Bool) -> Color {
-        if ReservationCalendar.hasReservation(reservations, on: day) { return selected ? Brand.ink : Color("AccentColor") }
-        if ReservationCalendar.hasSelection(selection, on: day) { return selected ? Brand.ink : Brand.limeDeep }
-        if ReservationCalendar.hasAvailability(slots, on: day) { return selected ? Brand.ink.opacity(0.45) : Color.primary.opacity(0.28) }
+    private func dotColor(for day: Date) -> Color {
+        if ReservationCalendar.hasReservation(reservations, on: day) { return Color("AccentColor") }
+        if ReservationCalendar.hasSelection(selection, on: day) { return Brand.ink }
+        if ReservationCalendar.hasAvailability(slots, on: day) { return Brand.limeDeep }
         return .clear
     }
     private func legend(color: Color, title: String) -> some View {

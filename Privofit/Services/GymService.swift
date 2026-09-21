@@ -19,7 +19,8 @@ import Foundation
 }
 @MainActor protocol BookingServicing {
     func reservations() async throws -> [Reservation]
-    func availableSlots() async throws -> [AvailableSlot]
+    func availableSlots(gymID: String) async throws -> [AvailableSlot]
+    func gyms() async throws -> [GymPlace]
     func reserve(slotID: String, requestID: UUID) async throws -> Reservation
     func quoteReservations(slotIDs: [String]) async throws -> BookingQuote
     func payAndReserve(slotIDs: [String], requestID: UUID, applePay: ApplePayToken) async throws -> BookingPayment
@@ -37,6 +38,7 @@ import Foundation
 @MainActor protocol UserServicing {
     func gymInfo() async throws -> GymInfo
     func visits() async throws -> [Visit]
+    func liveRevision() async throws -> String
 }
 @MainActor protocol GymService: AuthenticationServicing, MembershipServicing, BookingServicing,
                               DoorAccessServicing, RemoteNotificationsServicing, UserServicing {

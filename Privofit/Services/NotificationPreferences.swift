@@ -145,6 +145,7 @@ final class NotificationPreferencesStore: ObservableObject {
     }
 
     func applyTopicSubscriptions(subscribe: (String) -> Void, unsubscribe: (String) -> Void) {
+        subscribe("pf_live")
         for channel in NotificationChannel.allCases {
             let want = masterEnabled && isEnabled(channel)
             if want { subscribe(channel.fcmTopic) } else { unsubscribe(channel.fcmTopic) }

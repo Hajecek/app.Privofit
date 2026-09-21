@@ -8,7 +8,9 @@ import Foundation
     func changePassword(current: String, new: String) async throws { _ = try await authorized.send(contract.changePassword(current: current, new: new)) }
     func deleteAccount() async throws { _ = try await authorized.send(contract.deleteAccount()); await authorized.clear() }
     func gymInfo() async throws -> GymInfo { try await http.send(contract.gymInfo()) }
+    func liveRevision() async throws -> String { try await http.send(contract.live()).revision }
     func offers() async throws -> [MembershipOffer] { try await http.send(contract.offers()) }
+    func gyms() async throws -> [GymPlace] { try await http.send(contract.gyms()) }
     func visits() async throws -> [Visit] { try await authorized.send(contract.visits()) }
     var appleConfigured: Bool { contract.appleEnabled }
     private let contract: BackendContract
@@ -40,7 +42,7 @@ import Foundation
     }
     func membership() async throws -> Membership { try await authorized.send(contract.membership()) }
     func reservations() async throws -> [Reservation] { try await authorized.send(contract.reservations()) }
-    func availableSlots() async throws -> [AvailableSlot] { try await authorized.send(contract.slots()) }
+    func availableSlots(gymID: String) async throws -> [AvailableSlot] { try await authorized.send(contract.slots(gymID: gymID)) }
     func reserve(slotID: String, requestID: UUID) async throws -> Reservation { try await authorized.send(contract.reserve(slotID, requestID: requestID)) }
     func quoteReservations(slotIDs: [String]) async throws -> BookingQuote { try await authorized.send(contract.quoteReservations(slotIDs)) }
     func payAndReserve(slotIDs: [String], requestID: UUID, applePay: ApplePayToken) async throws -> BookingPayment {

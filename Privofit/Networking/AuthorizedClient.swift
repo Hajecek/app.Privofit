@@ -38,9 +38,11 @@ actor AuthorizedClient {
             let result = try await http.send(endpoint, bearer: session.accessToken)
             guard epoch == generation else { throw AppFailure.sessionChanged }
             return result
-        } catch AppFailure.unauthorized where endpoint.retryAfterRefresh && endpoint.method == .get {
+        } catch AppFailure.unauthorized {
             let renewed = try await refresh(session)
             guard epoch == generation else { throw AppFailure.sessionChanged }
+            // Fyzický příkaz a ostatní zápisy se po 401 neopakují. Token se ale obnoví, ať další volání zůstane přihlášené.
+            guard endpoint.retryAfterRefresh, endpoint.method == .get else { throw AppFailure.unauthorized }
             let result = try await http.send(endpoint, bearer: renewed.accessToken)
             guard epoch == generation else { throw AppFailure.sessionChanged }
             return result

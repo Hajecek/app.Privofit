@@ -64,7 +64,7 @@ private final class FixtureURLProtocol: URLProtocol, @unchecked Sendable {
         do { _ = try await client.send(endpoint); XCTFail("Expected unauthorized") }
         catch { XCTAssertEqual(error as? AppFailure, .unauthorized) }
         XCTAssertEqual(FixtureURLProtocol.store.count("/command"), 1)
-        XCTAssertEqual(FixtureURLProtocol.store.count("/refresh"), 0)
+        XCTAssertEqual(FixtureURLProtocol.store.count("/refresh"), 1)
     }
     func testHTTPErrorMapping() async {
         do { _ = try await http().send(Endpoint<String>(path: "denied", method: .get, decode: { _ in "" })); XCTFail("Expected forbidden") }

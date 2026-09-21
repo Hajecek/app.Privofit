@@ -12,12 +12,19 @@ enum ReservationSection: Hashable { case slots, mine }
     var membership: Membership?
     var reservations: [Reservation] = []
     var visits: [Visit] = []
+    var gym: GymInfo?
+    var slots: [AvailableSlot] = []
+    var offers: [MembershipOffer] = []
+    var gyms: [GymPlace] = []
+    var selectedGymID: String?
+    var gymSuggestedByLocation = false
     var inbox: [InboxItem] = []
     var tab: AppTab = .dashboard
     var reservationSection: ReservationSection = .slots
     var showGuestGate = false
     var showDoor = false
     var showInbox = false
+    var showFloor = false
     var registrationRequested = false
     var cooldownUntil: Date = .distantPast
     var doorRequestInFlight = false
@@ -29,18 +36,24 @@ enum ReservationSection: Hashable { case slots, mine }
     let service: any GymService
     let preferences: Preferences
     let notifications: NotificationService
+    let location: LocationService
     let biometrics: any BiometricAuthenticating
     let vault: KeychainVault
     let apple = AppleSignIn()
     let google = GoogleSignIn()
     private var epoch = 0
     private var syncing = false
+    private var liveRevision = ""
+    private var liveBusy = false
     var isGuest: Bool { phase == .guest || (phase == .onboarding && member == nil) }
     var isDemo: Bool { service.isDemo }
     init(service: any GymService, preferences: Preferences = Preferences(), notifications: NotificationService = NotificationService(),
+         location: LocationService = LocationService(),
          biometrics: any BiometricAuthenticating = BiometricService(), vault: KeychainVault = KeychainVault()) {
         self.service = service; self.preferences = preferences; self.notifications = notifications
+        self.location = location
         self.biometrics = biometrics; self.vault = vault
+        selectedGymID = preferences.gymID
     }
     func boot() async {
         guard phase == .launching else { return }
@@ -50,7 +63,12 @@ enum ReservationSection: Hashable { case slots, mine }
             guard current == epoch else { return }
             if let restored { accept(restored); if preferences.biometrics { locked = true } }
             else { phase = .signedOut }
-        } catch { guard current == epoch else { return }; handle(error); if phase == .launching { phase = .signedOut } }
+        } catch {
+            guard current == epoch else { return }
+            // Relace v klíčence zůstává. Výpadek nebo vypršelý access token není odhlášení.
+            phase = .authenticated
+            AppDelegate.shared?.updateAuthentication(isLoggedIn: true)
+        }
         await notifications.registerIfAllowed()
     }
     private func accept(_ user: Member) {
@@ -58,6 +76,7 @@ enum ReservationSection: Hashable { case slots, mine }
         guard user.status == .active else {
             showDoor = false
             showInbox = false
+            showFloor = false
             phase = .restricted(user.status)
             return
         }
@@ -105,8 +124,9 @@ enum ReservationSection: Hashable { case slots, mine }
     func requireLogin() { epoch += 1; phase = .signedOut; tab = .dashboard; error = nil }
     func logout() async {
         guard !busy else { return }; busy = true; epoch += 1
-        showDoor = false; showInbox = false
-        phase = .signedOut; member = nil; membership = nil; reservations = []; visits = []; inbox = []; locked = false; tab = .dashboard
+        showDoor = false; showInbox = false; showFloor = false
+        phase = .signedOut; member = nil; membership = nil; reservations = []; visits = []; gym = nil; slots = []; offers = []; gyms = []; selectedGymID = nil; gymSuggestedByLocation = false; inbox = []; locked = false; tab = .dashboard
+        liveRevision = ""
         AppDelegate.shared?.updateAuthentication(isLoggedIn: false)
         await service.logout(); busy = false
     }
@@ -164,14 +184,8 @@ enum ReservationSection: Hashable { case slots, mine }
     func handle(_ failure: Error, surface: Bool = true) {
         if failure is CancellationError { return }
         if let failure = failure as? AppFailure, failure == .unauthorized {
-            if phase == .sessionExpired { error = L10n.tr("error.session"); return }
             if phase == .signedOut { error = L10n.tr("error.credentials"); return }
-            showDoor = false; showInbox = false
-            busy = true
-            Task { await service.logout(); busy = false }
-            epoch += 1; member = nil; membership = nil; reservations = []; visits = []; inbox = []; locked = false; phase = .sessionExpired
-            AppDelegate.shared?.updateAuthentication(isLoggedIn: false)
-            error = FriendlyError.message(failure)
+            // Access token obnoví AuthorizedClient přes API. Aplikace se sama neodhlašuje.
             return
         }
         if surface { error = FriendlyError.message(failure) }
@@ -180,6 +194,35 @@ enum ReservationSection: Hashable { case slots, mine }
     func unlock() async {
         do { try await biometrics.authenticate(reason: L10n.tr("biometry.reason")); locked = false }
         catch { self.error = FriendlyError.message(error) }
+    }
+    func chooseGym(_ id: String) {
+        selectedGymID = id
+        preferences.gymID = id
+        preferences.gymPickedManually = true
+        gymSuggestedByLocation = false
+    }
+    func resolveGym(from places: [GymPlace]) async {
+        gyms = places
+        guard !places.isEmpty else { selectedGymID = nil; return }
+        if preferences.gymPickedManually, let saved = preferences.gymID, places.contains(where: { $0.id == saved }) {
+            selectedGymID = saved
+            gymSuggestedByLocation = false
+            return
+        }
+        if let coordinate = await location.currentIfAuthorized(),
+           let nearest = GymLocator.nearest(places, to: coordinate.latitude, longitude: coordinate.longitude) {
+            selectedGymID = nearest.id
+            preferences.gymID = nearest.id
+            gymSuggestedByLocation = true
+            return
+        }
+        if let saved = preferences.gymID, places.contains(where: { $0.id == saved }) {
+            selectedGymID = saved
+            return
+        }
+        selectedGymID = places[0].id
+        preferences.gymID = places[0].id
+        gymSuggestedByLocation = false
     }
     func refreshReservations() async {
         guard phase == .authenticated, !locked else { return }
@@ -190,6 +233,56 @@ enum ReservationSection: Hashable { case slots, mine }
             reservations = bookings
         } catch {
             if current == epoch { handle(error, surface: false) }
+        }
+    }
+    func tickLive(force: Bool = false) async {
+        guard !isDemo else { return }
+        switch phase {
+        case .authenticated, .guest, .onboarding, .restricted:
+            break
+        default:
+            return
+        }
+        if liveBusy { return }
+        liveBusy = true
+        defer { liveBusy = false }
+        do {
+            let revision = try await service.liveRevision()
+            let changed = revision != liveRevision
+            if changed { liveRevision = revision }
+            if force || changed || gym == nil {
+                await refreshLiveCatalog()
+            }
+            if force {
+                await syncAccount()
+            } else if changed {
+                await refreshReservations()
+            }
+        } catch is CancellationError {
+            return
+        } catch {
+            await refreshLiveCatalog()
+            if force { await syncAccount() }
+        }
+    }
+    private func refreshLiveCatalog() async {
+        if let info = await fetchPublic({ try await service.gymInfo() }) { gym = info }
+        if let plans = await fetchPublic({ try await service.offers() }) { offers = plans }
+        guard phase == .authenticated, !locked else { return }
+        if let places = await fetchKeepingSession({ try await service.gyms() }) {
+            await resolveGym(from: places)
+        }
+        guard let gymID = selectedGymID else { return }
+        if let available = await fetchKeepingSession({ try await service.availableSlots(gymID: gymID) }) {
+            slots = available
+        }
+    }
+    private func fetchPublic<T>(_ work: () async throws -> T) async -> T? {
+        do { return try await work() }
+        catch is CancellationError { return nil }
+        catch {
+            handle(error, surface: false)
+            return nil
         }
     }
     func refreshInbox() async {

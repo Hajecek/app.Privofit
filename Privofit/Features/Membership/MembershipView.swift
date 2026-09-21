@@ -2,7 +2,6 @@ import SwiftUI
 
 struct MembershipView: View {
     @Environment(AppModel.self) private var app
-    @State private var offers: [MembershipOffer] = []
     @State private var error: String?
     @State private var loading = false
     var body: some View {
@@ -17,8 +16,8 @@ struct MembershipView: View {
                 }
                 if let error { FailureView(message: error) { Task { await load() } } }
                 Text(L10n.tr("membership.offers")).font(.title2.bold())
-                if offers.isEmpty && !loading && error == nil { ContentUnavailableView(L10n.tr("membership.noOffers"), systemImage: "creditcard") }
-                ForEach(offers) { offer in
+                if app.offers.isEmpty && !loading && error == nil { ContentUnavailableView(L10n.tr("membership.noOffers"), systemImage: "creditcard") }
+                ForEach(app.offers) { offer in
                     BrandCard { VStack(alignment: .leading, spacing: 16) {
                         Text(offer.name).font(.title2.bold()); Text(offer.description).foregroundStyle(.secondary); Text(offer.priceDescription).font(.headline)
                         if app.isGuest { PrimaryButton(title: L10n.tr("membership.choose")) { app.showGuestGate = true } }
@@ -30,7 +29,7 @@ struct MembershipView: View {
     }
     private func load() async {
         guard !loading else { return }; loading = true; error = nil; defer { loading = false }
-        do { offers = try await app.service.offers() } catch { self.error = FriendlyError.message(error) }
+        do { app.offers = try await app.service.offers() } catch { self.error = FriendlyError.message(error) }
         if !app.isGuest {
             do { let result = try await app.service.membership(); guard app.phase == .authenticated else { return }; app.membership = result }
             catch { self.error = FriendlyError.message(error); app.handle(error, surface: false) }

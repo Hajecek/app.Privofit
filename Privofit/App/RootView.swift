@@ -12,8 +12,7 @@ struct RootView: View {
                 case .launching: LaunchView()
                 case .signedOut: AuthenticationView()
                 case .onboarding: OnboardingView()
-                case .authenticated, .guest: MainTabs()
-                case .sessionExpired: recovery(title: "session.title", message: "error.session")
+                case .authenticated, .guest, .sessionExpired: MainTabs()
                 case .restricted: recovery(title: "account.restricted", message: "account.restricted.body")
                 }
             }
@@ -28,29 +27,25 @@ struct RootView: View {
             if app.phase == .authenticated, let token = app.notifications.deliveryToken { await app.uploadPushToken(token) }
         }
         .task(id: app.phase) {
-            guard app.phase == .authenticated else { return }
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(20))
-                if Task.isCancelled { break }
-                await app.refreshReservations()
-            }
-        }
-        .task(id: app.phase) {
             guard !app.isDemo else { return }
             switch app.phase {
-            case .authenticated, .restricted: break
-            default: return
+            case .authenticated, .restricted, .guest:
+                break
+            default:
+                return
             }
-            await app.syncAccount()
+            await app.tickLive(force: true)
+            var ticks = 0
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(60))
+                try? await Task.sleep(for: .seconds(4))
                 if Task.isCancelled { break }
-                await app.syncAccount()
+                ticks += 1
+                await app.tickLive(force: ticks % 15 == 0)
             }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background { app.backgrounded() }
-            if phase == .active { Task { await app.syncAccount() } }
+            if phase == .active { Task { await app.tickLive(force: true) } }
         }
         .onReceive(NotificationCenter.default.publisher(for: .privofitPushToken)) { notification in
             if let token = notification.object as? String {
@@ -59,8 +54,16 @@ struct RootView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .privofitPushFailure)) { _ in app.notifications.registrationError = L10n.tr("notifications.registration.failed") }
-        .onReceive(NotificationCenter.default.publisher(for: .privofitPushReceived)) { _ in
-            Task { await app.syncAccount() }
+        .onReceive(NotificationCenter.default.publisher(for: .privofitPushReceived)) { notification in
+            let type = (notification.userInfo?["type"] as? String) ?? ""
+            Task {
+                if type == "live.sync" {
+                    await app.tickLive(force: true)
+                } else {
+                    await app.syncAccount()
+                    await app.tickLive(force: true)
+                }
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .privofitShowInbox)) { _ in
             if app.phase == .authenticated { app.showInbox = true }
@@ -114,6 +117,12 @@ struct MainTabs: View {
                 .onChange(of: app.phase) { _, phase in if phase != .authenticated { app.showDoor = false } }
         }
         .sheet(isPresented: $app.showInbox) { NavigationStack { NotificationsView() }.environment(app).privacyShield() }
+        .sheet(isPresented: $app.showFloor) {
+            NavigationStack { LiveFloorDetail() }
+                .environment(app)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+        }
     }
 }
 struct GuestGate: View {
