@@ -72,7 +72,11 @@ struct DoorView: View {
             if failing { playDeniedFeedback() } else { denyShake = 0 }
         }
         .animation(reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.82), value: model.state.isFailure)
-        .overlay { if phase != .active { Brand.night.ignoresSafeArea().overlay { BrandMark(size: 36) } } }
+        .overlay {
+            if phase == .background && model.state != .authenticating {
+                Brand.night.ignoresSafeArea().overlay { BrandMark(size: 36) }
+            }
+        }
     }
     private var topBar: some View {
         HStack {
@@ -100,10 +104,9 @@ struct DoorView: View {
                 DoorPortal(opened: opened, denied: failing)
                     .frame(height: 300)
             }
-            .frame(height: 320)
-            .modifier(AccessDeniedShake(progress: denyShake))
-            .scaleEffect(appeared || reduceMotion ? 1 : 0.88)
-            .opacity(appeared ? 1 : 0)
+                .modifier(AccessDeniedShake(progress: denyShake))
+                .scaleEffect(appeared || reduceMotion ? 1 : 0.88)
+                .opacity(appeared ? 1 : 0)
             stateContent.font(.subheadline).multilineTextAlignment(.center).frame(maxWidth: 420)
             if let booking = ReservationCalendar.current(app.reservations), !failing {
                 HStack { Image(systemName: "calendar"); Text(ReservationCalendar.occupiedRange(booking.start, booking.end, bufferMinutes: booking.bufferMinutes)) }

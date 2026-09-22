@@ -8,10 +8,10 @@ struct MembershipView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 if app.isDemo { StatusBadge(title: L10n.tr("demo.badge"), symbol: "hammer") }
-                if loading { SkeletonCard() }
+                if loading && app.offers.isEmpty && app.membership == nil { SkeletonCard() }
                 if app.isGuest { Text(L10n.tr("guest.membership")).foregroundStyle(.secondary) }
                 else if let membership = app.membership {
-                    MemberPass(name: app.member?.firstName ?? "Privofit").padding(.vertical, 12)
+                    MembershipWalletButton()
                     MembershipSummary(membership: membership)
                 }
                 if let error { FailureView(message: error) { Task { await load() } } }

@@ -18,7 +18,7 @@ enum DoorState: Equatable {
     private let isActive: @MainActor () -> Bool
     private var pending: PendingDoorCommand?
     let app: AppModel
-    init(app: AppModel, isActive: @escaping @MainActor () -> Bool = { UIApplication.shared.applicationState == .active }) { self.app = app; self.isActive = isActive }
+    init(app: AppModel, isActive: @escaping @MainActor () -> Bool = { UIApplication.shared.applicationState != .background }) { self.app = app; self.isActive = isActive }
     #if DEBUG
     func previewState(_ value: DoorState) { state = value; prepared = true; isPreview = true }
     #endif
@@ -40,25 +40,27 @@ enum DoorState: Equatable {
         guard !app.doorRequestInFlight, prepared, app.cooldownUntil <= Date(), state.canSend, app.phase == .authenticated, !app.locked, let userID = app.member?.id else { return }
         app.doorRequestInFlight = true
         defer { app.doorRequestInFlight = false }
-        state = .checking
+        state = .authenticating
         let eligibility: DoorEligibility
         do {
             let stored: PendingDoorCommand?
             if app.isDemo { stored = app.unconfirmedDoorCommands[userID] }
             else { stored = try await app.vault.pendingDoor(for: userID) }
             if let stored { pending = stored; state = .uncertain; return }
-            eligibility = try await app.service.eligibility()
-            doorName = eligibility.doorName ?? L10n.tr("door.entrance")
-            guard eligibility.allowed else { state = .denied(eligibility.reason ?? L10n.tr("door.denied")); return }
             if app.biometrics.available {
-                state = .authenticating
+                try? await Task.sleep(for: .milliseconds(420))
+                guard !Task.isCancelled else { return }
                 try await app.biometrics.authenticate(reason: L10n.tr("biometry.reason"))
             } else if app.preferences.biometrics {
                 throw AppFailure.biometricsUnavailable
             }
+            state = .checking
+            eligibility = try await app.service.eligibility()
+            doorName = eligibility.doorName ?? L10n.tr("door.entrance")
+            guard eligibility.allowed else { state = .denied(eligibility.reason ?? L10n.tr("door.denied")); return }
             try Task.checkCancellation()
             guard app.phase == .authenticated, app.member?.id == userID, !app.locked,
-                  isActive() else { throw AppFailure.sessionChanged }
+                  await foreground() else { throw AppFailure.sessionChanged }
             guard eligibility.expiresAt > Date() else { throw AppFailure.unavailable }
             let command = PendingDoorCommand(memberID: userID, requestID: UUID(), operationID: nil, createdAt: Date())
             if !app.isDemo { try await app.vault.saveDoor(command) }
@@ -70,7 +72,7 @@ enum DoorState: Equatable {
             return
         } catch { state = .failed(FriendlyError.message(error)); app.handle(error, surface: false); return }
         guard let pending else { state = .failed(L10n.tr("door.failed")); return }
-        guard app.phase == .authenticated, app.member?.id == userID, !app.locked, isActive() else {
+        guard app.phase == .authenticated, app.member?.id == userID, !app.locked, await foreground() else {
             // Persistence suspended; the app may have gone to the background.
             // No HTTP command has been dispatched, so this intent can be removed.
             if !app.isDemo { try? await app.vault.clearDoor(for: pending.memberID) }
@@ -93,6 +95,15 @@ enum DoorState: Equatable {
             guard app.member?.id == pending.memberID else { state = .uncertain; return }
             try await apply(receipt, pending: pending)
         } catch { state = .uncertain; app.handle(error, surface: false) }
+    }
+    private func foreground() async -> Bool {
+        if isActive() { return true }
+        for _ in 0..<15 {
+            try? await Task.sleep(for: .milliseconds(100))
+            if Task.isCancelled { return false }
+            if isActive() { return true }
+        }
+        return isActive()
     }
     func advanceCooldown() {
         if state == .confirmed { state = .cooldown }

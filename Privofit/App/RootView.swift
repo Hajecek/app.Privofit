@@ -7,7 +7,7 @@ struct RootView: View {
     var body: some View {
         @Bindable var app = app
         ZStack {
-            Group {
+            if app.entry == .hidden {
                 switch app.phase {
                 case .launching: LaunchView()
                 case .signedOut: AuthenticationView()
@@ -15,9 +15,11 @@ struct RootView: View {
                 case .authenticated, .guest, .sessionExpired: MainTabs()
                 case .restricted: recovery(title: "account.restricted", message: "account.restricted.body")
                 }
+            } else {
+                LaunchView(waiting: app.entry == .splash)
+                    .overlay(alignment: .bottom) { if app.entry == .retry { retryEntry } }
+                    .accessibilityIdentifier("entry.launch")
             }
-            .disabled(app.locked).accessibilityHidden(app.locked)
-            if app.locked { lockScreen }
             if scenePhase != .active { BrandMark().frame(maxWidth: .infinity, maxHeight: .infinity).brandBackground().accessibilityHidden(true) }
         }
         .brandBackground()
@@ -26,8 +28,8 @@ struct RootView: View {
         .task(id: app.phase) {
             if app.phase == .authenticated, let token = app.notifications.fcmToken { await app.uploadPushToken(token, kind: "fcm") }
         }
-        .task(id: app.phase) {
-            guard !app.isDemo else { return }
+        .task(id: LiveTick(phase: app.phase, open: app.entry == .hidden)) {
+            guard app.entry == .hidden, !app.isDemo else { return }
             switch app.phase {
             case .authenticated, .restricted, .guest:
                 break
@@ -45,7 +47,7 @@ struct RootView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background { app.backgrounded() }
-            if phase == .active { Task { await app.tickLive(force: true) } }
+            if phase == .active { Task { await app.returned() } }
         }
         .onReceive(NotificationCenter.default.publisher(for: .privofitPushToken)) { notification in
             if let token = notification.object as? String {
@@ -70,14 +72,12 @@ struct RootView: View {
         }
         .sheet(isPresented: $app.showGuestGate) { GuestGate().presentationDetents([.medium, .large]) }
     }
-    private var lockScreen: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "lock.shield").font(.largeTitle)
-            Text(L10n.tr("lock.title")).font(.title.bold())
-            PrimaryButton(title: L10n.tr("lock.unlock"), symbol: "faceid") { Task { await app.unlock() } }
+    private var retryEntry: some View {
+        VStack(spacing: 16) {
             if let error = app.error { FailureView(message: error) }
+            PrimaryButton(title: L10n.tr("lock.unlock"), symbol: "faceid") { Task { await app.unlock() } }
             Button(L10n.tr("auth.signout")) { Task { await app.logout() } }.frame(minHeight: 44)
-        }.padding(28).frame(maxWidth: .infinity, maxHeight: .infinity).brandBackground()
+        }.padding(28)
     }
     private func recovery(title: String, message: String) -> some View {
         VStack(spacing: 24) {
@@ -85,6 +85,10 @@ struct RootView: View {
             PrimaryButton(title: L10n.tr("auth.login")) { Task { await app.logout() } }
         }.padding(28)
     }
+}
+private struct LiveTick: Equatable {
+    var phase: AppPhase
+    var open: Bool
 }
 struct MainTabs: View {
     @Environment(AppModel.self) private var app

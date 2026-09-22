@@ -15,6 +15,7 @@ import Foundation
 }
 @MainActor protocol MembershipServicing {
     func membership() async throws -> Membership
+    func membershipPass() async throws -> Data
     func offers() async throws -> [MembershipOffer]
 }
 @MainActor protocol BookingServicing {

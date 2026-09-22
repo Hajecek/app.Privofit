@@ -69,7 +69,7 @@ struct ReservationsView: View {
             panePicker
             if let error, !showCheckout { FailureView(message: error) { Task { await load() } } }
             if completed { StatusBadge(title: L10n.tr("reservations.paid")) }
-            if loading { SkeletonCard() }
+            if loading && slots.isEmpty && app.reservations.isEmpty { SkeletonCard() }
             if app.reservationSection == .slots { slotsPane } else { minePane }
         }
     }

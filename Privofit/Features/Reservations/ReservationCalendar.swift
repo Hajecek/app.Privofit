@@ -201,8 +201,7 @@ enum GymPresence: Equatable {
     case occupied(Reservation)
 
     static func resolve(_ reservations: [Reservation], now: Date = Date()) -> GymPresence {
-        let active = reservations.filter { $0.start <= now && $0.end > now }.sorted { $0.start < $1.start }
-        if let current = active.first { return .occupied(current) }
+        if let current = ReservationCalendar.current(reservations, now: now) { return .occupied(current) }
         return .vacant
     }
 }

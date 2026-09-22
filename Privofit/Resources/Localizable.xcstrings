@@ -1366,6 +1366,57 @@
         }
       }
     },
+    "error.invalidResponse" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server poslal odpověď, které aplikace nerozumí."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server sent a response the app could not read."
+          }
+        }
+      }
+    },
+    "error.sessionChanged" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ověření přerušilo přepnutí aplikace. Zkus to znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The check was interrupted when the app moved to the background. Try again."
+          }
+        }
+      }
+    },
+    "error.unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Služba teď není dostupná. Zkus to později."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The service is unavailable right now. Try again later."
+          }
+        }
+      }
+    },
     "error.generic" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5740,6 +5791,142 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recent visits"
+          }
+        }
+      }
+    },
+    "wallet.demo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je to sběratelská karta, ne platební. Apple ji uloží, až ji podepíše server."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is a collectible card, not a payment card. Apple saves it once the server signs it."
+          }
+        }
+      }
+    },
+    "wallet.description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sběratelská členská karta"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collectible member card"
+          }
+        }
+      }
+    },
+    "wallet.field.status" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stav"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Status"
+          }
+        }
+      }
+    },
+    "wallet.inWallet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karta je v Peněžence"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The card is in Wallet"
+          }
+        }
+      }
+    },
+    "wallet.invalid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kartu se nepodařilo připravit pro Peněženku."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The card could not be prepared for Wallet."
+          }
+        }
+      }
+    },
+    "wallet.open" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otevřít v Peněžence"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Wallet"
+          }
+        }
+      }
+    },
+    "wallet.tap" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klepni na kartu a přidej ji do Peněženky."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the card to add it to Wallet."
+          }
+        }
+      }
+    },
+    "wallet.unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na tomhle zařízení nejde kartu do Peněženky přidat."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This device cannot add a card to Wallet."
           }
         }
       }

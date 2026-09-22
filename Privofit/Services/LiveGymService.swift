@@ -41,6 +41,7 @@ import Foundation
         await authorized.clear()
     }
     func membership() async throws -> Membership { try await authorized.send(contract.membership()) }
+    func membershipPass() async throws -> Data { try await authorized.send(contract.membershipPass()) }
     func reservations() async throws -> [Reservation] { try await authorized.send(contract.reservations()) }
     func availableSlots(gymID: String) async throws -> [AvailableSlot] { try await authorized.send(contract.slots(gymID: gymID)) }
     func reserve(slotID: String, requestID: UUID) async throws -> Reservation { try await authorized.send(contract.reserve(slotID, requestID: requestID)) }

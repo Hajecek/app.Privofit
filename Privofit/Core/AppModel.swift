@@ -6,6 +6,7 @@ enum AppPhase: Equatable {
 }
 enum AppTab: Hashable { case dashboard, reservations, door, membership, profile }
 enum ReservationSection: Hashable { case slots, mine }
+enum EntryCover: Equatable { case splash, retry, hidden }
 @MainActor @Observable final class AppModel {
     private(set) var phase: AppPhase = .launching
     private(set) var member: Member?
@@ -32,6 +33,7 @@ enum ReservationSection: Hashable { case slots, mine }
     var busy = false
     var loading = false
     var locked = false
+    private(set) var entry: EntryCover = .splash
     var error: String?
     let service: any GymService
     let preferences: Preferences
@@ -45,6 +47,11 @@ enum ReservationSection: Hashable { case slots, mine }
     private var syncing = false
     private var liveRevision = ""
     private var liveBusy = false
+    private var didBoot = false
+    private var settling = false
+    private var settleQueued = false
+    private var entryGeneration = 0
+    private var contentReady = false
     var isGuest: Bool { phase == .guest || (phase == .onboarding && member == nil) }
     var isDemo: Bool { service.isDemo }
     init(service: any GymService, preferences: Preferences = Preferences(), notifications: NotificationService = NotificationService(),
@@ -56,12 +63,13 @@ enum ReservationSection: Hashable { case slots, mine }
         selectedGymID = preferences.gymID
     }
     func boot() async {
-        guard phase == .launching else { return }
+        guard phase == .launching, !didBoot else { return }
+        didBoot = true
         let current = epoch
         do {
             let restored = try await service.restore()
             guard current == epoch else { return }
-            if let restored { accept(restored); if preferences.biometrics { locked = true } }
+            if let restored { accept(restored) }
             else { phase = .signedOut }
         } catch {
             guard current == epoch else { return }
@@ -70,6 +78,7 @@ enum ReservationSection: Hashable { case slots, mine }
             AppDelegate.shared?.updateAuthentication(isLoggedIn: true)
         }
         await notifications.registerIfAllowed()
+        await settleEntry()
     }
     private func accept(_ user: Member) {
         member = user
@@ -121,17 +130,28 @@ enum ReservationSection: Hashable { case slots, mine }
         phase = member == nil ? .guest : .authenticated
         if phase == .authenticated { AppDelegate.shared?.updateAuthentication(isLoggedIn: true) }
     }
-    func requireLogin() { epoch += 1; phase = .signedOut; tab = .dashboard; error = nil }
+    func requireLogin() {
+        epoch += 1; phase = .signedOut; tab = .dashboard; error = nil
+        contentReady = false
+        entryGeneration += 1
+        entry = .hidden
+        locked = false
+    }
     func logout() async {
         guard !busy else { return }; busy = true; epoch += 1
         showDoor = false; showInbox = false; showFloor = false
         phase = .signedOut; member = nil; membership = nil; reservations = []; visits = []; gym = nil; slots = []; offers = []; gyms = []; selectedGymID = nil; gymSuggestedByLocation = false; inbox = []; locked = false; tab = .dashboard
+        contentReady = false
+        entryGeneration += 1
+        entry = .hidden
         liveRevision = ""
         AppDelegate.shared?.updateAuthentication(isLoggedIn: false)
         await service.logout(); busy = false
     }
     func loadDashboard() async {
-        await syncAccount(showLoading: true)
+        let warm = contentReady
+        contentReady = false
+        await syncAccount(showLoading: !warm)
     }
     func syncAccount(showLoading: Bool = false) async {
         switch phase {
@@ -190,10 +210,92 @@ enum ReservationSection: Hashable { case slots, mine }
         }
         if surface { error = FriendlyError.message(failure) }
     }
-    func backgrounded() { if member != nil && preferences.biometrics { locked = true } }
+    func backgrounded() {
+        guard resumesBehindLaunch else { return }
+        entryGeneration += 1
+        entry = .splash
+        locked = true
+        error = nil
+        showDoor = false
+    }
+    func returned() async {
+        guard didBoot else { return }
+        if entry == .hidden {
+            await tickLive(force: true)
+        } else {
+            await settleEntry()
+        }
+    }
     func unlock() async {
-        do { try await biometrics.authenticate(reason: L10n.tr("biometry.reason")); locked = false }
-        catch { self.error = FriendlyError.message(error) }
+        error = nil
+        entry = .splash
+        await settleEntry()
+    }
+    private var resumesBehindLaunch: Bool {
+        switch phase {
+        case .authenticated, .guest, .onboarding, .sessionExpired, .restricted: return true
+        case .launching, .signedOut: return false
+        }
+    }
+    private var needsBiometry: Bool {
+        switch phase {
+        case .authenticated, .sessionExpired, .restricted: break
+        case .onboarding: guard member != nil else { return false }
+        case .launching, .signedOut, .guest: return false
+        }
+        return biometrics.available || preferences.biometrics
+    }
+    private func settleEntry() async {
+        if settling {
+            settleQueued = true
+            return
+        }
+        settling = true
+        defer { settling = false }
+        repeat {
+            settleQueued = false
+            guard entry != .hidden else { break }
+            await runSettle()
+        } while settleQueued
+    }
+    private func runSettle() async {
+        let generation = entryGeneration
+        if needsBiometry {
+            do {
+                try await biometrics.authenticate(reason: L10n.tr("biometry.reason"))
+                guard generation == entryGeneration else { return }
+                error = nil
+                locked = false
+            } catch {
+                guard generation == entryGeneration else { return }
+                locked = true
+                self.error = FriendlyError.message(error)
+                entry = .retry
+                return
+            }
+        } else {
+            locked = false
+        }
+        guard generation == entryGeneration else { return }
+        await prepareContent()
+        guard generation == entryGeneration else { return }
+        entry = .hidden
+        locked = false
+    }
+    private func prepareContent() async {
+        guard resumesBehindLaunch else { return }
+        switch phase {
+        case .authenticated, .restricted, .onboarding:
+            await syncAccount(showLoading: false)
+        case .guest, .launching, .signedOut, .sessionExpired:
+            break
+        }
+        if isDemo { await refreshLiveCatalog() }
+        else { await tickLive(force: true) }
+        switch phase {
+        case .authenticated, .guest, .restricted: contentReady = true
+        case .launching, .signedOut, .onboarding, .sessionExpired: break
+        }
     }
     func chooseGym(_ id: String) {
         selectedGymID = id

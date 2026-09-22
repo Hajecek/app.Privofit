@@ -71,7 +71,11 @@ import Foundation
     func register(_ input: RegistrationInput) async throws -> Member { try await login(.init(identifier: input.email, password: input.password)) }
     func signInWithApple(_ credential: AppleCredential) async throws -> Member { throw AppFailure.notConfigured("Apple není simulován") }
     func logout() async { signedIn = false }
-    func membership() async throws -> Membership { try check(); try await delay(); return .init(title: "Tvůj prostor", validUntil: Date().addingTimeInterval(86400 * 30), remainingEntries: 8, isActive: !inactiveMembership, validFrom: Date().addingTimeInterval(-86400 * 2), status: inactiveMembership ? .inactive : .active) }
+    func membership() async throws -> Membership { try check(); try await delay(); return currentMembership() }
+    func membershipPass() async throws -> Data { try check(); try await delay(); return try WalletPassArchive.make(member: user, membership: currentMembership()) }
+    private func currentMembership() -> Membership {
+        .init(title: "Tvůj prostor", validUntil: Date().addingTimeInterval(86400 * 30), remainingEntries: 8, isActive: !inactiveMembership, validFrom: Date().addingTimeInterval(-86400 * 2), status: inactiveMembership ? .inactive : .active)
+    }
     func reservations() async throws -> [Reservation] { try check(); return bookings }
     func gyms() async throws -> [GymPlace] { Self.places }
     func availableSlots(gymID: String) async throws -> [AvailableSlot] {

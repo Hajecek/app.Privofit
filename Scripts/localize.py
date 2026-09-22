@@ -123,6 +123,14 @@ membership.status.active|Aktivní|Active
 membership.status.ending|Brzy končí|Ending soon
 membership.status.paused|Pozastavené|Paused
 membership.status.inactive|Neaktivní|Inactive
+wallet.open|Otevřít v Peněžence|Open in Wallet
+wallet.tap|Klepni na kartu a přidej ji do Peněženky.|Tap the card to add it to Wallet.
+wallet.inWallet|Karta je v Peněžence|The card is in Wallet
+wallet.unavailable|Na tomhle zařízení nejde kartu do Peněženky přidat.|This device cannot add a card to Wallet.
+wallet.invalid|Kartu se nepodařilo připravit pro Peněženku.|The card could not be prepared for Wallet.
+wallet.demo|Je to sběratelská karta, ne platební. Apple ji uloží, až ji podepíše server.|This is a collectible card, not a payment card. Apple saves it once the server signs it.
+wallet.description|Sběratelská členská karta|Collectible member card
+wallet.field.status|Stav|Status
 reservations.new|Rychlá rezervace|Quick booking
 reservations.next|Nejbližší rezervace|Next booking
 reservations.empty|Zatím žádná rezervace|No bookings yet

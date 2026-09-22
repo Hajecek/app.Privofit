@@ -30,9 +30,9 @@ struct ValidationTests {
     }
 }
 @MainActor struct StateTests {
-    private func app(_ service: MockGymService = MockGymService()) -> AppModel {
+    private func app(_ service: MockGymService = MockGymService(), biometrics: any BiometricAuthenticating = UnavailableBiometrics()) -> AppModel {
         let defaults = UserDefaults(suiteName: "tests.\(UUID().uuidString)")!
-        return AppModel(service: service, preferences: Preferences(defaults: defaults), biometrics: UnavailableBiometrics())
+        return AppModel(service: service, preferences: Preferences(defaults: defaults), biometrics: biometrics)
     }
     @Test func guestOnboardingNeverCreatesMember() {
         let model = app(); model.enterGuest()
@@ -41,12 +41,51 @@ struct ValidationTests {
         model.requestDoor(); #expect(model.showGuestGate); #expect(!model.showDoor)
     }
     @Test func loginAndOnboardingDriveRootState() async {
-        let model = app(); await model.boot(); #expect(model.phase == .signedOut)
+        let model = app(); await model.boot(); #expect(model.phase == .signedOut); #expect(model.entry == .hidden)
         await model.login(identifier: "alex", password: "sample")
         #expect(model.phase == .authenticated)
         #expect(model.preferences.completedOnboarding(for: "demo-member"))
         await model.logout(); #expect(model.phase == .signedOut); #expect(model.member == nil)
         #expect(model.reservations.isEmpty)
+    }
+    @Test func returnWaitsForBiometryThenContent() async {
+        let service = MockGymService()
+        let bio = ScriptedBiometrics()
+        let model = app(service, biometrics: bio)
+        await model.boot()
+        await model.login(identifier: "alex", password: "sample")
+        model.backgrounded()
+        #expect(model.entry == .splash)
+        #expect(model.locked)
+        let resume = Task { await model.returned() }
+        await bio.waitUntilStarted()
+        #expect(model.entry == .splash)
+        bio.succeed()
+        await resume.value
+        #expect(model.entry == .hidden)
+        #expect(!model.locked)
+        #expect(model.membership != nil)
+        #expect(!model.visits.isEmpty)
+        #expect(!model.slots.isEmpty)
+    }
+    @Test func cancelledBiometryKeepsTheLaunchCover() async {
+        let service = MockGymService(); service.signedIn = true
+        let bio = ScriptedBiometrics()
+        let model = app(service, biometrics: bio)
+        let boot = Task { await model.boot() }
+        await bio.waitUntilStarted()
+        #expect(model.entry != .hidden)
+        bio.cancel()
+        await boot.value
+        #expect(model.entry == .retry)
+        #expect(model.locked)
+        #expect(model.membership == nil)
+        let retry = Task { await model.unlock() }
+        await bio.waitUntilStarted()
+        bio.succeed()
+        await retry.value
+        #expect(model.entry == .hidden)
+        #expect(model.membership != nil)
     }
     @Test func blockedAccountCannotEnter() async {
         let service = MockGymService(); service.accountStatus = .blocked
@@ -220,7 +259,13 @@ struct ValidationTests {
         }
         let before = GymPresence.resolve([booking], now: start.addingTimeInterval(-60))
         #expect(before == .vacant)
-        let afterSession = GymPresence.resolve([booking], now: booking.end.addingTimeInterval(60))
+        let duringBuffer = GymPresence.resolve([booking], now: booking.end.addingTimeInterval(60))
+        if case .occupied(let stillThere) = duringBuffer {
+            #expect(stillThere.id == "mine")
+        } else {
+            Issue.record("Expected the gym to stay occupied through the buffer")
+        }
+        let afterSession = GymPresence.resolve([booking], now: booking.occupiedUntil.addingTimeInterval(60))
         #expect(afterSession == .vacant)
         #expect(GymPresence.resolve([], now: during) == .vacant)
         let nearSmichov = GymLocator.nearest(MockGymService.places, to: 50.071, longitude: 14.406)
@@ -286,5 +331,85 @@ struct ValidationTests {
             calendar: calendar
         )
         #expect(gapped.length == 1)
+    }
+}
+
+@MainActor struct WalletPassTests {
+    @Test func checksumMatchesTheKnownVector() {
+        #expect(WalletZip.checksum(Data("123456789".utf8)) == 0xCBF43926)
+    }
+
+    @Test func archiveMatchesTheMembershipCard() throws {
+        let member = Member(id: "member-1", firstName: "Alex", username: "alex_demo", email: "alex@example.invalid", status: .active)
+        let membership = Membership(
+            title: "Tvůj prostor",
+            validUntil: Date(timeIntervalSince1970: 1_800_000_000),
+            remainingEntries: 8,
+            isActive: true,
+            validFrom: Date(timeIntervalSince1970: 1_700_000_000),
+            status: .active
+        )
+        let files = WalletZip.entries(try WalletPassArchive.make(member: member, membership: membership))
+        let passJSON = try #require(files["pass.json"])
+        let object = try #require(JSONSerialization.jsonObject(with: passJSON) as? [String: Any])
+        #expect(object["backgroundColor"] as? String == "rgb(16, 23, 20)")
+        #expect(object["foregroundColor"] as? String == "rgb(232, 240, 228)")
+        #expect(object["labelColor"] as? String == "rgb(198, 242, 26)")
+        #expect(object["serialNumber"] as? String == "member-1")
+        #expect(object["passTypeIdentifier"] as? String == WalletPassArchive.passTypeIdentifier)
+        let card = try #require(object["storeCard"] as? [String: Any])
+        let primary = try #require(card["primaryFields"] as? [[String: Any]])
+        #expect(primary.first?["value"] as? String == "Alex")
+        #expect(files["icon.png"]?.starts(with: Data([0x89, 0x50, 0x4E, 0x47])) == true)
+        #expect(files["strip.png"] != nil)
+        #expect(files["logo.png"] != nil)
+    }
+
+    @Test func passEndpointAcceptsPkpassOnly() throws {
+        let endpoint = BackendContract().membershipPass()
+        let zip = Data([0x50, 0x4B, 0x03, 0x04, 0x00])
+        #expect(try endpoint.decode(zip) == zip)
+        #expect(throws: AppFailure.invalidResponse) {
+            try endpoint.decode(Data(#"{"ok":true}"#.utf8))
+        }
+    }
+
+    @Test func demoPassUsesTheSignedInMember() async throws {
+        let service = MockGymService()
+        _ = try await service.login(LoginInput(identifier: "alex", password: "demo-password"))
+        let files = WalletZip.entries(try await service.membershipPass())
+        let passJSON = try #require(files["pass.json"])
+        let text = String(decoding: passJSON, as: UTF8.self)
+        #expect(text.contains("Alex"))
+        #expect(text.contains("demo-member"))
+    }
+}
+@MainActor final class ScriptedBiometrics: BiometricAuthenticating {
+    var available = true
+    var name: String { "Face ID" }
+    private var continuation: CheckedContinuation<Void, Error>?
+    private(set) var pending = false
+    func authenticate(reason: String) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            self.continuation = continuation
+            self.pending = true
+        }
+    }
+    func waitUntilStarted() async {
+        for _ in 0..<200 {
+            if pending { return }
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        Issue.record("Biometrie se nespustila")
+    }
+    func succeed() {
+        pending = false
+        continuation?.resume()
+        continuation = nil
+    }
+    func cancel() {
+        pending = false
+        continuation?.resume(throwing: AppFailure.cancelled)
+        continuation = nil
     }
 }

@@ -73,7 +73,6 @@ struct OnboardingView: View {
         do {
             if step == 1 { try await app.notifications.request() }
             if step == 2 { _ = await app.location.requestAccess() }
-            if step == 3 { try await app.biometrics.authenticate(reason: L10n.tr("biometry.reason")); app.preferences.biometrics = true }
             next()
         } catch { self.error = FriendlyError.message(error) }
     }

@@ -4,7 +4,22 @@ struct MemberPass: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var tilt: CGSize = .zero
     let name: String
+    var hint: String? = nil
+    var action: (() -> Void)? = nil
+
     var body: some View {
+        if let action {
+            Button(action: action) { face }
+                .buttonStyle(PassPressStyle())
+                .simultaneousGesture(tiltGesture)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityHint(hint ?? L10n.tr("wallet.tap"))
+        } else {
+            face.gesture(tiltGesture)
+        }
+    }
+
+    private var face: some View {
         VStack(alignment: .leading, spacing: 32) {
             HStack { BrandMark(size: 28); Spacer(); Image(systemName: "wave.3.right").font(.title2).foregroundStyle(Brand.lime) }
             HStack(alignment: .bottom, spacing: 16) {
@@ -22,9 +37,20 @@ struct MemberPass: View {
             }
             .overlay(RoundedRectangle(cornerRadius: 26).strokeBorder(Brand.fog.opacity(0.16)))
             .shadow(color: .black.opacity(0.15), radius: 16, y: 10)
+            .contentShape(RoundedRectangle(cornerRadius: 26))
             .rotation3DEffect(.degrees(reduceMotion ? 0 : Double(tilt.width / 18)), axis: (x: 0, y: 1, z: 0))
             .rotation3DEffect(.degrees(reduceMotion ? 0 : Double(-tilt.height / 22)), axis: (x: 1, y: 0, z: 0))
-            .gesture(DragGesture(minimumDistance: 15).onChanged { tilt = $0.translation }.onEnded { _ in withAnimation(reduceMotion ? nil : .spring()) { tilt = .zero } })
             .accessibilityElement(children: .combine)
+    }
+
+    private var tiltGesture: some Gesture {
+        DragGesture(minimumDistance: 15).onChanged { tilt = $0.translation }.onEnded { _ in withAnimation(reduceMotion ? nil : .spring()) { tilt = .zero } }
+    }
+}
+
+private struct PassPressStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    func makeBody(configuration: ButtonStyleConfiguration) -> some View {
+        configuration.label.scaleEffect(!reduceMotion && configuration.isPressed ? 0.98 : 1)
     }
 }

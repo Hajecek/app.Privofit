@@ -48,6 +48,18 @@ struct BackendContract: Sendable {
     func membership() throws -> Endpoint<Membership> {
         Endpoint(path: "memberships/me", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decode($0) })
     }
+    func membershipPass() -> Endpoint<Data> {
+        Endpoint(
+            path: "memberships/me/pass",
+            method: .get,
+            headers: ["Accept": "application/vnd.apple.pkpass"],
+            retryAfterRefresh: true,
+            decode: { data in
+                guard data.count > 4, data.starts(with: Data([0x50, 0x4B, 0x03, 0x04])) else { throw AppFailure.invalidResponse }
+                return data
+            }
+        )
+    }
     func reservations() throws -> Endpoint<[Reservation]> {
         Endpoint(path: "reservations", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decodeList($0) })
     }

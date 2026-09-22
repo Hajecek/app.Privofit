@@ -312,7 +312,7 @@ struct LiveFloorDetail: View {
                     Text(L10n.tr("reservations.nextSession"))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
-                    Text(ReservationCalendar.timeRange(next.start, next.end))
+                    Text(ReservationCalendar.occupiedRange(next.start, next.end, bufferMinutes: next.bufferMinutes))
                         .font(.headline.monospacedDigit())
                     Text(next.room)
                         .font(.subheadline)
@@ -332,7 +332,7 @@ struct LiveFloorDetail: View {
                     .font(.title2.weight(.bold))
             }
             VStack(alignment: .leading, spacing: 8) {
-                Label(ReservationCalendar.timeRange(reservation.start, reservation.end), systemImage: "clock")
+                Label(ReservationCalendar.occupiedRange(reservation.start, reservation.end, bufferMinutes: reservation.bufferMinutes), systemImage: "clock")
                     .font(.headline.monospacedDigit())
                 Label(reservation.room, systemImage: "location")
                     .font(.subheadline)

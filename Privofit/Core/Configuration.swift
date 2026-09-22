@@ -65,7 +65,10 @@ enum FriendlyError {
         case .cancelled: return L10n.tr("error.cancelled")
         case .timeout: return L10n.tr("error.timeout")
         case .rejected(let message): return message
-        default: return L10n.tr("error.generic")
+        case .sessionChanged: return L10n.tr("error.sessionChanged")
+        case .invalidResponse: return L10n.tr("error.invalidResponse")
+        case .unavailable: return L10n.tr("error.unavailable")
+        case .http: return L10n.tr("error.generic")
         }
     }
 }

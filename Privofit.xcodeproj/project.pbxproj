@@ -33,6 +33,7 @@
 		7E84C0A0E474DA42A7617077 /* NotificationPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D4F5F240848EB1C6AAEEABB /* NotificationPreferences.swift */; };
 		81BFFAD01DB8E68F6DD06027 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6816547431CD2BE70BFB6453 /* SettingsView.swift */; };
 		82A1A67024A455328AFB4EE1 /* PrivofitUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A05B2A4982504094EDFF6A1 /* PrivofitUITests.swift */; };
+		8734162B08532ABE6F86EC25 /* WalletPass.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DCC50F2A154BA34EB3FBC2 /* WalletPass.swift */; };
 		8A0031055C98AE76C492B86A /* PrivofitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3F1075B939335ABD781946 /* PrivofitApp.swift */; };
 		8C8071894D8CA4652A071245 /* DeviceServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9D66FAFAE8CDB517F07714 /* DeviceServices.swift */; };
 		99A2E6BF1B2ED5EBBB28930B /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B472E46D3716D9190B1C7B1 /* OnboardingView.swift */; };
@@ -111,6 +112,7 @@
 		A090070EA1B94233F426286B /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProfileView.swift; path = Privofit/Features/Profile/ProfileView.swift; sourceTree = "<group>"; };
 		A693FB910E00E7A66987C74F /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppModel.swift; path = Privofit/Core/AppModel.swift; sourceTree = "<group>"; };
 		B2B46E649FBE1D5C62D04F49 /* AuthenticationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AuthenticationView.swift; path = Privofit/Features/Authentication/AuthenticationView.swift; sourceTree = "<group>"; };
+		B5DCC50F2A154BA34EB3FBC2 /* WalletPass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WalletPass.swift; path = Privofit/Services/WalletPass.swift; sourceTree = "<group>"; };
 		BCBB40253876E5FC1DEE9C23 /* DoorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DoorModel.swift; path = Privofit/Features/DoorAccess/DoorModel.swift; sourceTree = "<group>"; };
 		C12E49F17590D93ACEECE037 /* GymService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GymService.swift; path = Privofit/Services/GymService.swift; sourceTree = "<group>"; };
 		C94252C007A3F32141C3D1D2 /* Previews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Previews.swift; path = Privofit/Shared/Previews.swift; sourceTree = "<group>"; };
@@ -238,6 +240,7 @@
 				4D4F5F240848EB1C6AAEEABB /* NotificationPreferences.swift */,
 				19B5DA490002A5547E65FD00 /* AppIconBadgeSync.swift */,
 				4BD96657D4A33320F61DB5C5 /* ApplePayCheckout.swift */,
+				B5DCC50F2A154BA34EB3FBC2 /* WalletPass.swift */,
 			);
 			name = Services;
 			sourceTree = "<group>";
@@ -516,6 +519,7 @@
 				7E84C0A0E474DA42A7617077 /* NotificationPreferences.swift in Sources */,
 				C96D5F28FCE77F3C8B141C7B /* AppIconBadgeSync.swift in Sources */,
 				74585B2F79E85269727F9C71 /* ApplePayCheckout.swift in Sources */,
+				8734162B08532ABE6F86EC25 /* WalletPass.swift in Sources */,
 				D591A7941D15E5EDBBFA43A8 /* AccessArtwork.swift in Sources */,
 				1714C4AB0172B23022418743 /* MemberPass.swift in Sources */,
 				9A9D1001748FBD66974E49BB /* Previews.swift in Sources */,
