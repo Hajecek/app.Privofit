@@ -46,8 +46,15 @@ enum InputValidator {
     static func password(_ value: String) -> Bool { value.count >= 12 }
     // Login must not reject valid legacy passwords by inventing a backend length policy.
     static func login(_ identifier: String, _ password: String) -> Bool { self.identifier(identifier) && !password.isEmpty }
+    static func personName(_ value: String) -> Bool {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return (1...80).contains(trimmed.count)
+    }
     static func registration(_ input: RegistrationInput) -> Bool {
-        identifier(input.firstName) && username(input.username.lowercased()) && email(input.email) && password(input.password)
+        personName(input.firstName) && personName(input.lastName)
+            && username(input.username.lowercased()) && email(input.email)
+            && password(input.password) && input.password == input.passwordConfirmation
+            && input.acceptedTerms && input.acceptedPrivacy
     }
 }
 enum L10n {

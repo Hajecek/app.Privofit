@@ -8,6 +8,7 @@ struct Member: Codable, Identifiable, Equatable, Sendable {
     var username: String
     var email: String
     var status: AccountStatus
+    var avatarURL: URL? = nil
 }
 enum AccountStatus: String, Codable, Sendable { case active, inactive, blocked }
 struct Membership: Codable, Equatable, Sendable {
@@ -130,7 +131,14 @@ struct Session: Codable, Equatable, Sendable {
 }
 struct LoginInput: Sendable { let identifier: String; let password: String }
 struct RegistrationInput: Sendable {
-    let firstName: String; let username: String; let email: String; let password: String
+    let firstName: String
+    let lastName: String
+    let username: String
+    let email: String
+    let password: String
+    let passwordConfirmation: String
+    let acceptedTerms: Bool
+    let acceptedPrivacy: Bool
 }
 struct AppleCredential: Sendable {
     let identityToken: String

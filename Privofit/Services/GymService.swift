@@ -6,6 +6,7 @@ import Foundation
     func restore() async throws -> Member?
     func login(_ input: LoginInput) async throws -> Member
     func register(_ input: RegistrationInput) async throws -> Member
+    func uploadAvatar(_ jpeg: Data) async throws
     func signInWithApple(_ credential: AppleCredential) async throws -> Member
     func signInWithGoogle(_ credential: GoogleCredential) async throws -> Member
     func requestPasswordReset(identifier: String) async throws

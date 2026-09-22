@@ -9,7 +9,7 @@ struct ProfileView: View {
     var body: some View {
         List {
             Section {
-                HStack(spacing: 16) { Avatar(name: app.member?.firstName ?? "P", size: 48); VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 16) { Avatar(name: app.member?.firstName ?? "P", imageURL: app.member?.avatarURL, size: 72); VStack(alignment: .leading, spacing: 4) {
                     Text(app.member?.firstName ?? L10n.tr("guest.name")).font(.title2.bold())
                     if let member = app.member { Text(member.username).foregroundStyle(.secondary); Text(member.email).font(.subheadline) }
                     else { Text(L10n.tr("guest.profile")).foregroundStyle(.secondary) }

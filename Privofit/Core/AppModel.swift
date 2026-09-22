@@ -101,7 +101,20 @@ enum EntryCover: Equatable { case splash, retry, hidden }
     func login(identifier: String, password: String) async {
         await authenticate { try await self.service.login(.init(identifier: identifier.trimmingCharacters(in: .whitespacesAndNewlines), password: password)) }
     }
-    func register(_ input: RegistrationInput) async { await authenticate { try await self.service.register(input) } }
+    func register(_ input: RegistrationInput, avatar: Data? = nil) async -> Bool {
+        await authenticate { try await self.service.register(input) }
+        guard member != nil else { return false }
+        guard let avatar, !avatar.isEmpty else { return true }
+        busy = true
+        defer { busy = false }
+        do {
+            try await service.uploadAvatar(avatar)
+            if let fresh = try await service.restore() { member = fresh }
+            return true
+        } catch {
+            return false
+        }
+    }
     func appleLogin() async {
         guard service.appleConfigured else { error = L10n.tr("error.configuration"); return }
         await authenticate { let credentials = try await self.apple.signIn(); return try await self.service.signInWithApple(credentials) }

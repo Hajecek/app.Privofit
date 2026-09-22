@@ -173,9 +173,6 @@
         }
       }
     },
-    "Apple" : {
-
-    },
     "auth.apple" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1366,57 +1363,6 @@
         }
       }
     },
-    "error.invalidResponse" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Server poslal odpověď, které aplikace nerozumí."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The server sent a response the app could not read."
-          }
-        }
-      }
-    },
-    "error.sessionChanged" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ověření přerušilo přepnutí aplikace. Zkus to znovu."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The check was interrupted when the app moved to the background. Try again."
-          }
-        }
-      }
-    },
-    "error.unavailable" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Služba teď není dostupná. Zkus to později."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The service is unavailable right now. Try again later."
-          }
-        }
-      }
-    },
     "error.generic" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1430,6 +1376,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "We could not complete this action. Please try again later."
+          }
+        }
+      }
+    },
+    "error.invalidResponse" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server poslal odpověď, které aplikace nerozumí."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server sent a response the app could not read."
           }
         }
       }
@@ -1468,6 +1431,23 @@
         }
       }
     },
+    "error.sessionChanged" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ověření přerušilo přepnutí aplikace. Zkus to znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The check was interrupted when the app moved to the background. Try again."
+          }
+        }
+      }
+    },
     "error.timeout" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1485,10 +1465,24 @@
         }
       }
     },
-    "G" : {
-
+    "error.unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Služba teď není dostupná. Zkus to později."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The service is unavailable right now. Try again later."
+          }
+        }
+      }
     },
-    "Google" : {
+    "G" : {
 
     },
     "greeting.day" : {
@@ -4078,6 +4072,193 @@
         }
       }
     },
+    "registration.avatarAdd" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Přidat fotku"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a photo"
+          }
+        }
+      }
+    },
+    "registration.avatarFailed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Účet je vytvořený. Fotku se teď nepodařilo nahrát, doplníš ji v profilu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your account is ready. The photo could not be uploaded now — you can add it later in your profile."
+          }
+        }
+      }
+    },
+    "registration.avatarHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Přidej fotku, nebo pokračuj bez ní. Doplnit ji můžeš i později v profilu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a photo, or continue without one. You can add it later in your profile."
+          }
+        }
+      }
+    },
+    "registration.avatarInvalid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotka musí být ve formátu JPEG, PNG nebo WebP."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The photo must be a JPEG, PNG, or WebP image."
+          }
+        }
+      }
+    },
+    "registration.avatarRemove" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odebrat fotku"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove photo"
+          }
+        }
+      }
+    },
+    "registration.consent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potvrď souhlas s obchodními podmínkami a zásadami ochrany osobních údajů."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm that you agree to the terms and the privacy policy."
+          }
+        }
+      }
+    },
+    "registration.headline" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Začni u sebe."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start with yourself."
+          }
+        }
+      }
+    },
+    "registration.lastName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Příjmení"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last name"
+          }
+        }
+      }
+    },
+    "registration.note" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heslo má alespoň 12 znaků. Účet se vytvoří hned."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The password has at least 12 characters. The account is created right away."
+          }
+        }
+      }
+    },
+    "registration.orEmail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nebo e-mailem"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "or with email"
+          }
+        }
+      }
+    },
+    "registration.passwordHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alespoň 12 znaků."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At least 12 characters."
+          }
+        }
+      }
+    },
     "registration.passwordPolicy" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4091,6 +4272,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose a strong, unique password. Password requirements are checked when creating your account."
+          }
+        }
+      }
+    },
+    "registration.privacy" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potvrzuji seznámení se zásadami ochrany osobních údajů."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I confirm that I have read the privacy policy."
+          }
+        }
+      }
+    },
+    "registration.subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nejdřív se trochu poznáme."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First, let’s get to know each other."
+          }
+        }
+      }
+    },
+    "registration.terms" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Souhlasím s obchodními podmínkami."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I agree to the terms of service."
+          }
+        }
+      }
+    },
+    "registration.usernameHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Písmena bez diakritiky, čísla, tečka nebo podtržítko."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letters without diacritics, numbers, a dot, or an underscore."
           }
         }
       }
@@ -5744,6 +5993,74 @@
         }
       }
     },
+    "validation.name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vyplň jméno i příjmení."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter your first and last name."
+          }
+        }
+      }
+    },
+    "validation.passwordLength" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heslo musí mít alespoň 12 znaků."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The password must have at least 12 characters."
+          }
+        }
+      }
+    },
+    "validation.passwordMatch" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hesla se neshodují."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The passwords do not match."
+          }
+        }
+      }
+    },
+    "validation.username" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uživatelské jméno může obsahovat 3–30 znaků: písmena, číslice, tečku a podtržítko."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A username can have 3–30 characters: letters, numbers, a dot, and an underscore."
+          }
+        }
+      }
+    },
     "validation.identifier" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5846,23 +6163,6 @@
         }
       }
     },
-    "wallet.inWallet" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Karta je v Peněžence"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The card is in Wallet"
-          }
-        }
-      }
-    },
     "wallet.invalid" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5876,6 +6176,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The card could not be prepared for Wallet."
+          }
+        }
+      }
+    },
+    "wallet.inWallet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karta je v Peněžence"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The card is in Wallet"
           }
         }
       }

@@ -32,7 +32,21 @@ struct BackendContract: Sendable {
         try APIJSON.post("auth/login", body: LoginBody(identifier: input.identifier, password: input.password))
     }
     func registration(_ input: RegistrationInput) throws -> Endpoint<Session> {
-        try APIJSON.post("auth/register", body: RegisterBody(firstName: input.firstName, username: input.username, email: input.email, password: input.password))
+        try APIJSON.post("auth/register", body: RegisterBody(input))
+    }
+    func uploadAvatar(_ jpeg: Data) -> Endpoint<EmptyResponse> {
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var body = Data()
+        body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"avatar\"; filename=\"avatar.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n".utf8))
+        body.append(jpeg)
+        body.append(Data("\r\n--\(boundary)--\r\n".utf8))
+        return Endpoint(
+            path: "users/me/avatar",
+            method: .post,
+            body: body,
+            headers: ["Content-Type": "multipart/form-data; boundary=\(boundary)"],
+            decode: { _ in EmptyResponse() }
+        )
     }
     func apple(_ input: AppleCredential) throws -> Endpoint<Session> { throw missing("Apple token exchange") }
     func refresh(_ token: String) throws -> Endpoint<Session> {
@@ -43,7 +57,31 @@ struct BackendContract: Sendable {
         try APIJSON.postEmpty("auth/logout", body: RefreshBody(refreshToken: token))
     }
     func me() throws -> Endpoint<Member> {
-        Endpoint(path: "users/me", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decode($0) })
+        Endpoint(path: "users/me", method: .get, retryAfterRefresh: true, decode: { data in
+            let dto: MemberDTO = try APIJSON.decode(data)
+            return Member(
+                id: dto.id,
+                firstName: dto.firstName,
+                username: dto.username,
+                email: dto.email,
+                status: dto.status,
+                avatarURL: Self.avatarURL(dto.avatarURL)
+            )
+        })
+    }
+    private static func avatarURL(_ raw: String?) -> URL? {
+        guard let raw else { return nil }
+        let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty, let base = Configuration.apiURL, let apiHost = base.host?.lowercased() else { return nil }
+        if let url = URL(string: value), let host = url.host?.lowercased(), host == apiHost, Configuration.isAllowedAPIBase(url) {
+            return url
+        }
+        guard value.hasPrefix("/") else { return nil }
+        var components = URLComponents(url: base, resolvingAgainstBaseURL: false)
+        components?.path = value
+        components?.query = nil
+        components?.fragment = nil
+        return components?.url
     }
     func membership() throws -> Endpoint<Membership> {
         Endpoint(path: "memberships/me", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decode($0) })
@@ -188,19 +226,41 @@ private enum APIJSON {
     }
 }
 
+private struct MemberDTO: Decodable {
+    var id: String
+    var firstName: String
+    var username: String
+    var email: String
+    var status: AccountStatus
+    var avatarURL: String?
+}
 private struct IdentifierBody: Encodable { var identifier: String }
 private struct PasswordBody: Encodable { var currentPassword: String; var newPassword: String }
 private struct LoginBody: Encodable { var identifier: String; var password: String; var platform = "ios"; var deviceName = "iOS" }
 private struct RegisterBody: Encodable {
     var firstName: String
+    var lastName: String
     var username: String
     var email: String
     var password: String
-    init(firstName: String, username: String, email: String, password: String) {
-        self.firstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-        self.username = username.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        self.email = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        self.password = password
+    var passwordConfirmation: String
+    var terms: Bool
+    var privacy: Bool
+    var platform = "ios"
+    var deviceName = "iOS"
+    enum CodingKeys: String, CodingKey {
+        case firstName, lastName, username, email, password, terms, privacy, platform, deviceName
+        case passwordConfirmation = "password_confirmation"
+    }
+    init(_ input: RegistrationInput) {
+        firstName = input.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        lastName = input.lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+        username = input.username.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        email = input.email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        password = input.password
+        passwordConfirmation = input.passwordConfirmation
+        terms = input.acceptedTerms
+        privacy = input.acceptedPrivacy
     }
 }
 private struct RefreshBody: Encodable { var refreshToken: String? }

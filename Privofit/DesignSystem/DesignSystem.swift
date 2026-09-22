@@ -176,16 +176,28 @@ extension View {
 }
 struct Avatar: View {
     let name: String
+    var imageURL: URL? = nil
     var size: CGFloat = 32
     var body: some View {
-        Text(String(name.prefix(1)).uppercased())
-            .font(size < 40 ? .subheadline.bold() : .title3.bold())
-            .foregroundStyle(Brand.ink)
-            .frame(width: size, height: size)
-            .background(Brand.lime, in: Circle())
-            .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
-            .clipShape(Circle())
-            .accessibilityHidden(true)
+        ZStack {
+            Text(String(name.prefix(1)).uppercased())
+                .font(size < 40 ? .subheadline.bold() : .title3.bold())
+                .foregroundStyle(Brand.ink)
+                .frame(width: size, height: size)
+                .background(Brand.lime)
+            if let imageURL {
+                AsyncImage(url: imageURL) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFill()
+                    }
+                }
+                .frame(width: size, height: size)
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
+        .accessibilityHidden(true)
     }
 }
 struct MainToolbarModifier: ViewModifier {
@@ -211,7 +223,7 @@ struct MainToolbarModifier: ViewModifier {
                     }
                     .accessibilityLabel(L10n.tr("notifications.title"))
                     Button { app.tab = .profile } label: {
-                        Avatar(name: app.member?.firstName ?? "P", size: 32)
+                        Avatar(name: app.member?.firstName ?? "P", imageURL: app.member?.avatarURL, size: 32)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(L10n.tr("tab.profile"))

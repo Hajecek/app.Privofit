@@ -34,6 +34,7 @@ import Foundation
     }
     func login(_ input: LoginInput) async throws -> Member { try await authenticate(contract.login(input)) }
     func register(_ input: RegistrationInput) async throws -> Member { try await authenticate(contract.registration(input)) }
+    func uploadAvatar(_ jpeg: Data) async throws { _ = try await authorized.send(contract.uploadAvatar(jpeg)) }
     func signInWithApple(_ credential: AppleCredential) async throws -> Member { try await authenticate(contract.apple(credential)) }
     func logout() async {
         // Revoke remotely when the API contract is configured. Local clearing is unconditional.

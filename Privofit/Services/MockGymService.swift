@@ -69,6 +69,7 @@ import Foundation
     func restore() async throws -> Member? { try await delay(); return signedIn ? user : nil }
     func login(_ input: LoginInput) async throws -> Member { try await delay(); signedIn = true; return user }
     func register(_ input: RegistrationInput) async throws -> Member { try await login(.init(identifier: input.email, password: input.password)) }
+    func uploadAvatar(_ jpeg: Data) async throws { try await delay() }
     func signInWithApple(_ credential: AppleCredential) async throws -> Member { throw AppFailure.notConfigured("Apple není simulován") }
     func logout() async { signedIn = false }
     func membership() async throws -> Membership { try check(); try await delay(); return currentMembership() }
