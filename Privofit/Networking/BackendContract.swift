@@ -2,11 +2,13 @@ import Foundation
 
 // Maps the local PRIVOFIT PHP API (`/api/v1/`) onto domain models.
 struct BackendContract: Sendable {
-    var appleEnabled = false
-    var googleEnabled = false
+    var appleEnabled = true
+    var googleEnabled = true
     var refreshFactory: (@Sendable (String) throws -> Endpoint<Session>)? = nil
 
-    func google(_ credential: GoogleCredential) throws -> Endpoint<Session> { throw missing("Google code exchange + PKCE + nonce validation") }
+    func google(_ credential: GoogleCredential) throws -> Endpoint<Session> {
+        try APIJSON.post("auth/google", body: GoogleAuthBody(credential))
+    }
     func resetPassword(_ identifier: String) throws -> Endpoint<EmptyResponse> {
         try APIJSON.postEmpty("auth/forgot-password", body: IdentifierBody(identifier: identifier))
     }
@@ -48,7 +50,9 @@ struct BackendContract: Sendable {
             decode: { _ in EmptyResponse() }
         )
     }
-    func apple(_ input: AppleCredential) throws -> Endpoint<Session> { throw missing("Apple token exchange") }
+    func apple(_ input: AppleCredential) throws -> Endpoint<Session> {
+        try APIJSON.post("auth/apple", body: AppleAuthBody(input))
+    }
     func refresh(_ token: String) throws -> Endpoint<Session> {
         if let refreshFactory { return try refreshFactory(token) }
         return try APIJSON.post("auth/refresh", body: RefreshBody(refreshToken: token))
@@ -237,6 +241,30 @@ private struct MemberDTO: Decodable {
 private struct IdentifierBody: Encodable { var identifier: String }
 private struct PasswordBody: Encodable { var currentPassword: String; var newPassword: String }
 private struct LoginBody: Encodable { var identifier: String; var password: String; var platform = "ios"; var deviceName = "iOS" }
+private struct GoogleAuthBody: Encodable {
+    var ticket: String
+    var platform = "ios"
+    var deviceName = "iOS"
+    init(_ credential: GoogleCredential) {
+        ticket = credential.ticket
+    }
+}
+private struct AppleAuthBody: Encodable {
+    var identityToken: String
+    var authorizationCode: String
+    var rawNonce: String
+    var givenName: String?
+    var familyName: String?
+    var platform = "ios"
+    var deviceName = "iOS"
+    init(_ credential: AppleCredential) {
+        identityToken = credential.identityToken
+        authorizationCode = credential.authorizationCode
+        rawNonce = credential.rawNonce
+        givenName = credential.givenName
+        familyName = credential.familyName
+    }
+}
 private struct RegisterBody: Encodable {
     var firstName: String
     var lastName: String

@@ -2,7 +2,7 @@ import Foundation
 
 @MainActor final class LiveGymService: GymService {
     let isDemo = false
-    var googleConfigured: Bool { contract.googleEnabled && Configuration.googleClientID != nil && Configuration.googleRedirect != nil }
+    var googleConfigured: Bool { contract.googleEnabled && Configuration.apiURL != nil }
     func signInWithGoogle(_ credential: GoogleCredential) async throws -> Member { try await authenticate(contract.google(credential)) }
     func requestPasswordReset(identifier: String) async throws { _ = try await http.send(contract.resetPassword(identifier)) }
     func changePassword(current: String, new: String) async throws { _ = try await authorized.send(contract.changePassword(current: current, new: new)) }

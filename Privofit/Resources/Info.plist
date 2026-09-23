@@ -31,6 +31,7 @@
 			<string>Google OAuth</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
+				<string>privofit</string>
 				<string>$(GOOGLE_CALLBACK_SCHEME)</string>
 			</array>
 		</dict>

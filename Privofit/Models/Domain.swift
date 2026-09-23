@@ -145,6 +145,7 @@ struct AppleCredential: Sendable {
     let authorizationCode: String
     let rawNonce: String
     let givenName: String?
+    let familyName: String?
 }
 struct DoorEligibility: Codable, Sendable {
     let allowed: Bool
@@ -194,11 +195,7 @@ enum AppFailure: Error, LocalizedError, Equatable, Sendable {
 }
 
 struct GoogleCredential: Sendable {
-    let authorizationCode: String
-    let codeVerifier: String
-    let redirectURI: String
-    let clientID: String
-    let nonce: String
+    let ticket: String
 }
 struct GymInfo: Codable, Equatable, Sendable {
     let name: String

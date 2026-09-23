@@ -32,7 +32,14 @@ import UIKit
               let data = credential.identityToken, let token = String(data: data, encoding: .utf8),
               let codeData = credential.authorizationCode, let code = String(data: codeData, encoding: .utf8) else { finish(.failure(AppFailure.invalidResponse)); return }
         // Backend must verify signature, issuer, audience, expiry and hashed nonce.
-        finish(.success(AppleCredential(identityToken: token, authorizationCode: code, rawNonce: nonce, givenName: credential.fullName?.givenName)))
+        let name = credential.fullName
+        finish(.success(AppleCredential(
+            identityToken: token,
+            authorizationCode: code,
+            rawNonce: nonce,
+            givenName: name?.givenName,
+            familyName: name?.familyName
+        )))
     }
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
         if let failure = error as? ASAuthorizationError, failure.code == .canceled { finish(.failure(AppFailure.cancelled)) }

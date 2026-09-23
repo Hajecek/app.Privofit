@@ -1,6 +1,10 @@
 // Public configuration only. Never put secrets in these files.
 // Use https:/$()/your-domain/api/v1/ to avoid xcconfig // comment parsing.
 API_BASE_URL =
+// iOS OAuth client from Google Cloud (application type iOS), not the web client.
+// Scheme is the reversed client id: 123-abc.apps.googleusercontent.com
+// becomes com.googleusercontent.apps.123-abc
+// GOOGLE_REDIRECT_URI must match GOOGLE_IOS_REDIRECT_URI on the API.
 GOOGLE_CLIENT_ID =
 GOOGLE_REDIRECT_URI =
 GOOGLE_CALLBACK_SCHEME = privofit-unconfigured
