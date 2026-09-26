@@ -46,9 +46,9 @@ import Foundation
     func reservations() async throws -> [Reservation] { try await authorized.send(contract.reservations()) }
     func availableSlots(gymID: String) async throws -> [AvailableSlot] { try await authorized.send(contract.slots(gymID: gymID)) }
     func reserve(slotID: String, requestID: UUID) async throws -> Reservation { try await authorized.send(contract.reserve(slotID, requestID: requestID)) }
-    func quoteReservations(slotIDs: [String]) async throws -> BookingQuote { try await authorized.send(contract.quoteReservations(slotIDs)) }
-    func payAndReserve(slotIDs: [String], requestID: UUID, applePay: ApplePayToken) async throws -> BookingPayment {
-        try await authorized.send(contract.payAndReserve(slotIDs, requestID: requestID, applePay: applePay))
+    func quoteReservations(slotIDs: [String], guests: Int = 1) async throws -> BookingQuote { try await authorized.send(contract.quoteReservations(slotIDs, guests: guests)) }
+    func payAndReserve(slotIDs: [String], requestID: UUID, applePay: ApplePayToken, guests: Int = 1) async throws -> BookingPayment {
+        try await authorized.send(contract.payAndReserve(slotIDs, requestID: requestID, applePay: applePay, guests: guests))
     }
     func cancelReservation(id: String, requestID: UUID) async throws { _ = try await authorized.send(contract.cancel(id, requestID: requestID)) }
     func inbox() async throws -> [InboxItem] { try await authorized.send(contract.inbox()) }

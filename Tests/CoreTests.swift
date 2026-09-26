@@ -9,6 +9,11 @@ struct ValidationTests {
         #expect(InputValidator.login("alex@example.com", "password"))
         #expect(!InputValidator.login(" \n", "password"))
         #expect(!InputValidator.login("alex", ""))
+        #expect(InputValidator.totp("123456"))
+        #expect(InputValidator.totp("12 34 56"))
+        #expect(InputValidator.totp("AB12CD34"))
+        #expect(!InputValidator.totp("12345"))
+        #expect(FriendlyError.message(AppFailure.mfaRequired) == L10n.tr("auth.mfa.body"))
     }
     @Test func registrationEmail() {
         #expect(InputValidator.email("alex+gym@example.com"))

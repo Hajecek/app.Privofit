@@ -90,6 +90,16 @@ private struct LiveTick: Equatable {
     var phase: AppPhase
     var open: Bool
 }
+private struct AwayBookingAccessory: ViewModifier {
+    var active: Bool
+    func body(content: Content) -> some View {
+        if active {
+            content.tabViewBottomAccessory { BookingCartDock() }
+        } else {
+            content
+        }
+    }
+}
 struct MainTabs: View {
     @Environment(AppModel.self) private var app
     var body: some View {
@@ -103,6 +113,7 @@ struct MainTabs: View {
             Tab(L10n.tr("tab.membership"), systemImage: "creditcard", value: AppTab.membership) { NavigationStack { MembershipView() } }
             Tab(L10n.tr("tab.profile"), systemImage: "person.crop.circle", value: AppTab.profile) { NavigationStack { ProfileView() } }
         }
+        .modifier(AwayBookingAccessory(active: app.showsBookingDock && app.tab != .reservations))
         .clearTopChrome()
         .onChange(of: app.tab) { previous, tab in
             guard tab == .door else { return }

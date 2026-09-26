@@ -57,7 +57,9 @@ import Foundation
                         end: start.addingTimeInterval(3600),
                         room: place.name,
                         price: 350,
-                        gymID: place.id
+                        gymID: place.id,
+                        priceTwo: 470,
+                        maxPersons: 2
                     )
                 }
             }
@@ -95,19 +97,27 @@ import Foundation
         let reservation = Reservation(id: slot.id, start: slot.start, end: slot.end, room: slot.room, canCancel: true, bufferMinutes: slot.bufferMinutes, price: slot.price, currencyCode: slot.currencyCode)
         bookings.append(reservation); return reservation
     }
-    func quoteReservations(slotIDs: [String]) async throws -> BookingQuote {
+    func quoteReservations(slotIDs: [String], guests: Int = 1) async throws -> BookingQuote {
         try check(); try await delay()
         let chosen = try resolvedSlots(slotIDs)
-        return BookingQuote(slots: chosen, pricePerSlot: 350, currencyCode: "CZK", total: 350 * Decimal(chosen.count))
+        let rate: Decimal = guests >= 2 ? 470 : 350
+        return BookingQuote(slots: chosen, pricePerSlot: rate, currencyCode: "CZK", total: rate * Decimal(chosen.count))
     }
-    func payAndReserve(slotIDs: [String], requestID: UUID, applePay: ApplePayToken) async throws -> BookingPayment {
+    func payAndReserve(slotIDs: [String], requestID: UUID, applePay: ApplePayToken, guests: Int = 1) async throws -> BookingPayment {
         try check(); try await delay()
         guard !applePay.transactionIdentifier.isEmpty else { throw AppFailure.unavailable }
         if let previous = checkouts[requestID] { return previous }
         checkoutCount += 1
         var reserved: [Reservation] = []
         for id in slotIDs {
-            reserved.append(try await reserve(slotID: id, requestID: requestID))
+            var item = try await reserve(slotID: id, requestID: requestID)
+            if let index = bookings.firstIndex(where: { $0.id == item.id }) {
+                bookings[index].guestCount = max(1, guests)
+                if guests >= 2 { bookings[index].price = 470 }
+                if let slot = cachedSlots.first(where: { $0.id == id }) { bookings[index].gymID = slot.gymID }
+                item = bookings[index]
+            }
+            reserved.append(item)
         }
         let payment = BookingPayment(id: requestID.uuidString, status: .paid, checkoutURL: nil, reservations: reserved)
         checkouts[requestID] = payment

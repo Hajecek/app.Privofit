@@ -54,11 +54,20 @@ actor HTTPClient {
         logger.debug("HTTP status: \(http.statusCode, privacy: .public)")
         switch http.statusCode {
         case 200..<300: return try endpoint.decode(data)
+        case 401 where Self.requiresMfa(data): throw AppFailure.mfaRequired
         case 401: throw AppFailure.unauthorized
         case 403: throw AppFailure.forbidden
+        case 400, 404, 409, 422, 500, 502, 503 where Self.requiresMfa(data): throw AppFailure.mfaRequired
         case 400, 404, 409, 422, 500, 502, 503: throw Self.rejected(from: data) ?? AppFailure.http(http.statusCode)
         default: throw AppFailure.http(http.statusCode)
         }
+    }
+    private static func requiresMfa(_ data: Data) -> Bool {
+        struct Payload: Decodable {
+            struct Errors: Decodable { var mfa: Bool? }
+            var errors: Errors?
+        }
+        return (try? JSONDecoder().decode(Payload.self, from: data))?.errors?.mfa == true
     }
     private static func rejected(from data: Data) -> AppFailure? {
         struct Payload: Decodable { var message: String? }

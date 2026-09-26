@@ -22,6 +22,8 @@ private final class ResponseStore: @unchecked Sendable {
             return (200, try! JSONEncoder().encode(value))
         }
         if path == "/denied" { return (403, Data()) }
+        if path == "/mfa" { return (401, Data(#"{"success":false,"message":"Vyžadován TOTP kód.","errors":{"mfa":true}}"#.utf8)) }
+        if path == "/mfa-apple" { return (422, Data(#"{"success":false,"message":"Vyžadován ověřovací kód.","errors":{"mfa":true}}"#.utf8)) }
         if path == "/command" { return (401, Data()) }
         return (request.value(forHTTPHeaderField: "Authorization") == "Bearer renewed" ? 200 : 401, Data("ok".utf8))
     }
@@ -59,12 +61,22 @@ private final class FixtureURLProtocol: URLProtocol, @unchecked Sendable {
     }
     func testCommandIsNeverRetriedOnUnauthorized() async throws {
         let vault = MemoryVault(.init(accessToken: "old", refreshToken: "refresh", expiresAt: Date().addingTimeInterval(3600)))
-        let client = AuthorizedClient(http: http(), vault: vault, contract: .init())
+        var contract = BackendContract()
+        contract.refreshFactory = { _ in Endpoint(path: "refresh", method: .post, decode: { try JSONDecoder().decode(Session.self, from: $0) }) }
+        let client = AuthorizedClient(http: http(), vault: vault, contract: contract)
         let endpoint = Endpoint<String>(path: "command", method: .post, retryAfterRefresh: true, decode: { String(decoding: $0, as: UTF8.self) })
         do { _ = try await client.send(endpoint); XCTFail("Expected unauthorized") }
         catch { XCTAssertEqual(error as? AppFailure, .unauthorized) }
         XCTAssertEqual(FixtureURLProtocol.store.count("/command"), 1)
         XCTAssertEqual(FixtureURLProtocol.store.count("/refresh"), 1)
+    }
+    func testMfaChallengeIsNotADeadSession() async {
+        let endpoint = Endpoint<String>(path: "mfa", method: .post, decode: { _ in "" })
+        do { _ = try await http().send(endpoint); XCTFail("Expected MFA") }
+        catch { XCTAssertEqual(error as? AppFailure, .mfaRequired) }
+        let apple = Endpoint<String>(path: "mfa-apple", method: .post, decode: { _ in "" })
+        do { _ = try await http().send(apple); XCTFail("Expected MFA") }
+        catch { XCTAssertEqual(error as? AppFailure, .mfaRequired) }
     }
     func testHTTPErrorMapping() async {
         do { _ = try await http().send(Endpoint<String>(path: "denied", method: .get, decode: { _ in "" })); XCTFail("Expected forbidden") }

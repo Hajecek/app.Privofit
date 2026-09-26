@@ -24,8 +24,8 @@ import Foundation
     func availableSlots(gymID: String) async throws -> [AvailableSlot]
     func gyms() async throws -> [GymPlace]
     func reserve(slotID: String, requestID: UUID) async throws -> Reservation
-    func quoteReservations(slotIDs: [String]) async throws -> BookingQuote
-    func payAndReserve(slotIDs: [String], requestID: UUID, applePay: ApplePayToken) async throws -> BookingPayment
+    func quoteReservations(slotIDs: [String], guests: Int) async throws -> BookingQuote
+    func payAndReserve(slotIDs: [String], requestID: UUID, applePay: ApplePayToken, guests: Int) async throws -> BookingPayment
     func cancelReservation(id: String, requestID: UUID) async throws
 }
 @MainActor protocol DoorAccessServicing {

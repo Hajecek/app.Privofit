@@ -46,6 +46,12 @@ enum InputValidator {
     static func password(_ value: String) -> Bool { value.count >= 12 }
     // Login must not reject valid legacy passwords by inventing a backend length policy.
     static func login(_ identifier: String, _ password: String) -> Bool { self.identifier(identifier) && !password.isEmpty }
+    static func totp(_ value: String) -> Bool {
+        let code = value.filter { !$0.isWhitespace }
+        if code.count == 6 { return code.allSatisfy(\.isNumber) }
+        if code.count == 8 { return code.allSatisfy(\.isHexDigit) }
+        return false
+    }
     static func personName(_ value: String) -> Bool {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return (1...80).contains(trimmed.count)
@@ -66,6 +72,7 @@ enum FriendlyError {
         switch error {
         case .notConfigured: return L10n.tr("error.configuration")
         case .unauthorized: return L10n.tr("error.session")
+        case .mfaRequired: return L10n.tr("auth.mfa.body")
         case .forbidden: return L10n.tr("error.denied")
         case .offline: return L10n.tr("error.offline")
         case .biometricsUnavailable: return L10n.tr("error.biometry")

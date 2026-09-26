@@ -21,11 +21,31 @@
         }
       }
     },
+    "%@, %@" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
     "%lld" : {
 
     },
     "%lld / 5" : {
 
+    },
+    "%lld %@" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@"
+          }
+        }
+      }
     },
     "%lld× %@" : {
       "localizations" : {
@@ -356,6 +376,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sign in"
+          }
+        }
+      }
+    },
+    "auth.mfa.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Účet má zapnuté dvoufaktorové ověření. Zadej kód z autentizační aplikace nebo záložní kód."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This account uses two-factor authentication. Enter the code from your authenticator app or a backup code."
+          }
+        }
+      }
+    },
+    "auth.mfa.code" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kód"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code"
+          }
+        }
+      }
+    },
+    "auth.mfa.submit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ověřit a přihlásit"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verify and sign in"
+          }
+        }
+      }
+    },
+    "auth.mfa.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ověřovací kód"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verification code"
           }
         }
       }
@@ -859,13 +947,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Klepnutím spustíš ověření vstupu."
+            "value" : "V dalším kroku otevření potvrdíš."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tap to start entry verification."
+            "value" : "Confirm opening in the next step."
           }
         }
       }
@@ -1386,13 +1474,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Server poslal odpověď, které aplikace nerozumí."
+            "value" : "Odpověď serveru se nepodařilo přečíst. Zkus to znovu."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The server sent a response the app could not read."
+            "value" : "The server response could not be read. Try again."
           }
         }
       }
@@ -1437,13 +1525,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ověření přerušilo přepnutí aplikace. Zkus to znovu."
+            "value" : "Přihlášení se změnilo. Přihlas se prosím znovu."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The check was interrupted when the app moved to the background. Try again."
+            "value" : "Your session changed. Please sign in again."
           }
         }
       }
@@ -1471,13 +1559,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Služba teď není dostupná. Zkus to později."
+            "value" : "Služba teď není dostupná. Zkus to prosím později."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The service is unavailable right now. Try again later."
+            "value" : "The service is unavailable right now. Please try again later."
           }
         }
       }
@@ -1797,13 +1885,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rezervovat termín"
+            "value" : "Rezervovat trénink"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Book a time"
+            "value" : "Book a session"
           }
         }
       }
@@ -1978,36 +2066,19 @@
         }
       }
     },
-    "home.live.closed" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fitko je zavřené"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The gym is closed"
-          }
-        }
-      }
-    },
     "home.live.free" : {
       "extractionState" : "manual",
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Teď tu nikdo není"
+            "value" : "Volné"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nobody is there right now"
+            "value" : "Open"
           }
         }
       }
@@ -2018,13 +2089,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prostor je volný."
+            "value" : "Prostor je teď volný."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The space is open."
+            "value" : "The space is open right now."
           }
         }
       }
@@ -2035,30 +2106,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Po přihlášení uvidíš, jestli je volno"
+            "value" : "Stav studia uvidíš po přihlášení."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sign in to see if it's free"
-          }
-        }
-      }
-    },
-    "home.live.kicker" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Živě"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live"
+            "value" : "Studio status appears after you sign in."
           }
         }
       }
@@ -2069,64 +2123,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Někdo je teď ve fitku"
+            "value" : "Probíhá termín"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Someone is in the gym"
-          }
-        }
-      }
-    },
-    "home.live.opens" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Otevře v"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Opens"
-          }
-        }
-      }
-    },
-    "home.live.unknown" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stav fitka teď nejde ověřit"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Can't check the gym right now"
-          }
-        }
-      }
-    },
-    "home.live.until" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "do"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "until"
+            "value" : "Session in progress"
           }
         }
       }
@@ -2137,30 +2140,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stav fitka"
+            "value" : "Stav studia"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gym status"
-          }
-        }
-      }
-    },
-    "home.live.yours" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Máš ho teď ty"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "It's yours right now"
+            "value" : "Studio status"
           }
         }
       }
@@ -2256,13 +2242,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Na tenhle týden stačí jeden trénink."
+            "value" : "Ještě jeden trénink a série pokračuje."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "One session is enough this week."
+            "value" : "One more session keeps the streak going."
           }
         }
       }
@@ -2273,13 +2259,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dnes ji ještě udržíš."
+            "value" : "Dnes je poslední šance. Bez tréninku série skončí."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Today still keeps it going."
+            "value" : "Last chance today. The streak ends without a session."
           }
         }
       }
@@ -2290,13 +2276,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jeden trénink v týdnu sérii spustí."
+            "value" : "První trénink spustí sérii."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "One session this week starts your streak."
+            "value" : "Your first session starts the streak."
           }
         }
       }
@@ -2324,7 +2310,7 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tenhle týden už máš trénink."
+            "value" : "Tento týden už máš trénink."
           }
         },
         "en" : {
@@ -2341,13 +2327,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "týdny v řadě"
+            "value" : "týdny"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "weeks in a row"
+            "value" : "weeks"
           }
         }
       }
@@ -2358,13 +2344,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "týden v řadě"
+            "value" : "týden"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "week in a row"
+            "value" : "week"
           }
         }
       }
@@ -2375,13 +2361,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "týdnů v řadě"
+            "value" : "týdnů"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "weeks in a row"
+            "value" : "weeks"
           }
         }
       }
@@ -3270,57 +3256,6 @@
         }
       }
     },
-    "onboarding.location.action" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Povolit polohu"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Allow location"
-          }
-        }
-      }
-    },
-    "onboarding.location.body" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Podle polohy vybereme fitko, které máš nejblíž. Později ho můžeš změnit."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We use your location to pick the nearest gym. You can change it later."
-          }
-        }
-      }
-    },
-    "onboarding.location.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nejbližší fitko"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nearest gym"
-          }
-        }
-      }
-    },
     "onboarding.progress" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3721,13 +3656,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Klepni na obrazovku. Ověříme oprávnění a otevřeme vstup."
+            "value" : "Potvrď otevření. Oprávnění bezpečně ověříme za tebe."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tap the screen. We'll check your access and open the door."
+            "value" : "Confirm entry. We'll securely check your access."
           }
         }
       }
@@ -4095,13 +4030,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Účet je vytvořený. Fotku se teď nepodařilo nahrát, doplníš ji v profilu."
+            "value" : "Účet je vytvořený, fotku se nepodařilo uložit."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your account is ready. The photo could not be uploaded now — you can add it later in your profile."
+            "value" : "The account was created, but the photo could not be saved."
           }
         }
       }
@@ -4112,13 +4047,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Přidej fotku, nebo pokračuj bez ní. Doplnit ji můžeš i později v profilu."
+            "value" : "Volitelné. Fotka se zobrazí v profilu."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add a photo, or continue without one. You can add it later in your profile."
+            "value" : "Optional. The photo appears on your profile."
           }
         }
       }
@@ -4129,13 +4064,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fotka musí být ve formátu JPEG, PNG nebo WebP."
+            "value" : "Fotku se nepodařilo použít. Zkus jiný obrázek do 5 MB."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The photo must be a JPEG, PNG, or WebP image."
+            "value" : "That photo could not be used. Try another image under 5 MB."
           }
         }
       }
@@ -4163,13 +4098,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Potvrď souhlas s obchodními podmínkami a zásadami ochrany osobních údajů."
+            "value" : "Potvrď souhlas s podmínkami a ochranou údajů."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Confirm that you agree to the terms and the privacy policy."
+            "value" : "Confirm that you agree to the terms and privacy policy."
           }
         }
       }
@@ -4180,13 +4115,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Začni u sebe."
+            "value" : "Tvůj prostor začíná tady."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Start with yourself."
+            "value" : "Your space starts here."
           }
         }
       }
@@ -4214,13 +4149,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Heslo má alespoň 12 znaků. Účet se vytvoří hned."
+            "value" : "Účet vytvoříme, jakmile potvrdíš oba souhlasy."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The password has at least 12 characters. The account is created right away."
+            "value" : "We create the account once you confirm both agreements."
           }
         }
       }
@@ -4248,7 +4183,7 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alespoň 12 znaků."
+            "value" : "Aspoň 12 znaků."
           }
         },
         "en" : {
@@ -4282,13 +4217,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Potvrzuji seznámení se zásadami ochrany osobních údajů."
+            "value" : "Souhlasím se zpracováním údajů."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I confirm that I have read the privacy policy."
+            "value" : "I agree to the processing of my data."
           }
         }
       }
@@ -4299,13 +4234,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nejdřív se trochu poznáme."
+            "value" : "Vyplň údaje a můžeš si rezervovat první trénink."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "First, let’s get to know each other."
+            "value" : "Fill in your details and book your first session."
           }
         }
       }
@@ -4316,30 +4251,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Souhlasím s obchodními podmínkami."
+            "value" : "Souhlasím s podmínkami."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I agree to the terms of service."
-          }
-        }
-      }
-    },
-    "registration.usernameHint" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Písmena bez diakritiky, čísla, tečka nebo podtržítko."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Letters without diacritics, numbers, a dot, or an underscore."
+            "value" : "I agree to the terms."
           }
         }
       }
@@ -4357,6 +4275,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your space starts here."
+          }
+        }
+      }
+    },
+    "registration.usernameHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3–30 znaků: malá písmena, čísla, tečka nebo podtržítko."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3–30 characters: lowercase letters, numbers, a dot, or an underscore."
           }
         }
       }
@@ -4860,13 +4795,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Žádné fitko se nenačetlo."
+            "value" : "Zatím tu není žádné fitko."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No gyms loaded."
+            "value" : "No gym is available yet."
           }
         }
       }
@@ -5364,6 +5299,193 @@
         }
       }
     },
+    "reservations.entriesMany" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vstupů"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "entries"
+          }
+        }
+      }
+    },
+    "reservations.fromMembership" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Z členství"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From membership"
+          }
+        }
+      }
+    },
+    "reservations.slotShortFew" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "termíny"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "slots"
+          }
+        }
+      }
+    },
+    "reservations.slotShortMany" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "termínů"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "slots"
+          }
+        }
+      }
+    },
+    "reservations.slotShortOne" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "termín"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "slot"
+          }
+        }
+      }
+    },
+    "reservations.resume" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokračovat"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        }
+      }
+    },
+    "reservations.persons" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osoby"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "People"
+          }
+        }
+      }
+    },
+    "reservations.personsFew" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "osoby"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "people"
+          }
+        }
+      }
+    },
+    "reservations.personsLess" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Méně osob"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fewer people"
+          }
+        }
+      }
+    },
+    "reservations.personsMany" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "osob"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "people"
+          }
+        }
+      }
+    },
+    "reservations.personsMore" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Více osob"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More people"
+          }
+        }
+      }
+    },
     "reservations.plan" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5755,6 +5877,23 @@
         }
       }
     },
+    "reservations.yours" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tvoje"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yours"
+          }
+        }
+      }
+    },
     "session.title" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5993,6 +6132,23 @@
         }
       }
     },
+    "validation.identifier" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vyplň e-mail nebo uživatelské jméno."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter your email or username."
+          }
+        }
+      }
+    },
     "validation.name" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6005,7 +6161,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enter your first and last name."
+            "value" : "Enter both your first and last name."
           }
         }
       }
@@ -6016,13 +6172,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Heslo musí mít alespoň 12 znaků."
+            "value" : "Heslo musí mít aspoň 12 znaků."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The password must have at least 12 characters."
+            "value" : "Password must be at least 12 characters."
           }
         }
       }
@@ -6039,7 +6195,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The passwords do not match."
+            "value" : "Passwords do not match."
           }
         }
       }
@@ -6050,30 +6206,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Uživatelské jméno může obsahovat 3–30 znaků: písmena, číslice, tečku a podtržítko."
+            "value" : "Uživatelské jméno musí mít 3–30 znaků: malá písmena, čísla, tečka nebo podtržítko."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A username can have 3–30 characters: letters, numbers, a dot, and an underscore."
-          }
-        }
-      }
-    },
-    "validation.identifier" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vyplň e-mail nebo uživatelské jméno."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter your email or username."
+            "value" : "Username must be 3–30 characters: lowercase letters, numbers, a dot, or an underscore."
           }
         }
       }

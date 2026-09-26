@@ -31,7 +31,7 @@ struct BackendContract: Sendable {
         Endpoint(path: "visits", method: .get, retryAfterRefresh: true, decode: { try APIJSON.decodeList($0) })
     }
     func login(_ input: LoginInput) throws -> Endpoint<Session> {
-        try APIJSON.post("auth/login", body: LoginBody(identifier: input.identifier, password: input.password))
+        try APIJSON.post("auth/login", body: LoginBody(identifier: input.identifier, password: input.password, totp: input.totp))
     }
     func registration(_ input: RegistrationInput) throws -> Endpoint<Session> {
         try APIJSON.post("auth/register", body: RegisterBody(input))
@@ -115,8 +115,8 @@ struct BackendContract: Sendable {
     func reserve(_ slot: String, requestID: UUID) throws -> Endpoint<Reservation> {
         try APIJSON.post("reservations", body: ReserveBody(slotID: slot, requestID: requestID))
     }
-    func quoteReservations(_ slotIDs: [String]) throws -> Endpoint<BookingQuote> {
-        Endpoint(path: "reservations/quote", method: .post, body: try APIJSON.body(QuoteBody(slotIDs: slotIDs)), decode: { data in
+    func quoteReservations(_ slotIDs: [String], guests: Int) throws -> Endpoint<BookingQuote> {
+        Endpoint(path: "reservations/quote", method: .post, body: try APIJSON.body(QuoteBody(slotIDs: slotIDs, guests: guests)), decode: { data in
             let dto: QuoteDTO = try APIJSON.decode(data)
             guard let price = Decimal(string: dto.pricePerSlot, locale: Locale(identifier: "en_US_POSIX")) else {
                 throw AppFailure.invalidResponse
@@ -125,8 +125,8 @@ struct BackendContract: Sendable {
             return BookingQuote(slots: dto.slots, pricePerSlot: price, currencyCode: dto.currencyCode, total: total)
         })
     }
-    func payAndReserve(_ slotIDs: [String], requestID: UUID, applePay: ApplePayToken) throws -> Endpoint<BookingPayment> {
-        Endpoint(path: "reservations/pay", method: .post, body: try APIJSON.body(PayBody(slotIDs: slotIDs, requestID: requestID, applePay: .init(applePay))), headers: ["Idempotency-Key": requestID.uuidString], decode: { data in
+    func payAndReserve(_ slotIDs: [String], requestID: UUID, applePay: ApplePayToken, guests: Int) throws -> Endpoint<BookingPayment> {
+        Endpoint(path: "reservations/pay", method: .post, body: try APIJSON.body(PayBody(slotIDs: slotIDs, requestID: requestID, applePay: .init(applePay), guests: guests)), headers: ["Idempotency-Key": requestID.uuidString], decode: { data in
             let dto: PaymentDTO = try APIJSON.decode(data)
             guard let status = BookingPayment.Status(rawValue: dto.status) else { throw AppFailure.invalidResponse }
             return BookingPayment(id: dto.id, status: status, checkoutURL: dto.checkoutURL, reservations: dto.reservations)
@@ -240,7 +240,22 @@ private struct MemberDTO: Decodable {
 }
 private struct IdentifierBody: Encodable { var identifier: String }
 private struct PasswordBody: Encodable { var currentPassword: String; var newPassword: String }
-private struct LoginBody: Encodable { var identifier: String; var password: String; var platform = "ios"; var deviceName = "iOS" }
+private struct LoginBody: Encodable {
+    var identifier: String
+    var password: String
+    var totp: String?
+    var platform = "ios"
+    var deviceName = "iOS"
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(identifier, forKey: .identifier)
+        try container.encode(password, forKey: .password)
+        if let totp, !totp.isEmpty { try container.encode(totp, forKey: .totp) }
+        try container.encode(platform, forKey: .platform)
+        try container.encode(deviceName, forKey: .deviceName)
+    }
+    private enum CodingKeys: String, CodingKey { case identifier, password, totp, platform, deviceName }
+}
 private struct GoogleAuthBody: Encodable {
     var ticket: String
     var platform = "ios"
@@ -255,6 +270,7 @@ private struct AppleAuthBody: Encodable {
     var rawNonce: String
     var givenName: String?
     var familyName: String?
+    var totp: String?
     var platform = "ios"
     var deviceName = "iOS"
     init(_ credential: AppleCredential) {
@@ -263,6 +279,22 @@ private struct AppleAuthBody: Encodable {
         rawNonce = credential.rawNonce
         givenName = credential.givenName
         familyName = credential.familyName
+        let code = credential.totp?.filter { !$0.isWhitespace }
+        totp = (code?.isEmpty == false) ? code : nil
+    }
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(identityToken, forKey: .identityToken)
+        try container.encode(authorizationCode, forKey: .authorizationCode)
+        try container.encode(rawNonce, forKey: .rawNonce)
+        try container.encodeIfPresent(givenName, forKey: .givenName)
+        try container.encodeIfPresent(familyName, forKey: .familyName)
+        try container.encodeIfPresent(totp, forKey: .totp)
+        try container.encode(platform, forKey: .platform)
+        try container.encode(deviceName, forKey: .deviceName)
+    }
+    private enum CodingKeys: String, CodingKey {
+        case identityToken, authorizationCode, rawNonce, givenName, familyName, totp, platform, deviceName
     }
 }
 private struct RegisterBody: Encodable {
@@ -293,7 +325,7 @@ private struct RegisterBody: Encodable {
 }
 private struct RefreshBody: Encodable { var refreshToken: String? }
 private struct ReserveBody: Encodable { var slotID: String; var requestID: UUID }
-private struct QuoteBody: Encodable { var slotIDs: [String] }
+private struct QuoteBody: Encodable { var slotIDs: [String]; var guests: Int }
 private struct RequestIDBody: Encodable { var requestID: UUID }
 private struct OpenDoorBody: Encodable { var doorID: String; var requestID: UUID }
 private struct PushBody: Encodable { var token: String; var preferences: PushNotificationPreferences; var environment: String }
@@ -313,6 +345,7 @@ private struct PayBody: Encodable {
     var slotIDs: [String]
     var requestID: UUID
     var applePay: ApplePayBody
+    var guests: Int
 }
 private struct ApplePayBody: Encodable {
     var transactionIdentifier: String

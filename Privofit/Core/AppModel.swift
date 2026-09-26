@@ -22,6 +22,12 @@ enum EntryCover: Equatable { case splash, retry, hidden }
     var inbox: [InboxItem] = []
     var tab: AppTab = .dashboard
     var reservationSection: ReservationSection = .slots
+    var bookingCart: [AvailableSlot] = []
+    var bookingGuests = 1
+    var showBookingCheckout = false
+    var bookingRequestID = UUID()
+    var showsBookingDock: Bool { !isGuest && !bookingCart.isEmpty && !showBookingCheckout && !showDoor }
+    var bookingPersonLimit: Int { max(1, slots.map(\.maxPersons).max() ?? 1) }
     var showGuestGate = false
     var showDoor = false
     var showInbox = false
@@ -33,6 +39,7 @@ enum EntryCover: Equatable { case splash, retry, hidden }
     var busy = false
     var loading = false
     var locked = false
+    var needsMfa = false
     private(set) var entry: EntryCover = .splash
     var error: String?
     let service: any GymService
@@ -52,6 +59,7 @@ enum EntryCover: Equatable { case splash, retry, hidden }
     private var settleQueued = false
     private var entryGeneration = 0
     private var contentReady = false
+    private var pendingApple: AppleCredential?
     var isGuest: Bool { phase == .guest || (phase == .onboarding && member == nil) }
     var isDemo: Bool { service.isDemo }
     init(service: any GymService, preferences: Preferences = Preferences(), notifications: NotificationService = NotificationService(),
@@ -98,8 +106,36 @@ enum EntryCover: Equatable { case splash, retry, hidden }
         phase = preferences.completedOnboarding(for: user.id) ? .authenticated : .onboarding
         if phase == .authenticated { AppDelegate.shared?.updateAuthentication(isLoggedIn: true) }
     }
-    func login(identifier: String, password: String) async {
-        await authenticate { try await self.service.login(.init(identifier: identifier.trimmingCharacters(in: .whitespacesAndNewlines), password: password)) }
+    func login(identifier: String, password: String, totp: String? = nil) async {
+        let code = Self.trimmedCode(totp)
+        if code == nil { pendingApple = nil }
+        await authenticate {
+            try await self.service.login(.init(
+                identifier: identifier.trimmingCharacters(in: .whitespacesAndNewlines),
+                password: password,
+                totp: code
+            ))
+        }
+    }
+    func completeMfa(code: String, identifier: String, password: String) async {
+        let totp = Self.trimmedCode(code)
+        guard let totp else { return }
+        if var credential = pendingApple {
+            credential.totp = totp
+            pendingApple = credential
+            await authenticate { try await self.service.signInWithApple(credential) }
+            return
+        }
+        await login(identifier: identifier, password: password, totp: totp)
+    }
+    func cancelMfa() {
+        needsMfa = false
+        pendingApple = nil
+        error = nil
+    }
+    private static func trimmedCode(_ value: String?) -> String? {
+        let code = value?.filter { !$0.isWhitespace } ?? ""
+        return code.isEmpty ? nil : code
     }
     func register(_ input: RegistrationInput, avatar: Data? = nil) async -> Bool {
         await authenticate { try await self.service.register(input) }
@@ -117,7 +153,11 @@ enum EntryCover: Equatable { case splash, retry, hidden }
     }
     func appleLogin() async {
         guard service.appleConfigured else { error = L10n.tr("error.configuration"); return }
-        await authenticate { let credentials = try await self.apple.signIn(); return try await self.service.signInWithApple(credentials) }
+        await authenticate {
+            let credentials = try await self.apple.signIn()
+            self.pendingApple = credentials
+            return try await self.service.signInWithApple(credentials)
+        }
     }
     func googleLogin() async {
         guard service.googleConfigured else { error = L10n.tr("error.configuration"); return }
@@ -130,8 +170,20 @@ enum EntryCover: Equatable { case splash, retry, hidden }
     private func authenticate(_ operation: () async throws -> Member) async {
         guard !busy else { return }; busy = true; error = nil; let current = epoch
         defer { busy = false }
-        do { let user = try await operation(); guard current == epoch else { return }; accept(user) }
-        catch { guard current == epoch else { return }; handle(error) }
+        do {
+            let user = try await operation()
+            guard current == epoch else { return }
+            needsMfa = false
+            pendingApple = nil
+            accept(user)
+        } catch AppFailure.mfaRequired {
+            guard current == epoch else { return }
+            needsMfa = true
+        } catch {
+            guard current == epoch else { return }
+            if !needsMfa { pendingApple = nil }
+            handle(error)
+        }
     }
     func enterGuest() {
         guard !busy else { return }; epoch += 1; member = nil; error = nil
@@ -143,8 +195,58 @@ enum EntryCover: Equatable { case splash, retry, hidden }
         phase = member == nil ? .guest : .authenticated
         if phase == .authenticated { AppDelegate.shared?.updateAuthentication(isLoggedIn: true) }
     }
+    func adjustBookingGuests(by delta: Int) {
+        let next = min(max(1, bookingGuests + delta), bookingPersonLimit)
+        guard next != bookingGuests else { return }
+        bookingGuests = next
+        bookingRequestID = UUID()
+    }
+    func reconcileBooking(available: [AvailableSlot]) {
+        bookingCart.removeAll { booked in !available.contains { $0.id == booked.id } }
+        if bookingCart.isEmpty { showBookingCheckout = false }
+        if bookingGuests > bookingPersonLimit {
+            bookingGuests = bookingPersonLimit
+            bookingRequestID = UUID()
+        }
+    }
+    func dropBookedSlots(_ bookings: [Reservation]) {
+        bookingCart.removeAll { booked in bookings.contains { $0.id == booked.id } }
+        if bookingCart.isEmpty { showBookingCheckout = false }
+    }
+    func removeBooking(_ slot: AvailableSlot) {
+        bookingCart.removeAll { $0.id == slot.id }
+        bookingRequestID = UUID()
+        if bookingCart.isEmpty { showBookingCheckout = false }
+    }
+    func toggleBooking(_ slot: AvailableSlot, blocked: Bool) {
+        if bookingCart.contains(where: { $0.id == slot.id }) {
+            removeBooking(slot)
+            return
+        }
+        guard !blocked else { return }
+        bookingCart.append(slot)
+        bookingRequestID = UUID()
+    }
+    func clearBooking() {
+        bookingCart = []
+        bookingGuests = 1
+        showBookingCheckout = false
+        bookingRequestID = UUID()
+    }
+    func openBookingCheckout() {
+        reservationSection = .slots
+        guard tab != .reservations else {
+            showBookingCheckout = true
+            return
+        }
+        tab = .reservations
+        Task { @MainActor in
+            showBookingCheckout = true
+        }
+    }
     func requireLogin() {
-        epoch += 1; phase = .signedOut; tab = .dashboard; error = nil
+        epoch += 1; phase = .signedOut; tab = .dashboard; error = nil; needsMfa = false; pendingApple = nil
+        clearBooking()
         contentReady = false
         entryGeneration += 1
         entry = .hidden
@@ -153,7 +255,8 @@ enum EntryCover: Equatable { case splash, retry, hidden }
     func logout() async {
         guard !busy else { return }; busy = true; epoch += 1
         showDoor = false; showInbox = false; showFloor = false
-        phase = .signedOut; member = nil; membership = nil; reservations = []; visits = []; gym = nil; slots = []; offers = []; gyms = []; selectedGymID = nil; gymSuggestedByLocation = false; inbox = []; locked = false; tab = .dashboard
+        clearBooking()
+        phase = .signedOut; member = nil; membership = nil; reservations = []; visits = []; gym = nil; slots = []; offers = []; gyms = []; selectedGymID = nil; gymSuggestedByLocation = false; inbox = []; locked = false; tab = .dashboard; needsMfa = false; pendingApple = nil
         contentReady = false
         entryGeneration += 1
         entry = .hidden

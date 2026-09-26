@@ -28,9 +28,12 @@ struct Reservation: Codable, Identifiable, Equatable, Sendable {
     var bufferMinutes: Int
     var price: Decimal?
     var currencyCode: String
-    init(id: String, start: Date, end: Date, room: String, canCancel: Bool, bufferMinutes: Int = 15, price: Decimal? = nil, currencyCode: String = "CZK") {
+    var guestCount: Int
+    var gymID: String
+    init(id: String, start: Date, end: Date, room: String, canCancel: Bool, bufferMinutes: Int = 15, price: Decimal? = nil, currencyCode: String = "CZK", guestCount: Int = 1, gymID: String = "") {
         self.id = id; self.start = start; self.end = end; self.room = room; self.canCancel = canCancel
         self.bufferMinutes = bufferMinutes; self.price = price; self.currencyCode = currencyCode
+        self.guestCount = guestCount; self.gymID = gymID
     }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -42,8 +45,15 @@ struct Reservation: Codable, Identifiable, Equatable, Sendable {
         bufferMinutes = try c.decodeIfPresent(Int.self, forKey: .bufferMinutes) ?? 15
         currencyCode = try c.decodeIfPresent(String.self, forKey: .currencyCode) ?? "CZK"
         price = GymMoney.decode(c, key: .price)
+        guestCount = try c.decodeIfPresent(Int.self, forKey: .guestCount) ?? 1
+        gymID = try c.decodeIfPresent(String.self, forKey: .gymID) ?? ""
     }
     var occupiedUntil: Date { GymClock.occupancyEnd(end, bufferMinutes: bufferMinutes) }
+    var partySuffix: String {
+        guard guestCount > 1 else { return "" }
+        let word = guestCount < 5 ? L10n.tr("reservations.personsFew") : L10n.tr("reservations.personsMany")
+        return " · \(guestCount) \(word)"
+    }
 }
 struct AvailableSlot: Codable, Identifiable, Equatable, Sendable {
     let id: String
@@ -52,12 +62,15 @@ struct AvailableSlot: Codable, Identifiable, Equatable, Sendable {
     let room: String
     var bufferMinutes: Int
     var price: Decimal?
+    var priceTwo: Decimal?
     var currencyCode: String
     var gymID: String
-    init(id: String, start: Date, end: Date, room: String, bufferMinutes: Int = 15, price: Decimal? = nil, currencyCode: String = "CZK", gymID: String = "vinohrady") {
+    var mine: Bool
+    var maxPersons: Int
+    init(id: String, start: Date, end: Date, room: String, bufferMinutes: Int = 15, price: Decimal? = nil, currencyCode: String = "CZK", gymID: String = "vinohrady", priceTwo: Decimal? = nil, mine: Bool = false, maxPersons: Int = 2) {
         self.id = id; self.start = start; self.end = end; self.room = room
-        self.bufferMinutes = bufferMinutes; self.price = price; self.currencyCode = currencyCode
-        self.gymID = gymID
+        self.bufferMinutes = bufferMinutes; self.price = price; self.priceTwo = priceTwo; self.currencyCode = currencyCode
+        self.gymID = gymID; self.mine = mine; self.maxPersons = maxPersons
     }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -68,9 +81,16 @@ struct AvailableSlot: Codable, Identifiable, Equatable, Sendable {
         bufferMinutes = try c.decodeIfPresent(Int.self, forKey: .bufferMinutes) ?? 15
         currencyCode = try c.decodeIfPresent(String.self, forKey: .currencyCode) ?? "CZK"
         price = GymMoney.decode(c, key: .price)
+        priceTwo = GymMoney.decode(c, key: .priceTwo)
         gymID = try c.decodeIfPresent(String.self, forKey: .gymID) ?? ""
+        mine = try c.decodeIfPresent(Bool.self, forKey: .mine) ?? false
+        maxPersons = try c.decodeIfPresent(Int.self, forKey: .maxPersons) ?? 2
     }
     var occupiedUntil: Date { GymClock.occupancyEnd(end, bufferMinutes: bufferMinutes) }
+    func price(for guests: Int) -> Decimal? {
+        if guests >= 2, let priceTwo { return priceTwo }
+        return price
+    }
 }
 enum GymMoney {
     static func czk(_ value: Decimal, code: String = "CZK") -> String {
@@ -129,7 +149,7 @@ struct Session: Codable, Equatable, Sendable {
     let refreshToken: String?
     let expiresAt: Date
 }
-struct LoginInput: Sendable { let identifier: String; let password: String }
+struct LoginInput: Sendable { let identifier: String; let password: String; var totp: String? = nil }
 struct RegistrationInput: Sendable {
     let firstName: String
     let lastName: String
@@ -146,6 +166,7 @@ struct AppleCredential: Sendable {
     let rawNonce: String
     let givenName: String?
     let familyName: String?
+    var totp: String? = nil
 }
 struct DoorEligibility: Codable, Sendable {
     let allowed: Bool
@@ -175,11 +196,12 @@ struct PushNotificationPreferences: Codable, Equatable, Sendable {
 
 enum AppFailure: Error, LocalizedError, Equatable, Sendable {
     case notConfigured(String), unauthorized, forbidden, unavailable, invalidResponse
-    case http(Int), offline, biometricsUnavailable, cancelled, sessionChanged, rejected(String), timeout
+    case http(Int), offline, biometricsUnavailable, cancelled, sessionChanged, rejected(String), timeout, mfaRequired
     var errorDescription: String? {
         switch self {
         case .notConfigured(let item): return "Chybí konfigurace: \(item)."
         case .unauthorized: return "Přihlášení vypršelo. Přihlas se znovu."
+        case .mfaRequired: return "Účet vyžaduje ověřovací kód."
         case .forbidden: return "Pro tuto akci nemáš oprávnění."
         case .unavailable: return "Služba teď není dostupná. Zkus to později."
         case .invalidResponse: return "Server poslal neočekávanou odpověď."

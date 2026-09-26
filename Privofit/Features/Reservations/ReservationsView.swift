@@ -3,37 +3,46 @@ import UIKit
 
 struct ReservationsView: View {
     @Environment(AppModel.self) private var app
-    @State private var cart: [AvailableSlot] = []
-    @State private var showCheckout = false
     @State private var cancellation: Reservation?
     @State private var date = Date()
     @State private var loading = false
     @State private var mutating = false
     @State private var error: String?
     @State private var completed = false
-    @State private var checkoutID = UUID()
     @State private var showGyms = false
     @State private var checkout = ApplePayCheckout()
     private var calendar: Calendar { GymClock.calendar }
     private var slots: [AvailableSlot] { app.slots }
+    private var visibleReservations: [Reservation] {
+        guard let gym = selectedGym else { return app.reservations }
+        return app.reservations.filter { item in
+            item.gymID.isEmpty || item.gymID == gym.id
+        }
+    }
     private var daySlots: [AvailableSlot] { ReservationCalendar.slots(on: date, from: slots, calendar: calendar) }
-    private var dayBookings: [Reservation] { ReservationCalendar.reservations(on: date, from: app.reservations, calendar: calendar) }
+    private var bookableDaySlots: [AvailableSlot] { daySlots.filter { !$0.mine } }
+    private var dayBookings: [Reservation] { ReservationCalendar.reservations(on: date, from: visibleReservations, calendar: calendar) }
     private var upcoming: [Reservation] { ReservationCalendar.upcoming(app.reservations) }
     private var laterUpcoming: [Reservation] { Array(upcoming.dropFirst()) }
     private var past: [Reservation] { ReservationCalendar.past(app.reservations) }
-    private var sortedCart: [AvailableSlot] { cart.sorted { $0.start < $1.start } }
+    private var sortedCart: [AvailableSlot] { app.bookingCart.sorted { $0.start < $1.start } }
     private var canGoBackMonth: Bool { !ReservationCalendar.isCurrentMonth(date, calendar: calendar) }
     var body: some View {
+        @Bindable var app = app
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 if app.isGuest { guestContent }
                 else { memberContent }
             }.padding(24).frame(maxWidth: 680).frame(maxWidth: .infinity)
         }
-        .safeAreaInset(edge: .bottom) { if !app.isGuest && !cart.isEmpty && !showCheckout { cartBar } }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if !app.isGuest, !app.bookingCart.isEmpty, !app.showBookingCheckout {
+                BookingCartDock(embedded: true)
+            }
+        }
         .brandBackground().navigationTitle(L10n.tr("tab.reservations")).mainToolbar()
-            .navigationDestination(isPresented: $showCheckout) {
-                BookingSummaryView(slots: sortedCart, busy: mutating, error: error) { slot in
+            .navigationDestination(isPresented: $app.showBookingCheckout) {
+                BookingSummaryView(slots: sortedCart, guests: app.bookingGuests, busy: mutating, error: error) { slot in
                     removeFromCart(slot)
                 } pay: { quote in
                     Task { await payAndReserve(quote: quote, applePay: true) }
@@ -43,7 +52,7 @@ struct ReservationsView: View {
             }
             .task { await load() }.refreshable { await load() }
             .onChange(of: app.slots) { _, available in
-                cart.removeAll { booked in !available.contains(where: { $0.id == booked.id }) }
+                app.reconcileBooking(available: available)
             }
             .sheet(isPresented: $showGyms) { gymSheet }
             .confirmationDialog(L10n.tr("reservations.cancelConfirm"), isPresented: Binding(get: { cancellation != nil }, set: { if !$0 { cancellation = nil } }), titleVisibility: .visible, presenting: cancellation) { item in
@@ -67,7 +76,7 @@ struct ReservationsView: View {
     private var memberContent: some View {
         VStack(alignment: .leading, spacing: 24) {
             panePicker
-            if let error, !showCheckout { FailureView(message: error) { Task { await load() } } }
+            if let error, !app.showBookingCheckout { FailureView(message: error) { Task { await load() } } }
             if completed { StatusBadge(title: L10n.tr("reservations.paid")) }
             if loading && slots.isEmpty && app.reservations.isEmpty { SkeletonCard() }
             if app.reservationSection == .slots { slotsPane } else { minePane }
@@ -172,7 +181,7 @@ struct ReservationsView: View {
     private func pick(_ gym: GymPlace) {
         showGyms = false
         guard gym.id != app.selectedGymID else { return }
-        cart = []
+        app.clearBooking()
         app.chooseGym(gym.id)
         Task { await load() }
     }
@@ -183,9 +192,9 @@ struct ReservationsView: View {
             gymSelector
             MonthCalendar(
                 date: $date,
-                slots: slots,
-                reservations: app.reservations,
-                selection: cart,
+                slots: slots.filter { !$0.mine },
+                reservations: visibleReservations,
+                selection: app.bookingCart,
                 canGoBack: canGoBackMonth,
                 onBack: { date = ReservationCalendar.clampedDay(ReservationCalendar.shiftMonth(date, by: -1, calendar: calendar), calendar: calendar) },
                 onForward: {
@@ -193,26 +202,6 @@ struct ReservationsView: View {
                 }
             )
             dayHeader
-            if !dayBookings.isEmpty {
-                Button {
-                    app.reservationSection = .mine
-                } label: {
-                    BrandCard {
-                        HStack(spacing: 12) {
-                            Image(systemName: "checkmark.circle.fill").foregroundStyle(Color("AccentColor"))
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(dayBookings.count == 1 ? L10n.tr("reservations.bookedOnDayOne") : "\(dayBookings.count) \(L10n.tr("reservations.bookedOnDayMany"))")
-                                    .font(.headline)
-                                Text(L10n.tr("reservations.goToMine")).font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right").foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityHint(L10n.tr("reservations.goToMine"))
-            }
             availability
         }
     }
@@ -264,41 +253,33 @@ struct ReservationsView: View {
             }
         }
     }
-    private var cartBar: some View {
-        VStack(spacing: 10) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(cartCountLabel).font(.headline)
-                    Text(L10n.tr("reservations.checkoutHint")).font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Button(L10n.tr("reservations.clearCart")) { clearCart() }.font(.subheadline)
-            }
-            PrimaryButton(title: L10n.tr("reservations.checkout"), symbol: "wallet.pass", busy: mutating) {
-                error = nil
-                showCheckout = true
-            }
-        }
-        .padding(16)
-        .background(.ultraThinMaterial)
-    }
     private var dayHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(dayTitle).font(.title3.bold())
             Text(slotCountLabel).font(.subheadline).foregroundStyle(.secondary)
         }
     }
+    private var daySchedule: [(DayPart, [Reservation], [AvailableSlot])] {
+        DayPart.allCases.compactMap { part in
+            let mine = dayBookings.filter { part.contains($0.start, calendar: calendar) }
+            let open = bookableDaySlots.filter { part.contains($0.start, calendar: calendar) }
+            return mine.isEmpty && open.isEmpty ? nil : (part, mine, open)
+        }
+    }
     @ViewBuilder private var availability: some View {
-        if daySlots.isEmpty && !loading {
+        if daySchedule.isEmpty && !loading {
             Text(L10n.tr("reservations.noSlots")).foregroundStyle(.secondary)
         } else {
-            ForEach(ReservationCalendar.groupedByDayPart(daySlots, calendar: calendar), id: \.0) { part, items in
+            ForEach(daySchedule, id: \.0) { part, mine, items in
                 VStack(alignment: .leading, spacing: 12) {
                     Text(L10n.tr("reservations.period.\(part.rawValue)")).font(.headline)
+                    ForEach(mine) { item in
+                        MineHourRow(reservation: item) { app.reservationSection = .mine }
+                    }
                     ForEach(items) { slot in
-                        let selected = cart.contains(where: { $0.id == slot.id })
-                        let blocked = ReservationCalendar.conflicts(slot, reservations: app.reservations, cart: cart)
-                        SlotRow(slot: slot, selected: selected, overlapping: blocked && !selected) {
+                        let selected = app.bookingCart.contains(where: { $0.id == slot.id })
+                        let blocked = ReservationCalendar.conflicts(slot, reservations: visibleReservations, cart: app.bookingCart)
+                        SlotRow(slot: slot, guests: app.bookingGuests, selected: selected, overlapping: blocked && !selected) {
                             toggle(slot)
                         }
                         .disabled(mutating || (blocked && !selected))
@@ -314,35 +295,22 @@ struct ReservationsView: View {
         return day.formatted(.dateTime.weekday(.wide).day().month(.wide))
     }
     private var slotCountLabel: String {
-        switch daySlots.count {
+        if bookableDaySlots.isEmpty && !dayBookings.isEmpty {
+            return dayBookings.count == 1 ? L10n.tr("reservations.bookedOnDayOne") : "\(dayBookings.count) \(L10n.tr("reservations.bookedOnDayMany"))"
+        }
+        switch bookableDaySlots.count {
         case 0: return L10n.tr("reservations.noSlots")
         case 1: return L10n.tr("reservations.slotsOne")
-        default: return "\(daySlots.count) \(L10n.tr("reservations.slotsMany"))"
+        default: return "\(bookableDaySlots.count) \(L10n.tr("reservations.slotsMany"))"
         }
-    }
-    private var cartCountLabel: String {
-        cart.count == 1 ? L10n.tr("reservations.cartOne") : "\(cart.count) \(L10n.tr("reservations.cartMany"))"
     }
     private func toggle(_ slot: AvailableSlot) {
-        if let index = cart.firstIndex(where: { $0.id == slot.id }) {
-            cart.remove(at: index)
-            checkoutID = UUID()
-            return
-        }
-        guard !ReservationCalendar.conflicts(slot, reservations: app.reservations, cart: cart) else { return }
-        cart.append(slot)
-        checkoutID = UUID()
-        completed = false
+        let blocked = ReservationCalendar.conflicts(slot, reservations: visibleReservations, cart: app.bookingCart)
+        app.toggleBooking(slot, blocked: blocked)
+        if app.bookingCart.contains(where: { $0.id == slot.id }) { completed = false }
     }
     private func removeFromCart(_ slot: AvailableSlot) {
-        cart.removeAll { $0.id == slot.id }
-        checkoutID = UUID()
-        if cart.isEmpty { showCheckout = false }
-    }
-    private func clearCart() {
-        cart = []
-        checkoutID = UUID()
-        showCheckout = false
+        app.removeBooking(slot)
     }
     private func load() async {
         guard !app.isGuest else { return }
@@ -353,7 +321,7 @@ struct ReservationsView: View {
             let bookings = try await app.service.reservations()
             guard !Task.isCancelled, app.phase == .authenticated else { return }
             app.reservations = bookings
-            cart.removeAll { booked in bookings.contains(where: { $0.id == booked.id }) }
+            app.dropBookedSlots(bookings)
         } catch is CancellationError {
             return
         } catch {
@@ -376,7 +344,7 @@ struct ReservationsView: View {
             let available = try await app.service.availableSlots(gymID: gymID)
             guard !Task.isCancelled, app.phase == .authenticated else { return }
             app.slots = available
-            cart.removeAll { booked in !available.contains(where: { $0.id == booked.id }) }
+            app.reconcileBooking(available: available)
         } catch is CancellationError {
             return
         } catch {
@@ -388,26 +356,25 @@ struct ReservationsView: View {
         if let lastError { self.error = FriendlyError.message(lastError) } else { error = nil }
     }
     private func payAndReserve(quote: BookingQuote?, applePay useApplePay: Bool) async {
-        guard !mutating, app.phase == .authenticated, !cart.isEmpty else { return }
+        guard !mutating, app.phase == .authenticated, !app.bookingCart.isEmpty else { return }
         mutating = true; error = nil
         defer { mutating = false }
-        let requestID = checkoutID
+        let requestID = app.bookingRequestID
+        let guestCount = app.bookingGuests
         let slots = sortedCart.map(\.id)
         do {
             let payment: BookingPayment
             if useApplePay {
                 guard let quote else { throw AppFailure.unavailable }
                 payment = try await checkout.pay(quote: quote) { token in
-                    try await app.service.payAndReserve(slotIDs: slots, requestID: requestID, applePay: token)
+                    try await app.service.payAndReserve(slotIDs: slots, requestID: requestID, applePay: token, guests: guestCount)
                 }
             } else {
-                payment = try await app.service.payAndReserve(slotIDs: slots, requestID: requestID, applePay: ApplePayCheckout.demoToken())
+                payment = try await app.service.payAndReserve(slotIDs: slots, requestID: requestID, applePay: ApplePayCheckout.demoToken(), guests: guestCount)
             }
             if payment.status == .paid {
-                cart = []
-                showCheckout = false
+                app.clearBooking()
                 completed = true
-                checkoutID = UUID()
                 app.reservationSection = .mine
                 await load()
             } else {
@@ -443,8 +410,162 @@ struct ReservationsView: View {
     }
 }
 
+struct BookingCartDock: View {
+    var embedded = false
+    @Environment(AppModel.self) private var app
+    private var estimate: Decimal { app.bookingCart.reduce(0) { $0 + ($1.price(for: app.bookingGuests) ?? 0) } }
+    private var countLabel: String {
+        app.bookingCart.count == 1 ? L10n.tr("reservations.cartOne") : "\(app.bookingCart.count) \(L10n.tr("reservations.cartMany"))"
+    }
+    private var priceLabel: String {
+        estimate > 0 ? GymMoney.czk(estimate) : L10n.tr("reservations.checkoutHint")
+    }
+    private var usesMembership: Bool {
+        guard let membership = app.membership, membership.isActive else { return false }
+        let needed = max(1, app.bookingCart.count)
+        if let left = membership.remainingEntries { return left >= needed }
+        return true
+    }
+    private var entryLabel: String {
+        let count = max(1, app.bookingCart.count)
+        switch count {
+        case 1: return "1 \(L10n.tr("reservations.entryOne"))"
+        case 2...4: return "\(count) \(L10n.tr("reservations.checkoutCountMany"))"
+        default: return "\(count) \(L10n.tr("reservations.entriesMany"))"
+        }
+    }
+    private var detailLabel: String {
+        if usesMembership {
+            if app.bookingGuests > 1 {
+                let word = app.bookingGuests < 5 ? L10n.tr("reservations.personsFew") : L10n.tr("reservations.personsMany")
+                return "\(app.bookingGuests) \(word) · \(entryLabel)"
+            }
+            return entryLabel
+        }
+        if app.bookingGuests > 1 {
+            let word = app.bookingGuests < 5 ? L10n.tr("reservations.personsFew") : L10n.tr("reservations.personsMany")
+            return "\(app.bookingGuests) \(word) · \(priceLabel)"
+        }
+        return priceLabel
+    }
+    private var actionTitle: String {
+        usesMembership ? L10n.tr("reservations.reserve") : L10n.tr("reservations.checkout")
+    }
+    var body: some View {
+        Group {
+            if embedded { sheet } else { chip }
+        }
+        .accessibilityIdentifier("reservations.cartDock")
+    }
+    private var sheet: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 14) {
+                if app.bookingPersonLimit > 1 { personControl }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(countLabel).font(.headline)
+                    Text(detailLabel).font(.subheadline.weight(.semibold))
+                }
+                Spacer(minLength: 8)
+                clearButton
+            }
+            Button { app.openBookingCheckout() } label: {
+                Text(actionTitle)
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .foregroundStyle(Brand.ink)
+                    .background(Brand.lime, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 14)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color("Background"))
+        .overlay(alignment: .top) { Divider() }
+    }
+    private var chipTitle: String {
+        let count = app.bookingCart.count
+        switch count {
+        case 1: return "1 \(L10n.tr("reservations.slotShortOne"))"
+        case 2...4: return "\(count) \(L10n.tr("reservations.slotShortFew"))"
+        default: return "\(count) \(L10n.tr("reservations.slotShortMany"))"
+        }
+    }
+    private var chip: some View {
+        Button { app.openBookingCheckout() } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "calendar")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Brand.ink)
+                    .frame(width: 36, height: 36)
+                    .background(Brand.lime, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(chipTitle)
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+                    Text(detailLabel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 8)
+                Text(L10n.tr("reservations.resume"))
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Brand.ink)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(Brand.lime, in: Capsule())
+            }
+            .padding(.horizontal, 16)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(chipTitle), \(detailLabel)")
+    }
+    private var clearButton: some View {
+        Button { app.clearBooking() } label: {
+            Image(systemName: "xmark")
+                .font(.caption.weight(.bold))
+                .frame(width: 36, height: 36)
+                .background(Color.primary.opacity(0.06), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L10n.tr("reservations.clearCart"))
+    }
+    private var personControl: some View {
+        HStack(spacing: 2) {
+            stepButton(systemName: "minus", label: L10n.tr("reservations.personsLess"), enabled: app.bookingGuests > 1) {
+                app.adjustBookingGuests(by: -1)
+            }
+            Text("\(app.bookingGuests)")
+                .font(.headline.monospacedDigit())
+                .frame(minWidth: 20)
+                .accessibilityLabel("\(app.bookingGuests) \(app.bookingGuests < 5 ? L10n.tr("reservations.personsFew") : L10n.tr("reservations.personsMany"))")
+            stepButton(systemName: "plus", label: L10n.tr("reservations.personsMore"), enabled: app.bookingGuests < app.bookingPersonLimit) {
+                app.adjustBookingGuests(by: 1)
+            }
+        }
+        .padding(.horizontal, 4)
+        .frame(height: 40)
+        .background(Color.primary.opacity(0.06), in: Capsule())
+        .accessibilityElement(children: .contain)
+    }
+    private func stepButton(systemName: String, label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.caption.weight(.bold))
+                .frame(width: 32, height: 32)
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .accessibilityLabel(label)
+    }
+}
+
 struct BookingSummaryView: View {
     let slots: [AvailableSlot]
+    var guests = 1
     var busy = false
     var error: String?
     var onRemove: (AvailableSlot) -> Void
@@ -454,7 +575,8 @@ struct BookingSummaryView: View {
     @State private var quoteError: String?
     @Environment(AppModel.self) private var app
     private var canPay: Bool { !slots.isEmpty && quote != nil && !busy }
-    private var grouped: [(Date, [AvailableSlot])] { ReservationCalendar.groupedSlots(slots) }
+    private var displaySlots: [AvailableSlot] { quote?.slots ?? slots }
+    private var grouped: [(Date, [AvailableSlot])] { ReservationCalendar.groupedSlots(displaySlots) }
     private var rooms: [String] { ReservationCalendar.uniqueRooms(slots) }
     private var minutes: Int { ReservationCalendar.totalMinutes(slots) }
     var body: some View {
@@ -471,15 +593,16 @@ struct BookingSummaryView: View {
         }
         .brandBackground()
         .navigationTitle(L10n.tr("reservations.checkoutTitle"))
+        .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(busy)
         .toolbar(.hidden, for: .tabBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .safeAreaInset(edge: .bottom) { payFooter }
-        .task { await loadQuote() }
-        .onChange(of: slots.map(\.id)) { _, _ in Task { await loadQuote() } }
+        .task(id: quoteKey) { await loadQuote() }
     }
+    private var quoteKey: String { slots.map(\.id).joined(separator: ",") + ":\(guests)" }
     private var summaryHero: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(L10n.tr("reservations.checkoutTitle")).font(.caption.weight(.semibold)).textCase(.uppercase)
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text("\(slots.count)").font(.largeTitle.weight(.heavy)).monospacedDigit()
                 Text(slots.count == 1 ? L10n.tr("reservations.entryOne") : L10n.tr("reservations.checkoutCountMany"))
@@ -543,7 +666,7 @@ struct BookingSummaryView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(L10n.tr("reservations.whenTitle")).font(.title2.bold())
             ForEach(grouped, id: \.0) { day, items in
-                CheckoutDayCard(day: day, slots: items, busy: busy, onRemove: onRemove)
+                CheckoutDayCard(day: day, slots: items, guests: guests, quoted: quote != nil, busy: busy, onRemove: onRemove)
             }
         }
     }
@@ -552,11 +675,15 @@ struct BookingSummaryView: View {
             if let quote {
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(L10n.tr("reservations.payFooter")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                        Text("\(quote.slots.count)× \(quote.formatted(quote.pricePerSlot))").font(.footnote).foregroundStyle(.secondary)
+                        Text(quote.total == 0 ? L10n.tr("reservations.fromMembership") : L10n.tr("reservations.payFooter"))
+                            .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        if quote.total > 0 {
+                            Text("\(quote.slots.count)× \(quote.formatted(quote.pricePerSlot))").font(.footnote).foregroundStyle(.secondary)
+                        }
                     }
                     Spacer()
-                    Text(quote.formatted(quote.total)).font(.title.bold()).monospacedDigit()
+                    Text(quote.total == 0 ? entryPhrase(quote.slots.count) : quote.formatted(quote.total))
+                        .font(.title.bold()).monospacedDigit()
                 }
             }
             if let quote, quote.total == 0 {
@@ -580,6 +707,13 @@ struct BookingSummaryView: View {
         .padding(16)
         .background(.ultraThinMaterial)
     }
+    private func entryPhrase(_ count: Int) -> String {
+        switch count {
+        case 1: return "1 \(L10n.tr("reservations.entryOne"))"
+        case 2...4: return "\(count) \(L10n.tr("reservations.checkoutCountMany"))"
+        default: return "\(count) \(L10n.tr("reservations.entriesMany"))"
+        }
+    }
     private var payTitle: String {
         if let quote { return "\(L10n.tr("reservations.pay")) · \(quote.formatted(quote.total))" }
         return L10n.tr("reservations.pay")
@@ -587,7 +721,7 @@ struct BookingSummaryView: View {
     private func loadQuote() async {
         guard !slots.isEmpty else { quote = nil; return }
         do {
-            quote = try await app.service.quoteReservations(slotIDs: slots.map(\.id))
+            quote = try await app.service.quoteReservations(slotIDs: slots.map(\.id), guests: guests)
             quoteError = nil
         } catch {
             quote = nil
@@ -599,6 +733,8 @@ struct BookingSummaryView: View {
 struct CheckoutDayCard: View {
     let day: Date
     let slots: [AvailableSlot]
+    var guests = 1
+    var quoted = false
     var busy = false
     var onRemove: (AvailableSlot) -> Void
     var body: some View {
@@ -610,7 +746,7 @@ struct CheckoutDayCard: View {
                         HStack(alignment: .top, spacing: 12) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(ReservationCalendar.occupiedRange(slot.start, slot.end, bufferMinutes: slot.bufferMinutes)).font(.headline.monospacedDigit())
-                                Text(ReservationCalendar.bookingDetail(room: slot.room, price: slot.price, currency: slot.currencyCode))
+                                Text(ReservationCalendar.bookingDetail(room: slot.room, price: quoted ? slot.price : slot.price(for: guests), currency: slot.currencyCode))
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer(minLength: 8)
@@ -651,7 +787,7 @@ struct NextSessionHero: View {
                     Text(GymClock.format(reservation.start, Date.FormatStyle().weekday(.wide).day().month(.wide))).font(.subheadline.weight(.medium))
                     Text(ReservationCalendar.occupiedRange(reservation.start, reservation.end, bufferMinutes: reservation.bufferMinutes))
                         .font(.largeTitle.weight(.bold)).tracking(-0.8).monospacedDigit()
-                    Text(ReservationCalendar.bookingDetail(room: reservation.room, price: reservation.price, currency: reservation.currencyCode))
+                    Text(ReservationCalendar.bookingDetail(room: reservation.room, price: reservation.price, currency: reservation.currencyCode) + reservation.partySuffix)
                         .font(.subheadline)
                 }
                 Spacer(minLength: 0)
@@ -686,7 +822,7 @@ struct BookedSessionCard: View {
                             .foregroundStyle(style == .past ? .secondary : Color("AccentColor"))
                         Text(ReservationCalendar.occupiedRange(reservation.start, reservation.end, bufferMinutes: reservation.bufferMinutes))
                             .font(.title3.bold()).monospacedDigit()
-                        Text(ReservationCalendar.bookingDetail(room: reservation.room, price: reservation.price, currency: reservation.currencyCode))
+                        Text(ReservationCalendar.bookingDetail(room: reservation.room, price: reservation.price, currency: reservation.currencyCode) + reservation.partySuffix)
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer(minLength: 0)
@@ -798,7 +934,9 @@ struct MonthCalendar: View {
                     .foregroundStyle(foreground(selected: selected, past: past, inMonth: day.inMonth))
                     .background(selected ? Brand.lime : Color.clear, in: Circle())
                     .overlay {
-                        if today && !selected {
+                        if ReservationCalendar.hasReservation(reservations, on: day.date) {
+                            Circle().strokeBorder(selected ? Brand.ink : Color("AccentColor"), lineWidth: 2)
+                        } else if today && !selected {
                             Circle().strokeBorder(Brand.limeDeep, lineWidth: 1.5)
                         }
                     }
@@ -810,9 +948,16 @@ struct MonthCalendar: View {
         .buttonStyle(.plain)
         .disabled(past)
         .opacity(day.inMonth || selected ? 1 : 0.35)
-        .accessibilityLabel(day.date.formatted(.dateTime.weekday(.wide).day().month(.wide)))
+        .accessibilityLabel(dayLabel(day))
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityHidden(!day.inMonth && past)
+    }
+    private func dayLabel(_ day: CalendarDay) -> String {
+        var text = day.date.formatted(.dateTime.weekday(.wide).day().month(.wide))
+        if ReservationCalendar.hasReservation(reservations, on: day.date) {
+            text += ", \(L10n.tr("reservations.legend.mine"))"
+        }
+        return text
     }
     private func foreground(selected: Bool, past: Bool, inMonth: Bool) -> Color {
         if selected { return Brand.ink }
@@ -833,8 +978,37 @@ struct MonthCalendar: View {
     }
 }
 
+struct MineHourRow: View {
+    let reservation: Reservation
+    var action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            BrandCard {
+                HStack(spacing: 14) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(Color("AccentColor"))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(ReservationCalendar.occupiedRange(reservation.start, reservation.end, bufferMinutes: reservation.bufferMinutes))
+                            .font(.headline)
+                        Text(L10n.tr("reservations.yours") + reservation.partySuffix)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+            }
+            .overlay(RoundedRectangle(cornerRadius: Brand.Radius.card).strokeBorder(Color("AccentColor"), lineWidth: 2))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(L10n.tr("reservations.yours")), \(ReservationCalendar.occupiedRange(reservation.start, reservation.end, bufferMinutes: reservation.bufferMinutes))")
+        .accessibilityHint(L10n.tr("reservations.goToMine"))
+    }
+}
+
 struct SlotRow: View {
     let slot: AvailableSlot
+    var guests = 1
     var selected = false
     var overlapping = false
     var action: () -> Void
@@ -848,7 +1022,7 @@ struct SlotRow: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(ReservationCalendar.occupiedRange(slot.start, slot.end, bufferMinutes: slot.bufferMinutes))
                             .font(.headline)
-                        Text(ReservationCalendar.bookingDetail(room: slot.room, price: slot.price, currency: slot.currencyCode))
+                        Text(ReservationCalendar.bookingDetail(room: slot.room, price: slot.price(for: guests), currency: slot.currencyCode))
                             .font(.caption).foregroundStyle(.secondary)
                         if overlapping {
                             Text(L10n.tr("reservations.overlap")).font(.caption).foregroundStyle(Brand.danger)
@@ -876,7 +1050,7 @@ struct ReservationSummary: View {
                     Text(relativeDay).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                 }
                 Text(ReservationCalendar.occupiedRange(reservation.start, reservation.end, bufferMinutes: reservation.bufferMinutes)).font(.title3.bold()).monospacedDigit()
-                Text(ReservationCalendar.bookingDetail(room: reservation.room, price: reservation.price, currency: reservation.currencyCode))
+                Text(ReservationCalendar.bookingDetail(room: reservation.room, price: reservation.price, currency: reservation.currencyCode) + reservation.partySuffix)
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)

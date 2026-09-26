@@ -5,6 +5,7 @@ struct AuthenticationView: View {
     @Environment(AppModel.self) private var app
     @State private var identifier = ""
     @State private var password = ""
+    @State private var code = ""
     @State private var touched = false
     @State private var registration = false
     @State private var reset = false
@@ -22,6 +23,9 @@ struct AuthenticationView: View {
                             Text(L10n.tr("demo.credentials")).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
                         }
                     }
+                    if app.needsMfa {
+                        mfaFields
+                    } else {
                     ProviderButtons()
                     HStack(spacing: 14) {
                         Rectangle().fill(.secondary.opacity(0.18)).frame(height: 1)
@@ -75,6 +79,7 @@ struct AuthenticationView: View {
                             .accessibilityIdentifier("auth.guest")
                     }
                     .padding(.bottom, 12)
+                    }
                 }
                 .padding(.horizontal, 24)
                 .frame(maxWidth: 440)
@@ -94,6 +99,36 @@ struct AuthenticationView: View {
                 }
                 if app.registrationRequested { registration = true; app.registrationRequested = false }
             }
+        }
+    }
+    private var mfaFields: some View {
+        VStack(spacing: 14) {
+            Text(L10n.tr("auth.mfa.title")).font(.title2.weight(.bold)).multilineTextAlignment(.center)
+            Text(L10n.tr("auth.mfa.body")).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            TextField(L10n.tr("auth.mfa.code"), text: $code)
+                .keyboardType(.asciiCapable)
+                .textContentType(.oneTimeCode)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
+                .multilineTextAlignment(.center)
+                .brandField()
+                .accessibilityIdentifier("login.totp")
+                .onChange(of: code) { _, value in
+                    let cleaned = String(value.filter { !$0.isWhitespace }.prefix(8))
+                    if cleaned != value { code = cleaned }
+                }
+            if let error = app.error { FailureView(message: error) }
+            PrimaryButton(title: L10n.tr("auth.mfa.submit"), symbol: "checkmark", busy: app.busy) {
+                Task { await app.completeMfa(code: code, identifier: identifier, password: password) }
+            }
+            .disabled(!InputValidator.totp(code))
+            .accessibilityIdentifier("login.mfa")
+            Button(L10n.tr("common.back")) {
+                code = ""
+                app.cancelMfa()
+            }
+            .font(.subheadline.weight(.medium))
+            .frame(minHeight: 44)
         }
     }
 }

@@ -17,6 +17,10 @@ auth.google|Pokračovat přes Google|Continue with Google
 auth.or|nebo|or
 auth.hidePassword|Skrýt heslo|Hide password
 auth.showPassword|Zobrazit heslo|Show password
+auth.mfa.title|Ověřovací kód|Verification code
+auth.mfa.body|Účet má zapnuté dvoufaktorové ověření. Zadej kód z autentizační aplikace nebo záložní kód.|This account uses two-factor authentication. Enter the code from your authenticator app or a backup code.
+auth.mfa.code|Kód|Code
+auth.mfa.submit|Ověřit a přihlásit|Verify and sign in
 auth.signout|Odhlásit se|Sign out
 common.continue|Pokračovat|Continue
 common.notNow|Teď ne|Not now
