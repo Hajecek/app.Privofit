@@ -198,10 +198,46 @@ enum ReservationCalendar {
 
 enum GymPresence: Equatable {
     case vacant
-    case occupied(Reservation)
+    /// `nil` = probíhá cizí termín (stejné pro všechny podle nabídky slotů).
+    case occupied(Reservation?)
 
     static func resolve(_ reservations: [Reservation], now: Date = Date()) -> GymPresence {
-        if let current = ReservationCalendar.current(reservations, now: now) { return .occupied(current) }
+        resolve(reservations: reservations, slots: [], now: now)
+    }
+
+    /// Obsazenost studia ze společné nabídky slotů — ne jen z mých rezervací.
+    static func resolve(
+        reservations: [Reservation],
+        slots: [AvailableSlot],
+        now: Date = Date(),
+        calendar: Calendar = GymClock.calendar
+    ) -> GymPresence {
+        if let current = ReservationCalendar.current(reservations, now: now) {
+            return .occupied(current)
+        }
+        // Bookovatelný slot právě teď → prostor je volný pro všechny.
+        if slots.contains(where: { $0.start <= now && now < $0.occupiedUntil }) {
+            return .vacant
+        }
+        let daySlots = slots
+            .filter { calendar.isDate($0.start, inSameDayAs: now) }
+            .sorted { $0.start < $1.start }
+        if let first = daySlots.first, let last = daySlots.last,
+           now >= first.start, now <= last.occupiedUntil {
+            return .occupied(nil)
+        }
+        let ordered = slots.sorted { $0.start < $1.start }
+        if let previous = ordered.last(where: { $0.occupiedUntil <= now }),
+           let next = ordered.first(where: { $0.start > now }) {
+            let gap = next.start.timeIntervalSince(previous.occupiedUntil)
+            if gap > 0, gap <= 3 * 3600 { return .occupied(nil) }
+        }
+        // Celý den bez volných slotů, ale okolní dny mají nabídku → typicky vyprodáno.
+        if daySlots.isEmpty {
+            let hour = calendar.component(.hour, from: now)
+            let nearby = slots.contains { abs($0.start.timeIntervalSince(now)) < 36 * 3600 }
+            if nearby, (7..<22).contains(hour) { return .occupied(nil) }
+        }
         return .vacant
     }
 }

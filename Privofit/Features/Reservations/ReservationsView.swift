@@ -59,6 +59,18 @@ struct ReservationsView: View {
                 Button(L10n.tr("reservations.cancel"), role: .destructive) { Task { await cancel(item) } }
                 Button(L10n.tr("common.notNow"), role: .cancel) { cancellation = nil }
             }
+            .overlay(alignment: .top) {
+                if completed {
+                    ToastBanner(title: L10n.tr("reservations.paid"))
+                        .padding(.top, 8)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .task(id: completed) {
+                            try? await Task.sleep(nanoseconds: 2_600_000_000)
+                            withAnimation(.easeInOut(duration: 0.25)) { completed = false }
+                        }
+                }
+            }
+            .animation(.spring(response: 0.35, dampingFraction: 0.86), value: completed)
     }
     private var guestContent: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -77,7 +89,6 @@ struct ReservationsView: View {
         VStack(alignment: .leading, spacing: 24) {
             panePicker
             if let error, !app.showBookingCheckout { FailureView(message: error) { Task { await load() } } }
-            if completed { StatusBadge(title: L10n.tr("reservations.paid")) }
             if loading && slots.isEmpty && app.reservations.isEmpty { SkeletonCard() }
             if app.reservationSection == .slots { slotsPane } else { minePane }
         }
@@ -375,8 +386,8 @@ struct ReservationsView: View {
             }
             if payment.status == .paid {
                 app.clearBooking()
-                completed = true
                 app.reservationSection = .mine
+                withAnimation { completed = true }
                 await load()
             } else {
                 self.error = L10n.tr("reservations.uncertain")
@@ -795,9 +806,7 @@ struct NextSessionHero: View {
                 Spacer(minLength: 0)
             }
             if reservation.canCancel {
-                Button(L10n.tr("reservations.cancel"), role: .destructive, action: onCancel)
-                    .font(.subheadline.weight(.semibold))
-                    .frame(minHeight: 44)
+                CancelReservationButton(emphasis: true, action: onCancel)
             }
         }
         .padding(24)
@@ -830,9 +839,7 @@ struct BookedSessionCard: View {
                     Spacer(minLength: 0)
                 }
                 if style == .upcoming, reservation.canCancel, let onCancel {
-                    Button(L10n.tr("reservations.cancel"), role: .destructive, action: onCancel)
-                        .font(.subheadline.weight(.semibold))
-                        .frame(minHeight: 44)
+                    CancelReservationButton(action: onCancel)
                 }
             }
         }

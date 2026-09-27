@@ -520,6 +520,24 @@ enum EntryCover: Equatable { case splash, retry, hidden }
             if current == epoch { handle(error, surface: false) }
         }
     }
+
+    /// Stav studia (volné / obsazené) potřebuje společné sloty, ne jen moje rezervace.
+    func refreshFloor() async {
+        guard phase == .authenticated, !locked else { return }
+        async let bookings: Void = refreshReservations()
+        let current = epoch
+        let gymID = selectedGymID
+        if let gymID {
+            do {
+                let available = try await service.availableSlots(gymID: gymID)
+                guard current == epoch, phase == .authenticated else { return }
+                slots = available
+            } catch {
+                if current == epoch { handle(error, surface: false) }
+            }
+        }
+        await bookings
+    }
     func tickLive(force: Bool = false) async {
         guard !isDemo else { return }
         switch phase {

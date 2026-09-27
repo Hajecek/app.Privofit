@@ -135,6 +135,48 @@ struct StatusBadge: View {
     var symbol = "checkmark.seal"
     var body: some View { Label(title, systemImage: symbol).font(.caption.weight(.semibold)).padding(.horizontal, 12).padding(.vertical, 8).background(Brand.lime.opacity(0.16), in: Capsule()) }
 }
+
+struct ToastBanner: View {
+    let title: String
+    var symbol = "checkmark.circle.fill"
+
+    var body: some View {
+        Label(title, systemImage: symbol)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Brand.ink)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Brand.lime, in: Capsule())
+            .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+            .accessibilityAddTraits(.isStaticText)
+    }
+}
+
+struct CancelReservationButton: View {
+    var emphasis = false
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(L10n.tr("reservations.cancel"))
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .foregroundStyle(emphasis ? Brand.ink : Brand.alert)
+                .background(
+                    emphasis ? Color.white.opacity(0.72) : Brand.alert.opacity(0.12),
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                )
+                .overlay {
+                    if !emphasis {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(Brand.alert.opacity(0.28), lineWidth: 1)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("reservations.cancel")
+    }
+}
 struct FailureView: View {
     let message: String
     var retry: (() -> Void)? = nil
@@ -240,14 +282,18 @@ struct LiveFloorButton: View {
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 30)) { context in
-            let presence = GymPresence.resolve(app.reservations, now: context.date)
+            let presence = GymPresence.resolve(
+                reservations: app.reservations,
+                slots: app.slots,
+                now: context.date
+            )
             Button {
                 if app.isGuest {
                     app.showGuestGate = true
                     return
                 }
                 app.showFloor = true
-                Task { await app.refreshReservations() }
+                Task { await app.refreshFloor() }
             } label: {
                 Circle()
                     .fill(mark(presence))
@@ -262,7 +308,9 @@ struct LiveFloorButton: View {
     }
 
     private func mark(_ presence: GymPresence) -> Color {
-        if app.isGuest || (app.loading && app.reservations.isEmpty) { return Color.primary.opacity(0.28) }
+        if app.isGuest || (app.loading && app.slots.isEmpty && app.reservations.isEmpty) {
+            return Color.primary.opacity(0.28)
+        }
         if case .occupied = presence { return Brand.alert }
         return Brand.limeDeep
     }
@@ -280,7 +328,7 @@ struct LiveFloorDetail: View {
 
     var body: some View {
         Group {
-            switch GymPresence.resolve(app.reservations) {
+            switch GymPresence.resolve(reservations: app.reservations, slots: app.slots) {
             case .vacant: vacant
             case .occupied(let reservation): occupied(reservation)
             }
@@ -294,6 +342,7 @@ struct LiveFloorDetail: View {
                 Button(L10n.tr("common.close")) { dismiss() }
             }
         }
+        .task { await app.refreshFloor() }
     }
 
     private var vacant: some View {
@@ -336,18 +385,24 @@ struct LiveFloorDetail: View {
         .frame(maxHeight: .infinity, alignment: .center)
     }
 
-    private func occupied(_ reservation: Reservation) -> some View {
+    private func occupied(_ reservation: Reservation?) -> some View {
         VStack(alignment: .leading, spacing: 22) {
             HStack(spacing: 14) {
                 Circle().fill(Brand.alert).frame(width: 18, height: 18)
                 Text(L10n.tr("home.live.occupied"))
                     .font(.title2.weight(.bold))
             }
-            VStack(alignment: .leading, spacing: 8) {
-                Label(ReservationCalendar.occupiedRange(reservation.start, reservation.end, bufferMinutes: reservation.bufferMinutes), systemImage: "clock")
-                    .font(.headline.monospacedDigit())
-                Label(reservation.room, systemImage: "location")
-                    .font(.subheadline)
+            if let reservation {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(ReservationCalendar.occupiedRange(reservation.start, reservation.end, bufferMinutes: reservation.bufferMinutes), systemImage: "clock")
+                        .font(.headline.monospacedDigit())
+                    Label(reservation.room, systemImage: "location")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Text(L10n.tr("home.live.occupiedHint"))
+                    .font(.body)
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)

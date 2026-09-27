@@ -2147,6 +2147,23 @@
         }
       }
     },
+    "home.live.occupiedHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Právě teď je v prostoru obsazený termín."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A session is using the space right now."
+          }
+        }
+      }
+    },
     "home.live.window" : {
       "extractionState" : "manual",
       "localizations" : {

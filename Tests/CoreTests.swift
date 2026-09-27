@@ -258,7 +258,7 @@ struct ValidationTests {
         let booking = Reservation(id: "mine", start: start, end: start.addingTimeInterval(3600), room: "PRIVOFIT / 01", canCancel: true)
         let during = start.addingTimeInterval(20 * 60)
         if case .occupied(let active) = GymPresence.resolve([booking], now: during) {
-            #expect(active.id == "mine")
+            #expect(active?.id == "mine")
         } else {
             Issue.record("Expected an active reservation")
         }
@@ -266,7 +266,7 @@ struct ValidationTests {
         #expect(before == .vacant)
         let duringBuffer = GymPresence.resolve([booking], now: booking.end.addingTimeInterval(60))
         if case .occupied(let stillThere) = duringBuffer {
-            #expect(stillThere.id == "mine")
+            #expect(stillThere?.id == "mine")
         } else {
             Issue.record("Expected the gym to stay occupied through the buffer")
         }
@@ -280,6 +280,21 @@ struct ValidationTests {
         #expect(GymLocator.nearest(MockGymService.places + [unknown], to: 50.071, longitude: 14.406)?.id == "smichov")
         #expect(GymLocator.nearest([unknown], to: 50.07, longitude: 14.4) == nil)
         #expect(nearKarlin?.id == "karlin")
+    }
+
+    @Test func presenceUsesSharedSlotsForEveryone() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+        let start = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 12))!
+        let during = start.addingTimeInterval(20 * 60)
+        let morning = AvailableSlot(id: "am", start: start.addingTimeInterval(-2 * 3600), end: start.addingTimeInterval(-3600), room: "PRIVOFIT / 01")
+        let afternoon = AvailableSlot(id: "pm", start: start.addingTimeInterval(2 * 3600), end: start.addingTimeInterval(3 * 3600), room: "PRIVOFIT / 01")
+        // Díra ve společné nabídce = obsazeno i bez mé rezervace.
+        let busy = GymPresence.resolve(reservations: [], slots: [morning, afternoon], now: during, calendar: calendar)
+        #expect(busy == .occupied(nil))
+        let openSlot = AvailableSlot(id: "now", start: start, end: start.addingTimeInterval(3600), room: "PRIVOFIT / 01")
+        let free = GymPresence.resolve(reservations: [], slots: [morning, openSlot, afternoon], now: during, calendar: calendar)
+        #expect(free == .vacant)
     }
     @Test func streakCountsWeeksWithAtLeastOneSession() {
         var calendar = Calendar(identifier: .gregorian)
