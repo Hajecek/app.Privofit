@@ -466,7 +466,43 @@ struct SessionActivityTests {
         #expect(commands == [.discard("gone")])
     }
 
-    @Test func onlyTheNextSessionsInsideTheHorizonAreKept() {
+    @Test func onlyOneLiveFocusIsPresentedForMultipleReservations() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let current = reservation("now", start: now.addingTimeInterval(-30 * 60))
+        let soon = reservation("soon", start: now.addingTimeInterval(2 * 60 * 60))
+        let later = reservation("later", start: now.addingTimeInterval(10 * 24 * 60 * 60))
+        let commands = SessionActivityPlanner.commands(reservations: [later, soon, current], existing: [], now: now)
+        let liveIDs = commands.compactMap { command -> String? in
+            if case .present(_, let id, let startsAt) = command, startsAt == nil { return id }
+            return nil
+        }
+        #expect(liveIDs == ["now"])
+        #expect(SessionActivityPlanner.focus(in: [later, soon, current], now: now)?.id == "now")
+    }
+
+    @Test func successorIsScheduledForHandoffAfterFocusEnds() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let current = reservation("a", start: now.addingTimeInterval(-30 * 60), minutes: 60)
+        let next = reservation("b", start: now.addingTimeInterval(50 * 60), minutes: 60)
+        let commands = SessionActivityPlanner.commands(reservations: [current, next], existing: [], now: now)
+        let handoff = SessionActivityAttributes.ContentState(current).occupiedUntil
+        #expect(commands.contains(.present(.init(current), reservationID: "a", startsAt: nil)))
+        #expect(commands.contains(.present(.init(next), reservationID: "b", startsAt: handoff)))
+    }
+
+    @Test func afterFocusEndsPlannerSwitchesToNext() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let finished = reservation("a", start: now.addingTimeInterval(-3 * 60 * 60), minutes: 60)
+        let next = reservation("b", start: now.addingTimeInterval(20 * 60), minutes: 60)
+        let existing = [
+            SessionActivityPlanner.Existing(id: "a", phase: .live, content: .init(finished))
+        ]
+        let commands = SessionActivityPlanner.commands(reservations: [finished, next], existing: existing, now: now)
+        #expect(commands.contains(.discard("a")))
+        #expect(commands.contains(.present(.init(next), reservationID: "b", startsAt: nil)))
+    }
+
+    @Test func distantSessionsAreNotAllKeptAsLive() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let soon = reservation("soon", start: now.addingTimeInterval(3 * 60 * 60))
         let later = reservation("later", start: now.addingTimeInterval(10 * 24 * 60 * 60))
