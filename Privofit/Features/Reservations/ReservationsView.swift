@@ -322,6 +322,7 @@ struct ReservationsView: View {
             guard !Task.isCancelled, app.phase == .authenticated else { return }
             app.reservations = bookings
             app.dropBookedSlots(bookings)
+            app.publishWidgets()
         } catch is CancellationError {
             return
         } catch {
@@ -398,6 +399,7 @@ struct ReservationsView: View {
         do {
             try await app.service.cancelReservation(id: item.id, requestID: UUID())
             app.reservations.removeAll { $0.id == item.id }
+            app.publishWidgets()
             completed = false
             error = nil
             await load()

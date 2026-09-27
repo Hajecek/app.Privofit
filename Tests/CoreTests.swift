@@ -389,6 +389,112 @@ struct ValidationTests {
         #expect(text.contains("demo-member"))
     }
 }
+
+struct SessionActivityTests {
+    private func reservation(_ id: String, start: Date, minutes: Int = 60, buffer: Int = 15, room: String = "PRIVOFIT / 01") -> Reservation {
+        Reservation(id: id, start: start, end: start.addingTimeInterval(TimeInterval(minutes * 60)), room: room, canCancel: true, bufferMinutes: buffer)
+    }
+
+    @Test func upcomingSessionIsScheduledBeforeTheLeadWindow() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let now = start.addingTimeInterval(-2 * 60 * 60)
+        let commands = SessionActivityPlanner.commands(reservations: [reservation("a", start: start)], existing: [], now: now)
+        #expect(commands == [
+            .present(SessionActivityAttributes.ContentState(reservation("a", start: start)), reservationID: "a", startsAt: start.addingTimeInterval(-SessionActivityTiming.lead))
+        ])
+    }
+
+    @Test func sessionInsideTheLeadWindowStartsNowAndStaysActive() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let item = reservation("a", start: start)
+        let now = start.addingTimeInterval(-10 * 60)
+        let content = SessionActivityAttributes.ContentState(item)
+        let commands = SessionActivityPlanner.commands(reservations: [item], existing: [], now: now)
+        #expect(commands == [
+            .present(content, reservationID: "a", startsAt: nil)
+        ])
+    }
+
+    @Test func runningSessionIsNotEndedSoTheIslandKeepsIt() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let item = reservation("a", start: start)
+        let now = start.addingTimeInterval(10 * 60)
+        let existing = SessionActivityPlanner.Existing(id: "a", phase: .live, content: .init(item))
+        let commands = SessionActivityPlanner.commands(reservations: [item], existing: [existing], now: now)
+        #expect(commands.isEmpty)
+    }
+
+    @Test func endedSessionIsRecreatedWhileItStillRuns() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let item = reservation("a", start: start)
+        let now = start.addingTimeInterval(10 * 60)
+        let existing = SessionActivityPlanner.Existing(id: "a", phase: .finished, content: .init(item))
+        let commands = SessionActivityPlanner.commands(reservations: [item], existing: [existing], now: now)
+        #expect(commands == [
+            .discard("a"),
+            .present(.init(item), reservationID: "a", startsAt: nil)
+        ])
+    }
+
+    @Test func changedPendingSessionIsRecreated() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let now = start.addingTimeInterval(-3 * 60 * 60)
+        let original = reservation("a", start: start, room: "PRIVOFIT / 01")
+        let moved = reservation("a", start: start.addingTimeInterval(3600), room: "PRIVOFIT / 02")
+        let existing = SessionActivityPlanner.Existing(
+            id: "a",
+            phase: .pending,
+            content: .init(original)
+        )
+        let commands = SessionActivityPlanner.commands(reservations: [moved], existing: [existing], now: now)
+        #expect(commands.first == .discard("a"))
+        #expect(commands.contains { command in
+            if case .present(let content, reservationID: "a", startsAt: _) = command { return content.room == "PRIVOFIT / 02" }
+            return false
+        })
+    }
+
+    @Test func cancelledAndFinishedSessionsAreRemoved() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let now = start.addingTimeInterval(2 * 60 * 60)
+        let existing = SessionActivityPlanner.Existing(
+            id: "gone",
+            phase: .live,
+            content: .init(reservation("gone", start: start))
+        )
+        let commands = SessionActivityPlanner.commands(reservations: [], existing: [existing], now: now)
+        #expect(commands == [.discard("gone")])
+    }
+
+    @Test func onlyTheNextSessionsInsideTheHorizonAreKept() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let soon = reservation("soon", start: now.addingTimeInterval(3 * 60 * 60))
+        let later = reservation("later", start: now.addingTimeInterval(10 * 24 * 60 * 60))
+        let commands = SessionActivityPlanner.commands(reservations: [later, soon], existing: [], now: now)
+        let ids = commands.compactMap { command -> String? in
+            if case .present(_, let id, _) = command { return id }
+            return nil
+        }
+        #expect(ids == ["soon"])
+    }
+
+    @Test func countdownSwitchesAtTheStart() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let state = SessionActivityAttributes.ContentState(reservation("a", start: start))
+        let before = state.countdownInterval(at: start.addingTimeInterval(-60))
+        let during = state.countdownInterval(at: start.addingTimeInterval(60))
+        #expect(before?.upperBound == start)
+        #expect(during?.upperBound == state.occupiedUntil)
+        #expect(state.staleDate(at: start.addingTimeInterval(-60)) == start)
+        #expect(state.staleDate(at: start.addingTimeInterval(60)) == state.occupiedUntil)
+    }
+
+    @Test func reservationLinkRoundTrips() {
+        let url = SessionActivityLink.url(for: "slot 1")
+        #expect(SessionActivityLink.reservationID(from: url!) == "slot 1")
+        #expect(SessionActivityLink.reservationID(from: URL(string: "privofit://auth?ticket=1")!) == nil)
+    }
+}
 @MainActor final class ScriptedBiometrics: BiometricAuthenticating {
     var available = true
     var name: String { "Face ID" }
@@ -416,5 +522,80 @@ struct ValidationTests {
         pending = false
         continuation?.resume(throwing: AppFailure.cancelled)
         continuation = nil
+    }
+}
+
+struct WidgetTests {
+    @Test func linksIgnoreOtherPrivofitURLs() {
+        #expect(WidgetLink.place(from: URL(string: "privofit://widget/session")!) == .session)
+        #expect(WidgetLink.place(from: URL(string: "privofit://widget/reservations")!) == .reservations)
+        #expect(WidgetLink.place(from: URL(string: "privofit://widget/membership")!) == .membership)
+        #expect(WidgetLink.place(from: URL(string: "privofit://?ticket=abc")!) == nil)
+        #expect(WidgetLink.place(from: URL(string: "https://privofit.cz/widget/session")!) == nil)
+    }
+
+    @Test func snapshotRoundTripAndFocus() throws {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let session = WidgetSession(id: "a", start: start, end: start.addingTimeInterval(3600), room: "PRIVOFIT / 01", bufferMinutes: 15)
+        let snapshot = WidgetSnapshot(
+            updatedAt: start,
+            signedIn: true,
+            membershipTitle: "PRIVOFIT",
+            membershipActive: true,
+            membershipStatus: "active",
+            validUntil: start.addingTimeInterval(86_400),
+            remainingEntries: 3,
+            streakLength: 2,
+            streakAtRisk: false,
+            todayTrained: false,
+            week: [WidgetDay(date: start, trained: true, planned: false)],
+            sessions: [session]
+        )
+        let decoded = try WidgetStore.decode(try WidgetStore.encode(snapshot))
+        #expect(decoded == snapshot)
+        #expect(decoded.focus(at: start.addingTimeInterval(60))?.id == "a")
+        #expect(decoded.current(at: start.addingTimeInterval(3600 + 15 * 60))?.id == "a")
+        #expect(decoded.focus(at: start.addingTimeInterval(3600 + 15 * 60 + 1)) == nil)
+    }
+
+    @Test func timelineHitsSessionBoundaries() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let start = now.addingTimeInterval(3600)
+        let session = WidgetSession(id: "a", start: start, end: start.addingTimeInterval(3600), room: "01", bufferMinutes: 15)
+        let snapshot = WidgetSnapshot.signedOut
+        var live = snapshot
+        live.signedIn = true
+        live.sessions = [session]
+        let dates = WidgetTimeline.dates(for: live, now: now, calendar: WidgetClock.calendar)
+        #expect(dates.first == now)
+        #expect(dates.contains(start))
+        #expect(dates.contains(session.occupiedUntil))
+        #expect(dates.count <= 8)
+        #expect(dates == dates.sorted())
+        let refresh = WidgetTimeline.refresh(after: dates, now: now)
+        #expect(refresh > now)
+        #expect(refresh <= now.addingTimeInterval(6 * 3600))
+    }
+
+    @Test func publisherKeepsUpcomingSessionAndStreak() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+        calendar.locale = Locale(identifier: "cs_CZ")
+        calendar.firstWeekday = 2
+        let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 15))!
+        let tonight = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 18))!
+        let monday = calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 18))!
+        let membership = Membership(title: "Měsíc", validUntil: now.addingTimeInterval(86_400 * 10), remainingEntries: 4, isActive: true)
+        let snapshot = WidgetPublisher.make(
+            membership: membership,
+            reservations: [Reservation(id: "later", start: tonight, end: tonight.addingTimeInterval(3600), room: "PRIVOFIT / 01", canCancel: true)],
+            visits: [Visit(id: "m", date: monday, room: "PRIVOFIT / 01")],
+            now: now
+        )
+        #expect(snapshot.signedIn)
+        #expect(snapshot.sessions.map(\.id) == ["later"])
+        #expect(snapshot.remainingEntries == 4)
+        #expect(snapshot.streakLength == 1)
+        #expect(snapshot.focus(at: now)?.id == "later")
     }
 }

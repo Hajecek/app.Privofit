@@ -21,6 +21,16 @@
         }
       }
     },
+    "%@ %@ %@" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ %3$@"
+          }
+        }
+      }
+    },
     "%@, %@" : {
       "localizations" : {
         "cs" : {
@@ -56,6 +66,9 @@
           }
         }
       }
+    },
+    "0:00" : {
+
     },
     "account.delete" : {
       "extractionState" : "manual",
@@ -2491,6 +2504,74 @@
         }
       }
     },
+    "liveactivity.alert.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Máš brzy termín"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your session is coming up"
+          }
+        }
+      }
+    },
+    "liveactivity.ends" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konec"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ends"
+          }
+        }
+      }
+    },
+    "liveactivity.finished" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termín skončil"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session ended"
+          }
+        }
+      }
+    },
+    "liveactivity.starts" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Začátek"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starts"
+          }
+        }
+      }
+    },
     "lock.title" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3410,6 +3491,9 @@
       }
     },
     "Privofit" : {
+
+    },
+    "PRIVOFIT" : {
 
     },
     "profile.email" : {
@@ -4704,6 +4788,23 @@
         }
       }
     },
+    "reservations.entriesMany" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vstupů"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "entries"
+          }
+        }
+      }
+    },
     "reservations.entryOne" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4751,6 +4852,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tomorrow · 5–6 pm"
+          }
+        }
+      }
+    },
+    "reservations.fromMembership" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Z členství"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From membership"
           }
         }
       }
@@ -5299,108 +5417,6 @@
         }
       }
     },
-    "reservations.entriesMany" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "vstupů"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "entries"
-          }
-        }
-      }
-    },
-    "reservations.fromMembership" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Z členství"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "From membership"
-          }
-        }
-      }
-    },
-    "reservations.slotShortFew" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "termíny"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "slots"
-          }
-        }
-      }
-    },
-    "reservations.slotShortMany" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "termínů"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "slots"
-          }
-        }
-      }
-    },
-    "reservations.slotShortOne" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "termín"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "slot"
-          }
-        }
-      }
-    },
-    "reservations.resume" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pokračovat"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continue"
-          }
-        }
-      }
-    },
     "reservations.persons" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5588,6 +5604,23 @@
         }
       }
     },
+    "reservations.resume" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokračovat"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        }
+      }
+    },
     "reservations.roomOne" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5652,6 +5685,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mark every slot you want, then pay for them together."
+          }
+        }
+      }
+    },
+    "reservations.slotShortFew" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "termíny"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "slots"
+          }
+        }
+      }
+    },
+    "reservations.slotShortMany" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "termínů"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "slots"
+          }
+        }
+      }
+    },
+    "reservations.slotShortOne" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "termín"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "slot"
           }
         }
       }
@@ -6383,6 +6467,210 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This device cannot add a card to Wallet."
+          }
+        }
+      }
+    },
+    "widget.control.book.description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otevře výběr termínu v Privofit."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the booking screen in Privofit."
+          }
+        }
+      }
+    },
+    "widget.control.book.name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezervovat"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Book"
+          }
+        }
+      }
+    },
+    "widget.control.open" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otevřít Privofit"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Privofit"
+          }
+        }
+      }
+    },
+    "widget.control.place" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kam otevřít"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where to open"
+          }
+        }
+      }
+    },
+    "widget.emptyInline" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Žádný termín"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No booking"
+          }
+        }
+      }
+    },
+    "widget.membership.description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stav členství a zbývající vstupy."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Membership status and remaining entries."
+          }
+        }
+      }
+    },
+    "widget.membership.name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Členství"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Membership"
+          }
+        }
+      }
+    },
+    "widget.session.description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Další rezervace na ploše, na zamčené obrazovce i ve StandBy."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your next booking on the Home Screen, Lock Screen, and StandBy."
+          }
+        }
+      }
+    },
+    "widget.session.name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nejbližší trénink"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next session"
+          }
+        }
+      }
+    },
+    "widget.signedOut" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otevři Privofit a přihlas se."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Privofit and sign in."
+          }
+        }
+      }
+    },
+    "widget.streak.description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kolik týdnů v řadě trénuješ."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How many weeks in a row you have trained."
+          }
+        }
+      }
+    },
+    "widget.streak.name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Série"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Streak"
           }
         }
       }

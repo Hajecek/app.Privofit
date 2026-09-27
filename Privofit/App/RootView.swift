@@ -45,6 +45,7 @@ struct RootView: View {
                 await app.tickLive(force: ticks % 15 == 0)
             }
         }
+        .onOpenURL { app.open($0) }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background { app.backgrounded() }
             if phase == .active { Task { await app.returned() } }
@@ -69,6 +70,10 @@ struct RootView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .privofitShowInbox)) { _ in
             if app.phase == .authenticated { app.showInbox = true }
+        }
+        .onOpenURL { app.noteWidgetURL($0) }
+        .onReceive(NotificationCenter.default.publisher(for: .privofitWidgetOpen)) { _ in
+            app.noteWidgetHandoff()
         }
         .sheet(isPresented: $app.showGuestGate) { GuestGate().presentationDetents([.medium, .large]) }
     }

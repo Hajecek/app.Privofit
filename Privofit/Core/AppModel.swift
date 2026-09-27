@@ -11,7 +11,9 @@ enum EntryCover: Equatable { case splash, retry, hidden }
     private(set) var phase: AppPhase = .launching
     private(set) var member: Member?
     var membership: Membership?
-    var reservations: [Reservation] = []
+    var reservations: [Reservation] = [] {
+        didSet { SessionActivityCenter.sync(phase == .authenticated ? reservations : []) }
+    }
     var visits: [Visit] = []
     var gym: GymInfo?
     var slots: [AvailableSlot] = []
@@ -32,6 +34,7 @@ enum EntryCover: Equatable { case splash, retry, hidden }
     var showDoor = false
     var showInbox = false
     var showFloor = false
+    var pendingWidget: WidgetPlace?
     var registrationRequested = false
     var cooldownUntil: Date = .distantPast
     var doorRequestInFlight = false
@@ -86,7 +89,41 @@ enum EntryCover: Equatable { case splash, retry, hidden }
             AppDelegate.shared?.updateAuthentication(isLoggedIn: true)
         }
         await notifications.registerIfAllowed()
+        noteWidgetHandoff()
         await settleEntry()
+    }
+    func publishWidgets() {
+        WidgetPublisher.publish(phase: phase, membership: membership, reservations: reservations, visits: visits)
+    }
+    func noteWidgetURL(_ url: URL) {
+        guard let place = WidgetLink.place(from: url) else { return }
+        pendingWidget = place
+        applyPendingWidget()
+    }
+    func noteWidgetHandoff() {
+        guard let place = WidgetHandoff.consume() else { return }
+        pendingWidget = place
+        applyPendingWidget()
+    }
+    func applyPendingWidget() {
+        guard entry == .hidden, let place = pendingWidget else { return }
+        switch phase {
+        case .authenticated, .guest: break
+        default: return
+        }
+        pendingWidget = nil
+        switch place {
+        case .session:
+            reservationSection = .mine
+            tab = .reservations
+        case .reservations:
+            reservationSection = .slots
+            tab = .reservations
+        case .streak, .dashboard:
+            tab = .dashboard
+        case .membership:
+            tab = .membership
+        }
     }
     private func accept(_ user: Member) {
         member = user
@@ -95,16 +132,19 @@ enum EntryCover: Equatable { case splash, retry, hidden }
             showInbox = false
             showFloor = false
             phase = .restricted(user.status)
+            publishWidgets()
             return
         }
         if isDemo {
             preferences.completeOnboarding(for: user.id)
             phase = .authenticated
             AppDelegate.shared?.updateAuthentication(isLoggedIn: true)
+            applyPendingWidget()
             return
         }
         phase = preferences.completedOnboarding(for: user.id) ? .authenticated : .onboarding
         if phase == .authenticated { AppDelegate.shared?.updateAuthentication(isLoggedIn: true) }
+        applyPendingWidget()
     }
     func login(identifier: String, password: String, totp: String? = nil) async {
         let code = Self.trimmedCode(totp)
@@ -188,12 +228,15 @@ enum EntryCover: Equatable { case splash, retry, hidden }
     func enterGuest() {
         guard !busy else { return }; epoch += 1; member = nil; error = nil
         phase = preferences.completedOnboarding(for: "guest") ? .guest : .onboarding
+        publishWidgets()
+        applyPendingWidget()
     }
     func finishOnboarding() {
         guard phase == .onboarding, member == nil || member?.status == .active else { return }
         preferences.completeOnboarding(for: member?.id ?? "guest")
         phase = member == nil ? .guest : .authenticated
         if phase == .authenticated { AppDelegate.shared?.updateAuthentication(isLoggedIn: true) }
+        applyPendingWidget()
     }
     func adjustBookingGuests(by delta: Int) {
         let next = min(max(1, bookingGuests + delta), bookingPersonLimit)
@@ -244,6 +287,22 @@ enum EntryCover: Equatable { case splash, retry, hidden }
             showBookingCheckout = true
         }
     }
+    func open(_ url: URL) {
+        guard SessionActivityLink.reservationID(from: url) != nil else { return }
+        switch phase {
+        case .authenticated, .sessionExpired, .onboarding:
+            break
+        case .launching, .signedOut, .guest, .restricted:
+            return
+        }
+        tab = .reservations
+        reservationSection = .mine
+        showDoor = false
+        showInbox = false
+        showFloor = false
+        showGuestGate = false
+        showBookingCheckout = false
+    }
     func requireLogin() {
         epoch += 1; phase = .signedOut; tab = .dashboard; error = nil; needsMfa = false; pendingApple = nil
         clearBooking()
@@ -251,6 +310,7 @@ enum EntryCover: Equatable { case splash, retry, hidden }
         entryGeneration += 1
         entry = .hidden
         locked = false
+        publishWidgets()
     }
     func logout() async {
         guard !busy else { return }; busy = true; epoch += 1
@@ -261,6 +321,8 @@ enum EntryCover: Equatable { case splash, retry, hidden }
         entryGeneration += 1
         entry = .hidden
         liveRevision = ""
+        pendingWidget = nil
+        publishWidgets()
         AppDelegate.shared?.updateAuthentication(isLoggedIn: false)
         await service.logout(); busy = false
     }
@@ -292,6 +354,7 @@ enum EntryCover: Equatable { case splash, retry, hidden }
             accept(user)
             guard phase == .authenticated else {
                 membership = nil
+                publishWidgets()
                 return
             }
             if let plan = await fetchKeepingSession({ try await service.membership() }) { membership = plan }
@@ -303,6 +366,7 @@ enum EntryCover: Equatable { case splash, retry, hidden }
             if let messages = await fetchKeepingSession({ try await service.inbox() }) { inbox = messages }
             guard current == epoch, phase == .authenticated else { return }
             error = nil
+            publishWidgets()
         } catch is CancellationError {
             return
         } catch {
@@ -336,6 +400,7 @@ enum EntryCover: Equatable { case splash, retry, hidden }
     }
     func returned() async {
         guard didBoot else { return }
+        noteWidgetHandoff()
         if entry == .hidden {
             await tickLive(force: true)
         } else {
@@ -397,6 +462,7 @@ enum EntryCover: Equatable { case splash, retry, hidden }
         guard generation == entryGeneration else { return }
         entry = .hidden
         locked = false
+        applyPendingWidget()
     }
     private func prepareContent() async {
         guard resumesBehindLaunch else { return }
@@ -449,6 +515,7 @@ enum EntryCover: Equatable { case splash, retry, hidden }
             let bookings = try await service.reservations()
             guard current == epoch, phase == .authenticated else { return }
             reservations = bookings
+            publishWidgets()
         } catch {
             if current == epoch { handle(error, surface: false) }
         }

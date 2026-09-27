@@ -48,9 +48,22 @@
 		D1C1CF310BC5BE7508A92A63 /* ReservationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0887D096BBDAFDAC4AAFE296 /* ReservationsView.swift */; };
 		D591A7941D15E5EDBBFA43A8 /* AccessArtwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A2BF28CB181B719896E1035 /* AccessArtwork.swift */; };
 		DA4F0AEF8E3849F40DBA11E1 /* GymService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12E49F17590D93ACEECE037 /* GymService.swift */; };
+		E1A10001000000000000000A /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A100010000000000000001 /* WidgetSnapshot.swift */; };
+		E1A10001000000000000000B /* WidgetPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A100010000000000000002 /* WidgetPublisher.swift */; };
+		E1A10001000000000000000C /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A100010000000000000001 /* WidgetSnapshot.swift */; };
+		E1A10001000000000000000D /* WidgetGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A100010000000000000003 /* WidgetGallery.swift */; };
+		E1A10001000000000000000E /* WidgetSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A100010000000000000004 /* WidgetSupport.swift */; };
+		E1A10001000000000000000F /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 6A7D286B78193D10208F2D6D /* Localizable.xcstrings */; };
+		E1A100010000000000000010 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E1A100010000000000000007 /* PrivacyInfo.xcprivacy */; };
+		E1A100010000000000000011 /* PrivofitWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E1A100010000000000000008 /* PrivofitWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E2319BFD1EE5CCE2DF5B0199 /* KeychainVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4F904F31848ADF8DDB94DD6 /* KeychainVault.swift */; };
 		E4B364543D8843726EF8D12F /* AuthenticationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2B46E649FBE1D5C62D04F49 /* AuthenticationView.swift */; };
 		EABBBF032F29CB7748257C12 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 6A7D286B78193D10208F2D6D /* Localizable.xcstrings */; };
+		F1A100000000000000000011 /* SessionActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A100000000000000000001 /* SessionActivityAttributes.swift */; };
+		F1A100000000000000000012 /* SessionActivityCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A100000000000000000002 /* SessionActivityCenter.swift */; };
+		F1A100000000000000000013 /* SessionLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A100000000000000000003 /* SessionLiveActivity.swift */; };
+		F1A100000000000000000014 /* SessionActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A100000000000000000001 /* SessionActivityAttributes.swift */; };
+		F1A100000000000000000015 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F1A100000000000000000018 /* Assets.xcassets */; };
 		FE5CE6D8E80A7A0DCD1E4DA7 /* HTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9544ED767B16AE24A11A43 /* HTTPClient.swift */; };
 		FF24CDB843012EA885417F81 /* NetworkingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5C6485A3210081E4B55E57 /* NetworkingTests.swift */; };
 /* End PBXBuildFile section */
@@ -70,7 +83,28 @@
 			remoteGlobalIDString = FCC071A80AB7A0191F8E02B7;
 			remoteInfo = Privofit;
 		};
+		E1A100010000000000000017 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 98F54143AB4E86B28C3AFEE0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A100010000000000000018;
+			remoteInfo = PrivofitWidgets;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E1A100010000000000000015 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E1A100010000000000000011 /* PrivofitWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0789B2373061EE970076D891 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -123,8 +157,21 @@
 		D9C6809C7DD98546BAC09823 /* Staging.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Staging.xcconfig; path = Configuration/Staging.xcconfig; sourceTree = "<group>"; };
 		DA244782E6892144D6125930 /* MemberPass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MemberPass.swift; path = Privofit/Shared/MemberPass.swift; sourceTree = "<group>"; };
 		DFB451C7A4BA6973BBA12584 /* LiveGymService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LiveGymService.swift; path = Privofit/Services/LiveGymService.swift; sourceTree = "<group>"; };
+		E1A100010000000000000001 /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WidgetSnapshot.swift; path = Privofit/Widgets/WidgetSnapshot.swift; sourceTree = "<group>"; };
+		E1A100010000000000000002 /* WidgetPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WidgetPublisher.swift; path = Privofit/Widgets/WidgetPublisher.swift; sourceTree = "<group>"; };
+		E1A100010000000000000003 /* WidgetGallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WidgetGallery.swift; path = Privofit/Widgets/WidgetGallery.swift; sourceTree = "<group>"; };
+		E1A100010000000000000004 /* WidgetSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WidgetSupport.swift; path = PrivofitWidgets/WidgetSupport.swift; sourceTree = "<group>"; };
+		E1A100010000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = PrivofitWidgets/Info.plist; sourceTree = "<group>"; };
+		E1A100010000000000000006 /* PrivofitWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = PrivofitWidgets.entitlements; path = PrivofitWidgets/PrivofitWidgets.entitlements; sourceTree = "<group>"; };
+		E1A100010000000000000007 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = PrivofitWidgets/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		E1A100010000000000000008 /* PrivofitWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PrivofitWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		E32A2A45BB038541E015BE31 /* CoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CoreTests.swift; path = Tests/CoreTests.swift; sourceTree = "<group>"; };
 		E437786ACD35FBCF7BD3A24D /* MockGymService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MockGymService.swift; path = Privofit/Services/MockGymService.swift; sourceTree = "<group>"; };
+		F1A100000000000000000001 /* SessionActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SessionActivityAttributes.swift; path = Privofit/LiveActivity/SessionActivityAttributes.swift; sourceTree = "<group>"; };
+		F1A100000000000000000002 /* SessionActivityCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SessionActivityCenter.swift; path = Privofit/LiveActivity/SessionActivityCenter.swift; sourceTree = "<group>"; };
+		F1A100000000000000000003 /* SessionLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SessionLiveActivity.swift; path = PrivofitLiveActivity/SessionLiveActivity.swift; sourceTree = "<group>"; };
+		F1A100000000000000000004 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = PrivofitLiveActivity/Info.plist; sourceTree = "<group>"; };
+		F1A100000000000000000018 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = PrivofitLiveActivity/Assets.xcassets; sourceTree = "<group>"; };
 		F46004CC0E66A5A0DC91BA39 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Privofit/Resources/Info.plist; sourceTree = "<group>"; };
 		F916276D5ED1C6E6FF63F5D1 /* ReservationCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ReservationCalendar.swift; path = Privofit/Features/Reservations/ReservationCalendar.swift; sourceTree = "<group>"; };
 		FF9544ED767B16AE24A11A43 /* HTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HTTPClient.swift; path = Privofit/Networking/HTTPClient.swift; sourceTree = "<group>"; };
@@ -139,6 +186,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		B5713219E5E941E97223D765 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1A100010000000000000013 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -309,19 +363,64 @@
 				8BBABE581696A816F7BD4AB8 /* Networking */,
 				6EE67047A4B2648DDBB08231 /* Services */,
 				44C7E229889FE9D1BB841A79 /* Shared */,
+				F1A100000000000000000019 /* LiveActivity */,
+				F1A10000000000000000001A /* PrivofitLiveActivity */,
 				156052F04525D0F710673CF0 /* Tests */,
 				5A349263041B6A939BD7831F /* UITests */,
 				A024F06580C79B7582C3806A /* Resources */,
 				C23108729D1809B8323E9806 /* Configuration */,
 				0789B2373061EE970076D891 /* GoogleService-Info.plist */,
+				E1A10001000000000000001D /* Widgets */,
+				E1A10001000000000000001E /* PrivofitWidgets */,
 				FBDC4F23F93125BBEEAE800C /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		E1A10001000000000000001D /* Widgets */ = {
+			isa = PBXGroup;
+			children = (
+				E1A100010000000000000001 /* WidgetSnapshot.swift */,
+				E1A100010000000000000002 /* WidgetPublisher.swift */,
+				E1A100010000000000000003 /* WidgetGallery.swift */,
+			);
+			name = Widgets;
+			sourceTree = "<group>";
+		};
+		E1A10001000000000000001E /* PrivofitWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				E1A100010000000000000004 /* WidgetSupport.swift */,
+				E1A100010000000000000005 /* Info.plist */,
+				E1A100010000000000000006 /* PrivofitWidgets.entitlements */,
+				E1A100010000000000000007 /* PrivacyInfo.xcprivacy */,
+			);
+			name = PrivofitWidgets;
+			sourceTree = "<group>";
+		};
+		F1A100000000000000000019 /* LiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				F1A100000000000000000001 /* SessionActivityAttributes.swift */,
+				F1A100000000000000000002 /* SessionActivityCenter.swift */,
+			);
+			name = LiveActivity;
+			sourceTree = "<group>";
+		};
+		F1A10000000000000000001A /* PrivofitLiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				F1A100000000000000000003 /* SessionLiveActivity.swift */,
+				F1A100000000000000000018 /* Assets.xcassets */,
+				F1A100000000000000000004 /* Info.plist */,
+			);
+			name = PrivofitLiveActivity;
 			sourceTree = "<group>";
 		};
 		FBDC4F23F93125BBEEAE800C /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				41BD25EBFAD2A82E4E789DFD /* Privofit.app */,
+				E1A100010000000000000008 /* PrivofitWidgets.appex */,
 				1A8A4C8A3ABF3E0F702B16A0 /* PrivofitTests.xctest */,
 				0A07735BC4E9085AAAE46C3B /* PrivofitUITests.xctest */,
 			);
@@ -367,6 +466,23 @@
 			productReference = 1A8A4C8A3ABF3E0F702B16A0 /* PrivofitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		E1A100010000000000000018 /* PrivofitWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E1A10001000000000000001C /* Build configuration list for PBXNativeTarget "PrivofitWidgets" */;
+			buildPhases = (
+				E1A100010000000000000012 /* Sources */,
+				E1A100010000000000000013 /* Frameworks */,
+				E1A100010000000000000014 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PrivofitWidgets;
+			productName = PrivofitWidgets;
+			productReference = E1A100010000000000000008 /* PrivofitWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		FCC071A80AB7A0191F8E02B7 /* Privofit */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2C4AD03BB153607E0E004090 /* Build configuration list for PBXNativeTarget "Privofit" */;
@@ -374,10 +490,12 @@
 				8E4C65486E2F0CA9889C5093 /* Sources */,
 				E66F0B84C201C54EEAF3D823 /* Frameworks */,
 				49BD7581A43DA8FB56EC5D2A /* Resources */,
+				E1A100010000000000000015 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E1A100010000000000000016 /* PBXTargetDependency */,
 			);
 			name = Privofit;
 			packageProductDependencies = (
@@ -430,6 +548,7 @@
 			projectRoot = "";
 			targets = (
 				FCC071A80AB7A0191F8E02B7 /* Privofit */,
+				E1A100010000000000000018 /* PrivofitWidgets */,
 				D36B0321388355F31175A5A1 /* PrivofitTests */,
 				7349D742EEBA0011ABAF6A64 /* PrivofitUITests */,
 			);
@@ -460,6 +579,16 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1A100010000000000000014 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1A10001000000000000000F /* Localizable.xcstrings in Resources */,
+				E1A100010000000000000010 /* PrivacyInfo.xcprivacy in Resources */,
+				F1A100000000000000000015 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -524,6 +653,22 @@
 				1714C4AB0172B23022418743 /* MemberPass.swift in Sources */,
 				9A9D1001748FBD66974E49BB /* Previews.swift in Sources */,
 				AE8CB50BB492AE01BABF054D /* PrivacyShield.swift in Sources */,
+				E1A10001000000000000000A /* WidgetSnapshot.swift in Sources */,
+				E1A10001000000000000000B /* WidgetPublisher.swift in Sources */,
+				F1A100000000000000000011 /* SessionActivityAttributes.swift in Sources */,
+				F1A100000000000000000012 /* SessionActivityCenter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1A100010000000000000012 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1A10001000000000000000C /* WidgetSnapshot.swift in Sources */,
+				E1A10001000000000000000D /* WidgetGallery.swift in Sources */,
+				E1A10001000000000000000E /* WidgetSupport.swift in Sources */,
+				F1A100000000000000000014 /* SessionActivityAttributes.swift in Sources */,
+				F1A100000000000000000013 /* SessionLiveActivity.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -539,6 +684,11 @@
 			isa = PBXTargetDependency;
 			target = FCC071A80AB7A0191F8E02B7 /* Privofit */;
 			targetProxy = C7323935E4447B96AAC37894 /* PBXContainerItemProxy */;
+		};
+		E1A100010000000000000016 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A100010000000000000018 /* PrivofitWidgets */;
+			targetProxy = E1A100010000000000000017 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -564,7 +714,7 @@
 				CODE_SIGN_ENTITLEMENTS = Privofit/Resources/Privofit.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = W6R3HZD7R4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -706,7 +856,7 @@
 				CODE_SIGN_ENTITLEMENTS = Privofit/Resources/Privofit.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = W6R3HZD7R4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -797,6 +947,102 @@
 			};
 			name = Release;
 		};
+		E1A100010000000000000019 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = PrivofitWidgets/PrivofitWidgets.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = W6R3HZD7R4;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PrivofitWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Privofit;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = cz.privofit.app.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		E1A10001000000000000001A /* Staging */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = PrivofitWidgets/PrivofitWidgets.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = W6R3HZD7R4;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PrivofitWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Privofit;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = cz.privofit.app.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Staging;
+		};
+		E1A10001000000000000001B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = PrivofitWidgets/PrivofitWidgets.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = W6R3HZD7R4;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PrivofitWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Privofit;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = cz.privofit.app.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 		EAE4614A6116BB5D3A3B6C25 /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 878B4AA5456134EF9DAA765D /* Production.xcconfig */;
@@ -806,7 +1052,7 @@
 				CODE_SIGN_ENTITLEMENTS = Privofit/Resources/Privofit.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = W6R3HZD7R4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -884,6 +1130,16 @@
 				BDB468977DF737AEF235B832 /* Debug */,
 				9CF9C89C49443130114B8630 /* Staging */,
 				955EDDD4C6FB12EEB0C02075 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E1A10001000000000000001C /* Build configuration list for PBXNativeTarget "PrivofitWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1A100010000000000000019 /* Debug */,
+				E1A10001000000000000001A /* Staging */,
+				E1A10001000000000000001B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

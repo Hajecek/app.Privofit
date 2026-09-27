@@ -20,6 +20,20 @@
                ReferencedContainer = "container:Privofit.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "E1A100010000000000000018"
+               BuildableName = "PrivofitWidgets.appex"
+               BlueprintName = "PrivofitWidgets"
+               ReferencedContainer = "container:Privofit.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

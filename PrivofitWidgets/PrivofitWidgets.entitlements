@@ -6,15 +6,5 @@
 	<array>
 		<string>group.cz.privofit.app</string>
 	</array>
-	<key>aps-environment</key>
-	<string>$(APS_ENVIRONMENT)</string>
-	<key>com.apple.developer.applesignin</key>
-	<array>
-		<string>Default</string>
-	</array>
-	<key>com.apple.developer.in-app-payments</key>
-	<array>
-		<string>merchant.cz.privofit.app</string>
-	</array>
 </dict>
 </plist>
