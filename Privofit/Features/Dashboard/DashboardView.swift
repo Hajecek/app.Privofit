@@ -3,54 +3,75 @@ import SwiftUI
 struct DashboardView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var entered = false
+    @State private var revealed = false
+
     private var next: Reservation? { ReservationCalendar.next(app.reservations) }
     private var current: Reservation? { ReservationCalendar.current(app.reservations) }
     private var streak: TrainingStreak.Summary { TrainingStreak.summary(reservations: app.reservations, visits: app.visits) }
+    private var text: Color { Brand.text(scheme) }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                header
-                if app.isDemo || app.isGuest { StatusBadge(title: L10n.tr(app.isDemo ? "demo.badge" : "guest.badge"), symbol: "info.circle") }
-                if let error = app.error, !app.isGuest { FailureView(message: error) { Task { await load() } } }
-                if app.loading && app.reservations.isEmpty && app.visits.isEmpty && !app.isGuest { SkeletonCard() }
-                bookAction
-                if let session = current ?? next { sessionRow(session) }
-                if app.isGuest {
-                    guestCard
-                } else if !app.loading || !app.visits.isEmpty || !app.reservations.isEmpty {
-                    streakCard
+            VStack(alignment: .leading, spacing: 16) {
+                header.modifier(RiseIn(shown: entered, index: 0, reduceMotion: reduceMotion))
+                if app.isDemo || app.isGuest {
+                    StatusBadge(title: L10n.tr(app.isDemo ? "demo.badge" : "guest.badge"), symbol: "info.circle")
+                        .modifier(RiseIn(shown: entered, index: 1, reduceMotion: reduceMotion))
                 }
-            }.padding(24).frame(maxWidth: 680).frame(maxWidth: .infinity)
+                if let error = app.error, !app.isGuest {
+                    FailureView(message: error) { Task { await reload() } }
+                }
+                if app.loading && app.reservations.isEmpty && app.visits.isEmpty && !app.isGuest {
+                    SkeletonCard()
+                }
+                if let session = current ?? next {
+                    sessionCard(session)
+                        .modifier(RiseIn(shown: revealed, index: 1, reduceMotion: reduceMotion))
+                }
+                bookAction.modifier(RiseIn(shown: entered, index: 2, reduceMotion: reduceMotion))
+                doorAction.modifier(RiseIn(shown: entered, index: 3, reduceMotion: reduceMotion))
+                if app.isGuest {
+                    guestCard.modifier(RiseIn(shown: revealed, index: 4, reduceMotion: reduceMotion))
+                } else if !app.loading || !app.visits.isEmpty || !app.reservations.isEmpty {
+                    streakCard.modifier(RiseIn(shown: revealed, index: 4, reduceMotion: reduceMotion))
+                }
+            }
+            .padding(24)
+            .frame(maxWidth: 680)
+            .frame(maxWidth: .infinity)
         }
         .brandBackground()
         .navigationTitle(L10n.tr("tab.dashboard"))
         .navigationBarTitleDisplayMode(.inline)
         .mainToolbar()
-        .task { await load() }
-        .refreshable { await load() }
+        .task { await reload() }
+        .refreshable { await reload() }
         .accessibilityIdentifier("dashboard")
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(L10n.tr("home.hi"))
-                .font(.title3.weight(.medium))
-                .foregroundStyle(.secondary)
-            Text(app.member?.firstName ?? L10n.tr("redesign.guestGreeting"))
-                .font(.system(size: 44, weight: .bold, design: .rounded))
-                .tracking(-1.4)
-                .lineLimit(1)
-                .minimumScaleFactor(0.55)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text("\(L10n.tr("home.hi")) \(app.member?.firstName ?? L10n.tr("redesign.guestGreeting"))")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .tracking(-0.6)
+                    .foregroundStyle(text)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Spacer(minLength: 8)
+                Text(Date.now, format: .dateTime.weekday(.abbreviated).day().month(.abbreviated))
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(text.opacity(0.62))
+                    .lineLimit(1)
+            }
             Text(headerLine)
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(Date.now, format: .dateTime.weekday(.abbreviated).day().month(.abbreviated))
-                .font(.footnote.weight(.medium))
-                .foregroundStyle(.tertiary)
-                .padding(.top, 2)
-        }.padding(.top, 6)
+                .font(.subheadline)
+                .foregroundStyle(text.opacity(0.82))
+                .lineLimit(2)
+        }
+        .padding(.top, 2)
     }
 
     private var headerLine: String {
@@ -71,7 +92,7 @@ struct DashboardView: View {
                     .background(Brand.ink.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 VStack(alignment: .leading, spacing: 4) {
                     Text(L10n.tr("home.bookTitle")).font(.title3.weight(.bold))
-                    Text(L10n.tr("home.bookHint")).font(.subheadline).opacity(0.7)
+                    Text(L10n.tr("home.bookHint")).font(.subheadline).foregroundStyle(Brand.ink.opacity(0.72))
                 }
                 Spacer(minLength: 8)
                 Image(systemName: "arrow.up.right")
@@ -80,98 +101,124 @@ struct DashboardView: View {
             .padding(18)
             .frame(maxWidth: .infinity, minHeight: 96, alignment: .leading)
             .foregroundStyle(Brand.ink)
-            .background(Brand.lime, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+            .background(Brand.lime, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(HomePressStyle())
         .accessibilityIdentifier("home.book")
     }
 
-    private func sessionRow(_ session: Reservation) -> some View {
-        Button {
+    private var doorAction: some View {
+        Button(action: openDoor) {
+            HStack(spacing: 14) {
+                Image(systemName: "door.left.hand.open")
+                    .font(.body.weight(.semibold))
+                    .frame(width: 42, height: 42)
+                    .background(Brand.lime.opacity(0.18), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.tr("tab.door")).font(.headline)
+                    Text(L10n.tr("home.doorHint")).font(.subheadline).foregroundStyle(text.opacity(0.72))
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(text.opacity(0.45))
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .foregroundStyle(text)
+            .background(Brand.surface(scheme), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(text.opacity(0.06)))
+        }
+        .buttonStyle(HomePressStyle())
+    }
+
+    private func sessionCard(_ session: Reservation) -> some View {
+        let live = current != nil
+        return Button {
             if app.isGuest { app.showGuestGate = true; return }
             app.reservationSection = .mine
             app.tab = .reservations
         } label: {
-            HStack(spacing: 14) {
-                Image(systemName: current != nil ? "bolt.fill" : "clock")
-                    .font(.body.weight(.semibold))
-                    .frame(width: 36, height: 36)
-                    .background(Brand.lime.opacity(0.2), in: Circle())
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(current != nil ? L10n.tr("home.now") : L10n.tr("reservations.nextSession"))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+            HStack(alignment: .center, spacing: 16) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(live ? L10n.tr("home.now") : L10n.tr("reservations.nextSession"))
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(live ? Brand.ink.opacity(0.62) : text.opacity(0.62))
                     Text(ReservationCalendar.occupiedRange(session.start, session.end, bufferMinutes: session.bufferMinutes))
-                        .font(.headline.monospacedDigit())
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
                     Text("\(dayLabel(session.start)) · \(session.room)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(live ? Brand.ink.opacity(0.78) : text.opacity(0.78))
                 }
                 Spacer(minLength: 8)
+                Image(systemName: live ? "bolt.fill" : "clock")
+                    .font(.title3.weight(.semibold))
+                    .frame(width: 48, height: 48)
+                    .background((live ? Brand.ink : Brand.lime).opacity(live ? 0.08 : 0.2), in: Circle())
+            }
+            .padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .foregroundStyle(live ? Brand.ink : text)
+            .background(live ? Brand.lime : Brand.surface(scheme), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .overlay {
+                if !live {
+                    RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(text.opacity(0.06))
+                }
             }
         }
-        .buttonStyle(.plain)
-        .padding(16)
-        .background(Brand.surface(scheme), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.primary.opacity(0.06)))
+        .buttonStyle(HomePressStyle())
     }
 
     private var streakCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .firstTextBaseline) {
-                Label(L10n.tr("home.streak.title"), systemImage: "flame.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(scheme == .dark ? Brand.lime : Brand.ink)
-                Spacer(minLength: 8)
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .bottom, spacing: 12) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Label(L10n.tr("home.streak.title"), systemImage: "flame.fill")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(scheme == .dark ? Brand.lime : Brand.ink)
+                        .symbolEffect(.bounce, value: revealed)
                     Text(streak.length.formatted())
-                        .font(.system(size: 42, weight: .bold, design: .rounded))
+                        .font(.system(size: 64, weight: .bold, design: .rounded))
                         .monospacedDigit()
+                        .foregroundStyle(text)
+                        .contentTransition(.numericText())
+                        .padding(.top, 4)
                     Text(streakUnit)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(text.opacity(0.72))
                 }
-            }
-            HStack(spacing: 0) {
-                ForEach(Array(zip(streak.week, weekdayLabels)), id: \.0.id) { mark, label in
-                    dayMark(mark, label: label)
-                }
+                Spacer(minLength: 8)
+                WeekBars(
+                    week: streak.week,
+                    labels: weekdayLabels,
+                    revealed: revealed,
+                    reduceMotion: reduceMotion,
+                    scheme: scheme
+                )
             }
             Text(streakHint)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .font(.subheadline)
+                .foregroundStyle(streak.atRisk ? Brand.alert : text.opacity(0.88))
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .foregroundStyle(scheme == .dark ? Brand.fog : Brand.ink)
-        .background(streakFill, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .background(streakFill, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(streakAccessibility)
-    }
-
-    private func dayMark(_ mark: TrainingStreak.Mark, label: String) -> some View {
-        let today = GymClock.calendar.isDateInToday(mark.date)
-        let fill = scheme == .dark ? Brand.lime : Brand.ink
-        return VStack(spacing: 8) {
-            Text(label)
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(today ? .primary : .secondary)
-            ZStack {
-                Circle().strokeBorder(mark.planned || mark.trained ? fill.opacity(mark.trained ? 1 : 0.85) : Color.primary.opacity(0.16), lineWidth: today ? 2 : 1.5)
-                if mark.trained { Circle().fill(fill).padding(3.5) }
-            }
-            .frame(width: 18, height: 18)
-        }
-        .frame(maxWidth: .infinity)
     }
 
     private var guestCard: some View {
         BrandCard {
             VStack(alignment: .leading, spacing: 14) {
-                Text(L10n.tr("guest.dashboard.title")).font(.title3.bold())
-                Text(L10n.tr("guest.dashboard.body")).foregroundStyle(.secondary)
-                Button(L10n.tr("auth.login")) { app.showGuestGate = true }.frame(minHeight: 44)
+                Text(L10n.tr("guest.dashboard.title")).font(.title3.bold()).foregroundStyle(text)
+                Text(L10n.tr("guest.dashboard.body")).foregroundStyle(text.opacity(0.82))
+                Button(L10n.tr("auth.login")) { app.showGuestGate = true }
+                    .font(.headline)
+                    .frame(minHeight: 44)
             }
         }
     }
@@ -213,8 +260,104 @@ struct DashboardView: View {
         app.tab = .reservations
     }
 
-    private func load() async {
-        guard !app.isGuest else { return }
+    private func openDoor() {
+        if app.isGuest { app.showGuestGate = true; return }
+        app.tab = .door
+    }
+
+    private func reload() async {
+        await showChrome()
+        guard !app.isGuest else {
+            await showData()
+            return
+        }
         await app.loadDashboard()
+        await showData()
+    }
+
+    private func showChrome() async {
+        if reduceMotion { entered = true; return }
+        if entered { return }
+        try? await Task.sleep(for: .milliseconds(20))
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.84)) { entered = true }
+    }
+
+    private func showData() async {
+        if reduceMotion { revealed = true; return }
+        revealed = false
+        try? await Task.sleep(for: .milliseconds(30))
+        withAnimation(.spring(response: 0.55, dampingFraction: 0.82)) { revealed = true }
+    }
+}
+
+private struct WeekBars: View {
+    var week: [TrainingStreak.Mark]
+    var labels: [String]
+    var revealed: Bool
+    var reduceMotion: Bool
+    var scheme: ColorScheme
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 7) {
+            ForEach(Array(week.enumerated()), id: \.element.id) { index, mark in
+                let label = index < labels.count ? labels[index] : ""
+                let today = GymClock.calendar.isDateInToday(mark.date)
+                VStack(spacing: 7) {
+                    Capsule()
+                        .fill(barColor(mark))
+                        .frame(width: 16, height: barHeight(mark))
+                        .overlay {
+                            if today {
+                                Capsule().strokeBorder(scheme == .dark ? Brand.lime : Brand.ink, lineWidth: 1.5)
+                            }
+                        }
+                        .scaleEffect(y: revealed || reduceMotion ? 1 : 0.18, anchor: .bottom)
+                        .animation(reduceMotion ? nil : .spring(response: 0.46, dampingFraction: 0.7).delay(Double(index) * 0.045), value: revealed)
+                    Text(label)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Brand.text(scheme).opacity(today ? 1 : 0.55))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .frame(maxWidth: 210)
+        .accessibilityHidden(true)
+    }
+
+    private func barHeight(_ mark: TrainingStreak.Mark) -> CGFloat {
+        if mark.trained { return 58 }
+        if mark.planned { return 36 }
+        return 16
+    }
+
+    private func barColor(_ mark: TrainingStreak.Mark) -> Color {
+        let strong = scheme == .dark ? Brand.lime : Brand.ink
+        if mark.trained { return strong }
+        if mark.planned { return strong.opacity(0.38) }
+        return Color.primary.opacity(0.14)
+    }
+}
+
+private struct RiseIn: ViewModifier {
+    var shown: Bool
+    var index: Int
+    var reduceMotion: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown || reduceMotion ? 1 : 0)
+            .offset(y: shown || reduceMotion ? 0 : 18)
+            .animation(reduceMotion ? nil : .spring(response: 0.52, dampingFraction: 0.84).delay(0.05 * Double(index)), value: shown)
+    }
+}
+
+private struct HomePressStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    func makeBody(configuration: ButtonStyle.Configuration) -> some View {
+        configuration.label
+            .scaleEffect(!reduceMotion && configuration.isPressed ? 0.98 : 1)
+            .animation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.72), value: configuration.isPressed)
     }
 }
