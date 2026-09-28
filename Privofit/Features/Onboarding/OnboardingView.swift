@@ -3,6 +3,7 @@ import SwiftUI
 struct OnboardingView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var scheme
     @State private var step = 0
     @State private var busy = false
     @State private var error: String?
@@ -18,7 +19,7 @@ struct OnboardingView: View {
             VStack(spacing: 0) {
                 progress
                     .padding(.top, 12)
-                    .padding(.horizontal, 28)
+                    .padding(.horizontal, 18)
                 ZStack {
                     page
                         .id(step)
@@ -72,10 +73,12 @@ struct OnboardingView: View {
             ForEach(OnboardingStep.allCases, id: \.rawValue) { item in
                 Capsule()
                     .fill(item.rawValue <= step ? Brand.lime : Color.primary.opacity(0.1))
-                    .frame(width: item.rawValue == step ? 22 : 8, height: 6)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 5)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: 560)
+        .frame(maxWidth: .infinity, alignment: .center)
         .animation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.78), value: step)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.tr("onboarding.progress"))
@@ -90,16 +93,19 @@ struct OnboardingView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: current == .enter ? 300 : 236)
                 }
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 14) {
                     Text(L10n.tr(current.titleKey))
                         .font(.system(size: 34, weight: .bold, design: .rounded))
                         .tracking(-0.8)
+                        .foregroundStyle(Brand.text(scheme))
                         .fixedSize(horizontal: false, vertical: true)
                     Text(L10n.tr(current.bodyKey))
-                        .foregroundStyle(.secondary)
-                        .lineSpacing(3)
+                        .font(.body)
+                        .foregroundStyle(Brand.text(scheme).opacity(0.92))
+                        .lineSpacing(4)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                .padding(.top, 36)
                 if current == .welcome { OnboardingFeatureGrid() }
                 if current == .biometrics {
                     StatusBadge(title: app.biometrics.name, symbol: app.biometrics.available ? "checkmark.shield" : "info.circle")
