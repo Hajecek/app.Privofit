@@ -158,20 +158,25 @@ struct CancelReservationButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text(L10n.tr("reservations.cancel"))
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity, minHeight: 48)
-                .foregroundStyle(emphasis ? Brand.ink : Brand.alert)
-                .background(
-                    emphasis ? Color.white.opacity(0.72) : Brand.alert.opacity(0.12),
-                    in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                )
-                .overlay {
-                    if !emphasis {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(Brand.alert.opacity(0.28), lineWidth: 1)
-                    }
-                }
+            HStack(spacing: 8) {
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.bold))
+                Text(L10n.tr("reservations.cancel"))
+                    .font(.subheadline.weight(.semibold))
+            }
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .foregroundStyle(emphasis ? Brand.ink.opacity(0.78) : Brand.alert)
+            .background {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(emphasis ? Color.white.opacity(0.42) : Color.clear)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(
+                        emphasis ? Brand.ink.opacity(0.14) : Brand.alert.opacity(0.35),
+                        lineWidth: 1
+                    )
+            }
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("reservations.cancel")

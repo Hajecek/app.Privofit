@@ -29,7 +29,7 @@ enum EntryCover: Equatable { case splash, retry, hidden }
     var showBookingCheckout = false
     var bookingRequestID = UUID()
     var showsBookingDock: Bool { !isGuest && !bookingCart.isEmpty && !showBookingCheckout && !showDoor }
-    var bookingPersonLimit: Int { max(1, slots.map(\.maxPersons).max() ?? 1) }
+    var bookingPersonLimit: Int { BookingLimits.maxPersons }
     var showGuestGate = false
     var showDoor = false
     var showInbox = false
@@ -239,27 +239,37 @@ enum EntryCover: Equatable { case splash, retry, hidden }
         applyPendingWidget()
     }
     func adjustBookingGuests(by delta: Int) {
-        let next = min(max(1, bookingGuests + delta), bookingPersonLimit)
+        let limit = max(1, bookingPersonLimit)
+        let next = min(max(1, bookingGuests + delta), limit)
         guard next != bookingGuests else { return }
         bookingGuests = next
         bookingRequestID = UUID()
     }
     func reconcileBooking(available: [AvailableSlot]) {
         bookingCart.removeAll { booked in !available.contains { $0.id == booked.id } }
-        if bookingCart.isEmpty { showBookingCheckout = false }
-        if bookingGuests > bookingPersonLimit {
-            bookingGuests = bookingPersonLimit
-            bookingRequestID = UUID()
+        if bookingCart.isEmpty {
+            showBookingCheckout = false
+            bookingGuests = 1
+        } else {
+            clampBookingGuests()
         }
     }
     func dropBookedSlots(_ bookings: [Reservation]) {
         bookingCart.removeAll { booked in bookings.contains { $0.id == booked.id } }
-        if bookingCart.isEmpty { showBookingCheckout = false }
+        if bookingCart.isEmpty {
+            showBookingCheckout = false
+            bookingGuests = 1
+        }
     }
     func removeBooking(_ slot: AvailableSlot) {
         bookingCart.removeAll { $0.id == slot.id }
         bookingRequestID = UUID()
-        if bookingCart.isEmpty { showBookingCheckout = false }
+        if bookingCart.isEmpty {
+            showBookingCheckout = false
+            bookingGuests = 1
+        } else {
+            clampBookingGuests()
+        }
     }
     func toggleBooking(_ slot: AvailableSlot, blocked: Bool) {
         if bookingCart.contains(where: { $0.id == slot.id }) {
@@ -268,6 +278,7 @@ enum EntryCover: Equatable { case splash, retry, hidden }
         }
         guard !blocked else { return }
         bookingCart.append(slot)
+        clampBookingGuests()
         bookingRequestID = UUID()
     }
     func clearBooking() {
@@ -275,6 +286,12 @@ enum EntryCover: Equatable { case splash, retry, hidden }
         bookingGuests = 1
         showBookingCheckout = false
         bookingRequestID = UUID()
+    }
+    private func clampBookingGuests() {
+        let limit = max(1, bookingPersonLimit)
+        let next = min(max(1, bookingGuests), limit)
+        guard next != bookingGuests else { return }
+        bookingGuests = next
     }
     func openBookingCheckout() {
         reservationSection = .slots

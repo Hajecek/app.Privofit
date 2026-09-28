@@ -51,6 +51,24 @@ enum ReservationCalendar {
         return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: first) }.map { startOfDay($0, calendar: calendar) }
     }
 
+    /// Nadcházející dny od „dnes“ (včetně) — pro horizontální výběr dne.
+    static func upcomingDays(from now: Date = Date(), count: Int = 21, calendar: Calendar = GymClock.calendar) -> [Date] {
+        let start = startOfDay(now, calendar: calendar)
+        return (0..<max(1, count)).compactMap { offset in
+            calendar.date(byAdding: .day, value: offset, to: start).map { startOfDay($0, calendar: calendar) }
+        }
+    }
+
+    static func durationLabel(minutes: Int) -> String {
+        let value = max(0, minutes)
+        if value >= 60 {
+            let hours = value / 60
+            let rest = value % 60
+            return rest == 0 ? "\(hours) h" : "\(hours) h \(rest) min"
+        }
+        return "\(value) min"
+    }
+
     static func shiftWeek(_ date: Date, by weeks: Int, calendar: Calendar = GymClock.calendar) -> Date {
         calendar.date(byAdding: .weekOfYear, value: weeks, to: date) ?? date
     }

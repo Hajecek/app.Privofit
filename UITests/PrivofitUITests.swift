@@ -10,9 +10,15 @@ import XCTest
         for _ in 0..<6 { if element.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(element.waitForExistence(timeout: 5)); XCTAssertTrue(element.isHittable)
     }
+    /// Welcome, booking, door and streak come before the first permission screen.
+    private func passStories(_ app: XCUIApplication) {
+        let next = app.buttons["onboarding.next"]
+        XCTAssertTrue(next.waitForExistence(timeout: 5))
+        for _ in 0..<4 { scrollTo(next, in: app); next.tap() }
+    }
     private func finishOnboarding(_ app: XCUIApplication) {
         let next = app.buttons["onboarding.next"]
-        XCTAssertTrue(next.waitForExistence(timeout: 5)); scrollTo(next, in: app); next.tap()
+        passStories(app)
         scrollTo(app.buttons["onboarding.skip"], in: app); app.buttons["onboarding.skip"].tap()
         scrollTo(app.buttons["onboarding.skip"], in: app); app.buttons["onboarding.skip"].tap()
         XCTAssertFalse(next.isEnabled) // Injected unavailable biometrics.
@@ -60,8 +66,11 @@ import XCTest
             if deny.exists { deny.tap(); return true }; return false
         }
         let guest = app.buttons["auth.guest"]; scrollTo(guest, in: app); guest.tap()
-        app.buttons["onboarding.next"].tap(); app.buttons["onboarding.next"].tap(); app.tap()
-        app.buttons["onboarding.skip"].tap()
+        passStories(app)
+        let next = app.buttons["onboarding.next"]
+        scrollTo(next, in: app); next.tap(); app.tap()
+        XCTAssertTrue(app.staticTexts["Najdi svoje fitko."].waitForExistence(timeout: 8))
+        scrollTo(app.buttons["onboarding.skip"], in: app); app.buttons["onboarding.skip"].tap()
         XCTAssertTrue(app.staticTexts["Biometrie není dostupná"].waitForExistence(timeout: 5))
         app.buttons["onboarding.skip"].tap(); app.buttons["onboarding.next"].tap()
         XCTAssertTrue(app.descendants(matching: .any)["dashboard"].waitForExistence(timeout: 5))

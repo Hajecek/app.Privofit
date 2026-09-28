@@ -55,6 +55,11 @@ struct Reservation: Codable, Identifiable, Equatable, Sendable {
         return " · \(guestCount) \(word)"
     }
 }
+enum BookingLimits {
+    /// Studio capacity — never more than two people on a booking.
+    static let maxPersons = 2
+}
+
 struct AvailableSlot: Codable, Identifiable, Equatable, Sendable {
     let id: String
     let start: Date
@@ -67,10 +72,11 @@ struct AvailableSlot: Codable, Identifiable, Equatable, Sendable {
     var gymID: String
     var mine: Bool
     var maxPersons: Int
-    init(id: String, start: Date, end: Date, room: String, bufferMinutes: Int = 15, price: Decimal? = nil, currencyCode: String = "CZK", gymID: String = "vinohrady", priceTwo: Decimal? = nil, mine: Bool = false, maxPersons: Int = 2) {
+    init(id: String, start: Date, end: Date, room: String, bufferMinutes: Int = 15, price: Decimal? = nil, currencyCode: String = "CZK", gymID: String = "vinohrady", priceTwo: Decimal? = nil, mine: Bool = false, maxPersons: Int = BookingLimits.maxPersons) {
         self.id = id; self.start = start; self.end = end; self.room = room
         self.bufferMinutes = bufferMinutes; self.price = price; self.priceTwo = priceTwo; self.currencyCode = currencyCode
-        self.gymID = gymID; self.mine = mine; self.maxPersons = maxPersons
+        self.gymID = gymID; self.mine = mine
+        self.maxPersons = min(BookingLimits.maxPersons, max(1, maxPersons))
     }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -84,12 +90,12 @@ struct AvailableSlot: Codable, Identifiable, Equatable, Sendable {
         priceTwo = GymMoney.decode(c, key: .priceTwo)
         gymID = try c.decodeIfPresent(String.self, forKey: .gymID) ?? ""
         mine = try c.decodeIfPresent(Bool.self, forKey: .mine) ?? false
-        maxPersons = try c.decodeIfPresent(Int.self, forKey: .maxPersons) ?? 2
+        maxPersons = min(BookingLimits.maxPersons, max(1, try c.decodeIfPresent(Int.self, forKey: .maxPersons) ?? BookingLimits.maxPersons))
     }
     var occupiedUntil: Date { GymClock.occupancyEnd(end, bufferMinutes: bufferMinutes) }
     func price(for guests: Int) -> Decimal? {
-        if guests >= 2, let priceTwo { return priceTwo }
-        return price
+        if guests >= 2 { return priceTwo ?? price }
+        return price ?? priceTwo
     }
 }
 enum GymMoney {

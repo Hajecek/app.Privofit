@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "cs",
   "strings" : {
+    "·" : {
+
+    },
     "%@ · %@" : {
       "localizations" : {
         "cs" : {
@@ -3173,13 +3176,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vyber si čas. Přijď. Otevři telefonem. A soustřeď se jen na svůj trénink."
+            "value" : "Privofit je soukromé fitko jen pro tebe. Vybereš si čas, přijdeš, otevřeš dveře telefonem a trénuješ ve svém tempu."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pick a time. Arrive. Enter with your phone. Focus on your workout."
+            "value" : "Privofit is a private gym that's yours alone. Pick a time, arrive, open the door with your phone and train at your pace."
           }
         }
       }
@@ -3275,13 +3278,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Biometrie chrání aplikaci a potvrzuje citlivé akce. Povolení ke vstupu vždy ověřujeme také na serveru."
+            "value" : "Face ID nebo Touch ID zamkne aplikaci a potvrdí citlivé akce, třeba otevření dveří. Když to povolíš, ověření spustíme hned."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Biometrics protect the app and confirm sensitive actions. Entry permission is always verified by the server too."
+            "value" : "Face ID or Touch ID locks the app and confirms sensitive actions, like opening the door. If you allow it, we'll verify right away."
           }
         }
       }
@@ -3326,13 +3329,13 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Všechno důležité najdeš v přehledu. Tvoje tělo. Tvoje tempo. Tvoje pravidla."
+            "value" : "Rezervace, vstup, členství i série. Všechno důležité najdeš v přehledu. Tvoje tělo. Tvoje tempo. Tvoje pravidla."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Everything you need is on your overview. Your body. Your pace. Your rules."
+            "value" : "Bookings, entry, membership and your streak. Everything that matters is on your overview. Your body. Your pace. Your rules."
           }
         }
       }
@@ -3354,6 +3357,176 @@
         }
       }
     },
+    "onboarding.chip.door" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vstup"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entry"
+          }
+        }
+      }
+    },
+    "onboarding.chip.membership" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Členství"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Membership"
+          }
+        }
+      }
+    },
+    "onboarding.chip.reserve" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezervace"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Booking"
+          }
+        }
+      }
+    },
+    "onboarding.chip.streak" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Série"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Streak"
+          }
+        }
+      }
+    },
+    "onboarding.enter.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "U vstupu potvrdíš otevření jedním dotykem. Oprávnění vždy kontroluje server. Bez platného členství a rezervace se dveře neotevřou."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At the entrance you confirm the door with one tap. The server always checks permission. Without a valid membership and booking, the door stays closed."
+          }
+        }
+      }
+    },
+    "onboarding.enter.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dveře otevře telefon."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your phone opens the door."
+          }
+        }
+      }
+    },
+    "onboarding.location.action" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Použít moji polohu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use my location"
+          }
+        }
+      }
+    },
+    "onboarding.location.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poloha vybere fitko, které máš nejblíž. Použijeme ji jen k tomu a fitko můžeš kdykoli vybrat ručně."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location picks the gym closest to you. We use it only for that, and you can choose a gym by hand anytime."
+          }
+        }
+      }
+    },
+    "onboarding.location.hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jen když je aplikace otevřená"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only while the app is open"
+          }
+        }
+      }
+    },
+    "onboarding.location.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Najdi svoje fitko."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find your gym."
+          }
+        }
+      }
+    },
     "onboarding.progress" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3367,6 +3540,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Getting started"
+          }
+        }
+      }
+    },
+    "onboarding.reserve.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "V kalendáři si zabereš volný slot. V tu dobu je fitko tvoje. Rezervaci můžeš změnit nebo zrušit, kdykoli se plán posune."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claim an open slot in the calendar. The gym is yours for that window. Change or cancel the booking whenever plans shift."
+          }
+        }
+      }
+    },
+    "onboarding.reserve.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Čas, který patří jen tobě."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A time that's only yours."
+          }
+        }
+      }
+    },
+    "onboarding.rhythm.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Přehled ukáže další trénink a sérii týdnů. Členství, vstupy a profil máš pořád po ruce."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your overview shows the next session and your weekly streak. Membership, visits and profile stay within reach."
+          }
+        }
+      }
+    },
+    "onboarding.rhythm.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tvoje tempo na jednom místě."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your pace, in one place."
           }
         }
       }
@@ -5128,6 +5369,23 @@
         }
       }
     },
+    "reservations.monthShort" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Měsíc"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Month"
+          }
+        }
+      }
+    },
     "reservations.new" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5209,6 +5467,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next week"
+          }
+        }
+      }
+    },
+    "reservations.noOpenSlots" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "V tento den už nemáš volné termíny k rezervaci."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No open slots left to book on this day."
           }
         }
       }
@@ -5451,6 +5726,57 @@
         }
       }
     },
+    "reservations.personsHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maximum jsou 2 osoby."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maximum is 2 people."
+          }
+        }
+      }
+    },
+    "reservations.personsTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Počet osob"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "People"
+          }
+        }
+      }
+    },
+    "reservations.personOne" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "osoba"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "person"
+          }
+        }
+      }
+    },
     "reservations.personsFew" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5515,6 +5841,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "More people"
+          }
+        }
+      }
+    },
+    "reservations.pickDay" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vyber den"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a day"
+          }
+        }
+      }
+    },
+    "reservations.pickDayConfirm" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vybrat"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select"
+          }
+        }
+      }
+    },
+    "reservations.pickDayHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klepni a otevři kalendář"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to open the calendar"
           }
         }
       }
@@ -5821,6 +6198,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Slots"
+          }
+        }
+      }
+    },
+    "reservations.timeline" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tvoje termíny"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your sessions"
           }
         }
       }

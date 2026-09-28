@@ -10,6 +10,7 @@ struct ReservationsView: View {
     @State private var error: String?
     @State private var completed = false
     @State private var showGyms = false
+    @State private var showCalendar = false
     @State private var checkout = ApplePayCheckout()
     private var calendar: Calendar { GymClock.calendar }
     private var slots: [AvailableSlot] { app.slots }
@@ -23,7 +24,13 @@ struct ReservationsView: View {
     private var bookableDaySlots: [AvailableSlot] { daySlots.filter { !$0.mine } }
     private var dayBookings: [Reservation] { ReservationCalendar.reservations(on: date, from: visibleReservations, calendar: calendar) }
     private var upcoming: [Reservation] { ReservationCalendar.upcoming(app.reservations) }
-    private var laterUpcoming: [Reservation] { Array(upcoming.dropFirst()) }
+    private var focusReservation: Reservation? {
+        ReservationCalendar.current(app.reservations) ?? upcoming.first
+    }
+    private var timelineUpcoming: [Reservation] {
+        guard let focus = focusReservation else { return upcoming }
+        return upcoming.filter { $0.id != focus.id }
+    }
     private var past: [Reservation] { ReservationCalendar.past(app.reservations) }
     private var sortedCart: [AvailableSlot] { app.bookingCart.sorted { $0.start < $1.start } }
     private var canGoBackMonth: Bool { !ReservationCalendar.isCurrentMonth(date, calendar: calendar) }
@@ -55,6 +62,7 @@ struct ReservationsView: View {
                 app.reconcileBooking(available: available)
             }
             .sheet(isPresented: $showGyms) { gymSheet }
+            .sheet(isPresented: $showCalendar) { calendarSheet }
             .confirmationDialog(L10n.tr("reservations.cancelConfirm"), isPresented: Binding(get: { cancellation != nil }, set: { if !$0 { cancellation = nil } }), titleVisibility: .visible, presenting: cancellation) { item in
                 Button(L10n.tr("reservations.cancel"), role: .destructive) { Task { await cancel(item) } }
                 Button(L10n.tr("common.notNow"), role: .cancel) { cancellation = nil }
@@ -76,8 +84,14 @@ struct ReservationsView: View {
         VStack(alignment: .leading, spacing: 20) {
             StatusBadge(title: L10n.tr("guest.reservations"), symbol: "eye")
             Text(L10n.tr("guest.reservations.body")).foregroundStyle(.secondary)
-            MonthCalendar(date: $date, slots: [], reservations: [], selection: [], canGoBack: false, onBack: {}, onForward: {})
-                .disabled(true)
+            WeekDayStrip(
+                selected: $date,
+                slots: [],
+                reservations: [],
+                selection: [],
+                onOpenMonth: { app.showGuestGate = true },
+                onSelectDay: { _ in app.showGuestGate = true }
+            )
             BrandCard { VStack(alignment: .leading, spacing: 16) {
                 Label(L10n.tr("reservations.example"), systemImage: "calendar")
                 Text(L10n.tr("reservations.example.time")).font(.title2.bold())
@@ -134,8 +148,9 @@ struct ReservationsView: View {
                     .foregroundStyle(.secondary)
             }
             .padding(14)
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.primary.opacity(0.08)))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color("Surface"), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color("PrimaryText").opacity(0.08)))
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("reservations.gym")
@@ -197,22 +212,32 @@ struct ReservationsView: View {
         Task { await load() }
     }
     private var slotsPane: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 20) {
             Text(L10n.tr("reservations.plan")).font(.title2.bold())
             Text(L10n.tr("reservations.selectHint")).font(.subheadline).foregroundStyle(.secondary)
             gymSelector
-            MonthCalendar(
-                date: $date,
+            WeekDayStrip(
+                selected: $date,
                 slots: slots.filter { !$0.mine },
                 reservations: visibleReservations,
                 selection: app.bookingCart,
-                canGoBack: canGoBackMonth,
-                onBack: { date = ReservationCalendar.clampedDay(ReservationCalendar.shiftMonth(date, by: -1, calendar: calendar), calendar: calendar) },
-                onForward: {
-                    date = ReservationCalendar.startOfDay(ReservationCalendar.shiftMonth(date, by: 1, calendar: calendar), calendar: calendar)
-                }
+                onOpenMonth: { showCalendar = true }
             )
-            dayHeader
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(dayTitle)
+                    .font(.title3.bold())
+                    .contentTransition(.opacity)
+                Spacer(minLength: 8)
+                Text(slotCountLabel)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+            .animation(.snappy(duration: 0.22), value: date)
+            if !dayBookings.isEmpty {
+                MineDayBanner(count: dayBookings.count) {
+                    app.reservationSection = .mine
+                }
+            }
             availability
         }
     }
@@ -231,71 +256,59 @@ struct ReservationsView: View {
                 }
             }
         } else {
-            if let next = upcoming.first {
-                NextSessionHero(reservation: next) {
-                    if next.canCancel { cancellation = next }
+            if let focus = focusReservation {
+                NextSessionHero(reservation: focus) {
+                    if focus.canCancel { cancellation = focus }
                 }
                 .disabled(mutating)
             }
-            if !laterUpcoming.isEmpty {
-                Text(L10n.tr("reservations.mine")).font(.title2.bold())
-                ForEach(ReservationCalendar.groupedByDay(laterUpcoming, calendar: calendar), id: \.0) { day, items in
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(dayHeading(day)).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                        ForEach(items) { item in
-                            BookedSessionCard(reservation: item, style: .upcoming) {
-                                cancellation = item
-                            }
-                            .disabled(mutating)
-                        }
-                    }
-                }
-            }
-            if !past.isEmpty {
-                Text(L10n.tr("reservations.past")).font(.title2.bold()).padding(.top, upcoming.isEmpty ? 0 : 8)
-                ForEach(ReservationCalendar.groupedByDay(past, descending: true, calendar: calendar), id: \.0) { day, items in
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(dayHeading(day)).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                        ForEach(items) { item in
-                            BookedSessionCard(reservation: item, style: .past, onCancel: nil)
-                        }
-                    }
+            if !timelineUpcoming.isEmpty || !past.isEmpty {
+                Text(L10n.tr("reservations.timeline")).font(.title2.bold())
+                ReservationTimeline(
+                    upcoming: timelineUpcoming,
+                    past: past,
+                    dayHeading: dayHeading,
+                    disabled: mutating
+                ) { item in
+                    cancellation = item
                 }
             }
         }
     }
-    private var dayHeader: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(dayTitle).font(.title3.bold())
-            Text(slotCountLabel).font(.subheadline).foregroundStyle(.secondary)
-        }
+    private var calendarSheet: some View {
+        DayPickerSheet(
+            date: $date,
+            slots: slots.filter { !$0.mine },
+            reservations: visibleReservations,
+            selection: app.bookingCart,
+            canGoBackMonth: canGoBackMonth,
+            onDismiss: { showCalendar = false }
+        )
     }
-    private var daySchedule: [(DayPart, [Reservation], [AvailableSlot])] {
-        DayPart.allCases.compactMap { part in
-            let mine = dayBookings.filter { part.contains($0.start, calendar: calendar) }
-            let open = bookableDaySlots.filter { part.contains($0.start, calendar: calendar) }
-            return mine.isEmpty && open.isEmpty ? nil : (part, mine, open)
-        }
+    private var dayAgenda: [DayAgendaItem] {
+        let opens = bookableDaySlots.map { DayAgendaItem.open($0) }
+        let booked = dayBookings.map { DayAgendaItem.booked($0) }
+        return (opens + booked).sorted { $0.start < $1.start }
     }
     @ViewBuilder private var availability: some View {
-        if daySchedule.isEmpty && !loading {
-            Text(L10n.tr("reservations.noSlots")).foregroundStyle(.secondary)
+        if dayAgenda.isEmpty && !loading {
+            Text(L10n.tr("reservations.noSlots"))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 8)
         } else {
-            ForEach(daySchedule, id: \.0) { part, mine, items in
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(L10n.tr("reservations.period.\(part.rawValue)")).font(.headline)
-                    ForEach(mine) { item in
-                        MineHourRow(reservation: item) { app.reservationSection = .mine }
-                    }
-                    ForEach(items) { slot in
-                        let selected = app.bookingCart.contains(where: { $0.id == slot.id })
-                        let blocked = ReservationCalendar.conflicts(slot, reservations: visibleReservations, cart: app.bookingCart)
-                        SlotRow(slot: slot, guests: app.bookingGuests, selected: selected, overlapping: blocked && !selected) {
-                            toggle(slot)
-                        }
-                        .disabled(mutating || (blocked && !selected))
-                    }
-                }
+            DaySlotTimeline(
+                items: dayAgenda,
+                guests: app.bookingGuests,
+                selectedIDs: Set(app.bookingCart.map(\.id)),
+                cart: app.bookingCart,
+                reservations: visibleReservations,
+                disabled: mutating
+            ) { slot in
+                toggle(slot)
+            } onMine: {
+                app.reservationSection = .mine
             }
         }
     }
@@ -447,19 +460,17 @@ struct BookingCartDock: View {
         default: return "\(count) \(L10n.tr("reservations.entriesMany"))"
         }
     }
+    private var personsWord: String {
+        app.bookingGuests == 1
+            ? L10n.tr("reservations.personOne")
+            : (app.bookingGuests < 5 ? L10n.tr("reservations.personsFew") : L10n.tr("reservations.personsMany"))
+    }
     private var detailLabel: String {
+        let people = "\(app.bookingGuests) \(personsWord)"
         if usesMembership {
-            if app.bookingGuests > 1 {
-                let word = app.bookingGuests < 5 ? L10n.tr("reservations.personsFew") : L10n.tr("reservations.personsMany")
-                return "\(app.bookingGuests) \(word) · \(entryLabel)"
-            }
-            return entryLabel
+            return app.bookingGuests > 1 ? "\(people) · \(entryLabel)" : entryLabel
         }
-        if app.bookingGuests > 1 {
-            let word = app.bookingGuests < 5 ? L10n.tr("reservations.personsFew") : L10n.tr("reservations.personsMany")
-            return "\(app.bookingGuests) \(word) · \(priceLabel)"
-        }
-        return priceLabel
+        return app.bookingGuests > 1 ? "\(people) · \(priceLabel)" : priceLabel
     }
     private var actionTitle: String {
         usesMembership ? L10n.tr("reservations.reserve") : L10n.tr("reservations.checkout")
@@ -541,38 +552,49 @@ struct BookingCartDock: View {
             Image(systemName: "xmark")
                 .font(.caption.weight(.bold))
                 .frame(width: 36, height: 36)
+                .contentShape(Circle())
                 .background(Color.primary.opacity(0.06), in: Circle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.tr("reservations.clearCart"))
     }
     private var personControl: some View {
-        HStack(spacing: 2) {
-            stepButton(systemName: "minus", label: L10n.tr("reservations.personsLess"), enabled: app.bookingGuests > 1) {
+        HStack(spacing: 0) {
+            Button {
                 app.adjustBookingGuests(by: -1)
+            } label: {
+                Image(systemName: "minus")
+                    .font(.caption.weight(.bold))
+                    .frame(width: 36, height: 36)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .disabled(app.bookingGuests <= 1)
+            .opacity(app.bookingGuests <= 1 ? 0.35 : 1)
+            .accessibilityLabel(L10n.tr("reservations.personsLess"))
+
             Text("\(app.bookingGuests)")
                 .font(.headline.monospacedDigit())
-                .frame(minWidth: 20)
-                .accessibilityLabel("\(app.bookingGuests) \(app.bookingGuests < 5 ? L10n.tr("reservations.personsFew") : L10n.tr("reservations.personsMany"))")
-            stepButton(systemName: "plus", label: L10n.tr("reservations.personsMore"), enabled: app.bookingGuests < app.bookingPersonLimit) {
+                .frame(minWidth: 22)
+                .accessibilityLabel("\(app.bookingGuests) \(personsWord)")
+
+            Button {
                 app.adjustBookingGuests(by: 1)
+            } label: {
+                Image(systemName: "plus")
+                    .font(.caption.weight(.bold))
+                    .frame(width: 36, height: 36)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .disabled(app.bookingGuests >= app.bookingPersonLimit)
+            .opacity(app.bookingGuests >= app.bookingPersonLimit ? 0.35 : 1)
+            .accessibilityLabel(L10n.tr("reservations.personsMore"))
         }
-        .padding(.horizontal, 4)
+        .padding(.horizontal, 2)
         .frame(height: 40)
         .background(Color.primary.opacity(0.06), in: Capsule())
         .accessibilityElement(children: .contain)
-    }
-    private func stepButton(systemName: String, label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.caption.weight(.bold))
-                .frame(width: 32, height: 32)
-        }
-        .buttonStyle(.plain)
-        .disabled(!enabled)
-        .accessibilityLabel(label)
     }
 }
 
@@ -596,6 +618,7 @@ struct BookingSummaryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 summaryHero
+                guestStepper
                 statsRow
                 whereSection
                 whenSection
@@ -613,7 +636,7 @@ struct BookingSummaryView: View {
         .safeAreaInset(edge: .bottom) { payFooter }
         .task(id: quoteKey) { await loadQuote() }
     }
-    private var quoteKey: String { slots.map(\.id).joined(separator: ",") + ":\(guests)" }
+    private var quoteKey: String { slots.map(\.id).joined(separator: ",") + ":\(app.bookingGuests)" }
     private var summaryHero: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
@@ -634,6 +657,49 @@ struct BookingSummaryView: View {
         .foregroundStyle(Brand.ink)
         .background(LinearGradient(colors: [Color(hex: 0xD4F65E), Brand.lime], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 28))
         .accessibilityElement(children: .combine)
+    }
+    private var guestStepper: some View {
+        BrandCard {
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L10n.tr("reservations.personsTitle"))
+                        .font(.headline)
+                    Text(L10n.tr("reservations.personsHint"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 8)
+                HStack(spacing: 0) {
+                    Button { app.adjustBookingGuests(by: -1) } label: {
+                        Image(systemName: "minus")
+                            .font(.caption.weight(.bold))
+                            .frame(width: 40, height: 40)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(app.bookingGuests <= 1 || busy)
+                    .opacity(app.bookingGuests <= 1 ? 0.35 : 1)
+                    .accessibilityLabel(L10n.tr("reservations.personsLess"))
+
+                    Text("\(app.bookingGuests)")
+                        .font(.title3.weight(.bold).monospacedDigit())
+                        .frame(minWidth: 28)
+                        .accessibilityLabel("\(app.bookingGuests) \(app.bookingGuests == 1 ? L10n.tr("reservations.personOne") : L10n.tr("reservations.personsFew"))")
+
+                    Button { app.adjustBookingGuests(by: 1) } label: {
+                        Image(systemName: "plus")
+                            .font(.caption.weight(.bold))
+                            .frame(width: 40, height: 40)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(app.bookingGuests >= app.bookingPersonLimit || busy)
+                    .opacity(app.bookingGuests >= app.bookingPersonLimit ? 0.35 : 1)
+                    .accessibilityLabel(L10n.tr("reservations.personsMore"))
+                }
+                .background(Color.primary.opacity(0.06), in: Capsule())
+            }
+        }
     }
     private var statsRow: some View {
         HStack(spacing: 10) {
@@ -679,7 +745,7 @@ struct BookingSummaryView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(L10n.tr("reservations.whenTitle")).font(.title2.bold())
             ForEach(grouped, id: \.0) { day, items in
-                CheckoutDayCard(day: day, slots: items, guests: guests, quoted: quote != nil, busy: busy, onRemove: onRemove)
+                CheckoutDayCard(day: day, slots: items, guests: app.bookingGuests, quoted: quote != nil, busy: busy, onRemove: onRemove)
             }
         }
     }
@@ -734,7 +800,7 @@ struct BookingSummaryView: View {
     private func loadQuote() async {
         guard !slots.isEmpty else { quote = nil; return }
         do {
-            quote = try await app.service.quoteReservations(slotIDs: slots.map(\.id), guests: guests)
+            quote = try await app.service.quoteReservations(slotIDs: slots.map(\.id), guests: app.bookingGuests)
             quoteError = nil
         } catch {
             quote = nil
@@ -759,7 +825,7 @@ struct CheckoutDayCard: View {
                         HStack(alignment: .top, spacing: 12) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(ReservationCalendar.occupiedRange(slot.start, slot.end, bufferMinutes: slot.bufferMinutes)).font(.headline.monospacedDigit())
-                                Text(ReservationCalendar.bookingDetail(room: slot.room, price: quoted ? slot.price : slot.price(for: guests), currency: slot.currencyCode))
+                                Text(ReservationCalendar.bookingDetail(room: slot.room, price: slot.price(for: guests), currency: slot.currencyCode))
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer(minLength: 8)
@@ -865,149 +931,306 @@ struct DateBadge: View {
     }
 }
 
-struct MonthCalendar: View {
-    @Binding var date: Date
-    let slots: [AvailableSlot]
-    let reservations: [Reservation]
-    var selection: [AvailableSlot] = []
-    var canGoBack = true
-    var onBack: () -> Void
-    var onForward: () -> Void
-    private var calendar: Calendar { GymClock.calendar }
-    private var days: [CalendarDay] { ReservationCalendar.monthGrid(containing: date, calendar: calendar) }
-    private var columns: [GridItem] { Array(repeating: GridItem(.flexible(), spacing: 6), count: 7) }
-    var body: some View {
-        BrandCard {
-            VStack(spacing: 18) {
-                HStack(spacing: 8) {
-                    monthButton(systemName: "chevron.left", label: L10n.tr("reservations.previousMonth"), enabled: canGoBack, action: onBack)
-                    Spacer(minLength: 8)
-                    VStack(spacing: 4) {
-                        Text(date.formatted(.dateTime.month(.wide).year()))
-                            .font(.title3.weight(.bold))
-                        if !calendar.isDateInToday(date) {
-                            Button(L10n.tr("reservations.todayJump")) { date = ReservationCalendar.clampedDay(Date(), calendar: calendar) }
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(Brand.ink)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(Brand.lime, in: Capsule())
-                        }
-                    }
-                    Spacer(minLength: 8)
-                    monthButton(systemName: "chevron.right", label: L10n.tr("reservations.nextMonth"), enabled: true, action: onForward)
-                }
-                HStack(spacing: 0) {
-                    ForEach(Array(ReservationCalendar.shortWeekdayLabels(calendar: calendar).enumerated()), id: \.offset) { _, symbol in
-                        Text(symbol).font(.caption2.weight(.bold)).foregroundStyle(.secondary).frame(maxWidth: .infinity)
-                    }
-                }
-                LazyVGrid(columns: columns, spacing: 8) {
-                    ForEach(days, id: \.date) { day in
-                        dayButton(day)
-                    }
-                }
-                HStack(spacing: 14) {
-                    legend(color: Brand.limeDeep, title: L10n.tr("reservations.legend.free"))
-                    legend(color: Color("AccentColor"), title: L10n.tr("reservations.legend.mine"))
-                    legend(color: Brand.ink, title: L10n.tr("reservations.legend.selected"))
-                }
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            }
+enum DayAgendaItem: Identifiable {
+    case open(AvailableSlot)
+    case booked(Reservation)
+
+    var id: String {
+        switch self {
+        case .open(let slot): return "open-\(slot.id)"
+        case .booked(let item): return "booked-\(item.id)"
         }
-        .accessibilityIdentifier("reservations.calendar")
     }
-    private func monthButton(systemName: String, label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.body.weight(.semibold))
-                .frame(width: 40, height: 40)
-                .background(Color.primary.opacity(enabled ? 0.06 : 0.03), in: Circle())
-        }
-        .buttonStyle(.plain)
-        .disabled(!enabled)
-        .accessibilityLabel(label)
-    }
-    private func dayButton(_ day: CalendarDay) -> some View {
-        let selected = calendar.isDate(day.date, inSameDayAs: date)
-        let past = ReservationCalendar.isPastDay(day.date)
-        let today = calendar.isDateInToday(day.date)
-        return Button {
-            date = ReservationCalendar.clampedDay(day.date, calendar: calendar)
-        } label: {
-            VStack(spacing: 5) {
-                Text(day.date, format: .dateTime.day())
-                    .font(.subheadline.weight(today || selected ? .bold : .medium))
-                    .frame(width: 36, height: 36)
-                    .foregroundStyle(foreground(selected: selected, past: past, inMonth: day.inMonth))
-                    .background(selected ? Brand.lime : Color.clear, in: Circle())
-                    .overlay {
-                        if ReservationCalendar.hasReservation(reservations, on: day.date) {
-                            Circle().strokeBorder(selected ? Brand.ink : Color("AccentColor"), lineWidth: 2)
-                        } else if today && !selected {
-                            Circle().strokeBorder(Brand.limeDeep, lineWidth: 1.5)
-                        }
-                    }
-                Circle().fill(dotColor(for: day.date)).frame(width: 5, height: 5)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 2)
-        }
-        .buttonStyle(.plain)
-        .disabled(past)
-        .opacity(day.inMonth || selected ? 1 : 0.35)
-        .accessibilityLabel(dayLabel(day))
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .accessibilityHidden(!day.inMonth && past)
-    }
-    private func dayLabel(_ day: CalendarDay) -> String {
-        var text = day.date.formatted(.dateTime.weekday(.wide).day().month(.wide))
-        if ReservationCalendar.hasReservation(reservations, on: day.date) {
-            text += ", \(L10n.tr("reservations.legend.mine"))"
-        }
-        return text
-    }
-    private func foreground(selected: Bool, past: Bool, inMonth: Bool) -> Color {
-        if selected { return Brand.ink }
-        if past || !inMonth { return Color.primary.opacity(0.35) }
-        return Color.primary
-    }
-    private func dotColor(for day: Date) -> Color {
-        if ReservationCalendar.hasReservation(reservations, on: day) { return Color("AccentColor") }
-        if ReservationCalendar.hasSelection(selection, on: day) { return Brand.ink }
-        if ReservationCalendar.hasAvailability(slots, on: day) { return Brand.limeDeep }
-        return .clear
-    }
-    private func legend(color: Color, title: String) -> some View {
-        HStack(spacing: 6) {
-            Circle().fill(color).frame(width: 6, height: 6)
-            Text(title)
+
+    var start: Date {
+        switch self {
+        case .open(let slot): return slot.start
+        case .booked(let item): return item.start
         }
     }
 }
 
-struct MineHourRow: View {
-    let reservation: Reservation
-    var action: () -> Void
+struct WeekDayStrip: View {
+    @Environment(\.colorScheme) private var scheme
+    @Binding var selected: Date
+    let slots: [AvailableSlot]
+    let reservations: [Reservation]
+    var selection: [AvailableSlot] = []
+    var onOpenMonth: () -> Void
+    var onSelectDay: ((Date) -> Void)? = nil
+
+    private var calendar: Calendar { GymClock.calendar }
+    private var days: [Date] {
+        let start = ReservationCalendar.startOfDay(Date(), calendar: calendar)
+        let focus = ReservationCalendar.clampedDay(selected, calendar: calendar)
+        let span = calendar.dateComponents([.day], from: start, to: focus).day ?? 0
+        return ReservationCalendar.upcomingDays(count: max(21, span + 7), calendar: calendar)
+    }
+
     var body: some View {
-        Button(action: action) {
-            BrandCard {
-                HStack(spacing: 14) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(Color("AccentColor"))
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(ReservationCalendar.occupiedRange(reservation.start, reservation.end, bufferMinutes: reservation.bufferMinutes))
-                            .font(.headline)
-                        Text(L10n.tr("reservations.yours") + reservation.partySuffix)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+        HStack(alignment: .top, spacing: 10) {
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(days, id: \.self) { day in
+                            dayCell(day)
+                                .id(ReservationCalendar.startOfDay(day, calendar: calendar))
+                        }
                     }
-                    Spacer()
+                    .padding(.vertical, 2)
+                }
+                .frame(maxWidth: .infinity)
+                .onAppear { scrollToSelected(proxy) }
+                .onChange(of: selected) { _, _ in scrollToSelected(proxy) }
+            }
+
+            Button(action: onOpenMonth) {
+                VStack(spacing: 6) {
+                    Image(systemName: "calendar")
+                        .font(.body.weight(.semibold))
+                    Text(L10n.tr("reservations.monthShort"))
+                        .font(.caption2.weight(.bold))
+                }
+                .foregroundStyle(Brand.ink)
+                .frame(width: 56, height: 72)
+                .background(Brand.lime, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.tr("reservations.pickDay"))
+            .accessibilityHint(L10n.tr("reservations.pickDayHint"))
+        }
+        .padding(10)
+        .background(Brand.surface(scheme), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .strokeBorder(Brand.text(scheme).opacity(0.08))
+        )
+    }
+
+    private func dayCell(_ day: Date) -> some View {
+        let focused = calendar.isDate(day, inSameDayAs: selected)
+        let today = calendar.isDateInToday(day)
+        let free = ReservationCalendar.hasAvailability(slots, on: day, calendar: calendar)
+        let mine = ReservationCalendar.hasReservation(reservations, on: day, calendar: calendar)
+        let picked = ReservationCalendar.hasSelection(selection, on: day, calendar: calendar)
+        return Button {
+            withAnimation(.snappy(duration: 0.22)) {
+                selected = ReservationCalendar.clampedDay(day, calendar: calendar)
+            }
+            onSelectDay?(day)
+        } label: {
+            VStack(spacing: 6) {
+                Text(day, format: .dateTime.weekday(.abbreviated))
+                    .font(.caption2.weight(.bold))
+                    .textCase(.uppercase)
+                Text(day, format: .dateTime.day())
+                    .font(.title3.weight(.bold))
+                    .monospacedDigit()
+                HStack(spacing: 3) {
+                    if free { Circle().fill(focused ? Brand.ink.opacity(0.55) : Brand.limeDeep).frame(width: 5, height: 5) }
+                    if mine { Capsule().fill(focused ? Brand.ink.opacity(0.55) : Brand.sky).frame(width: 8, height: 4) }
+                    if picked && !focused {
+                        RoundedRectangle(cornerRadius: 1, style: .continuous)
+                            .fill(Brand.limeDeep)
+                            .frame(width: 6, height: 4)
+                    }
+                    if !free && !mine && !picked {
+                        Color.clear.frame(width: 5, height: 5)
+                    }
+                }
+                .frame(height: 6)
+            }
+            .foregroundStyle(focused ? Brand.ink : Brand.text(scheme))
+            .frame(width: 52, height: 72)
+            .background(
+                focused ? Brand.lime : (today ? Brand.lime.opacity(0.14) : Color.clear),
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(
+                        focused ? Color.clear : (today ? Brand.limeDeep.opacity(0.55) : Brand.text(scheme).opacity(0.06)),
+                        lineWidth: 1
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(day.formatted(.dateTime.weekday(.wide).day().month(.wide)))
+        .accessibilityAddTraits(focused ? .isSelected : [])
+    }
+
+    private func scrollToSelected(_ proxy: ScrollViewProxy) {
+        let id = ReservationCalendar.startOfDay(selected, calendar: calendar)
+        DispatchQueue.main.async {
+            withAnimation(.snappy(duration: 0.25)) {
+                proxy.scrollTo(id, anchor: .center)
+            }
+        }
+    }
+}
+
+struct DaySlotTimeline: View {
+    let items: [DayAgendaItem]
+    var guests = 1
+    var selectedIDs: Set<String> = []
+    var cart: [AvailableSlot] = []
+    var reservations: [Reservation] = []
+    var disabled = false
+    var onToggle: (AvailableSlot) -> Void
+    var onMine: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                timelineRow(item, isLast: index == items.count - 1)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func timelineRow(_ item: DayAgendaItem, isLast: Bool) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(spacing: 0) {
+                Text(item.start, format: .dateTime.hour().minute())
+                    .font(.caption.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 44, alignment: .trailing)
+                    .padding(.top, 18)
+                if !isLast {
+                    Rectangle()
+                        .fill(Color.primary.opacity(0.10))
+                        .frame(width: 2)
+                        .frame(maxHeight: .infinity)
+                        .padding(.top, 8)
                 }
             }
-            .overlay(RoundedRectangle(cornerRadius: Brand.Radius.card).strokeBorder(Color("AccentColor"), lineWidth: 2))
+            .frame(width: 44)
+
+            Group {
+                switch item {
+                case .open(let slot):
+                    let selected = selectedIDs.contains(slot.id)
+                    let blocked = ReservationCalendar.conflicts(slot, reservations: reservations, cart: cart)
+                    SlotPickRow(
+                        slot: slot,
+                        guests: guests,
+                        selected: selected,
+                        overlapping: blocked && !selected
+                    ) {
+                        onToggle(slot)
+                    }
+                    .disabled(disabled || (blocked && !selected))
+                case .booked(let reservation):
+                    MineSlotRow(reservation: reservation, action: onMine)
+                        .disabled(disabled)
+                }
+            }
+            .padding(.bottom, isLast ? 0 : 12)
+        }
+    }
+}
+
+struct SlotPickRow: View {
+    @Environment(\.colorScheme) private var scheme
+    let slot: AvailableSlot
+    var guests = 1
+    var selected = false
+    var overlapping = false
+    var action: () -> Void
+
+    private var duration: String {
+        ReservationCalendar.durationLabel(
+            minutes: ReservationCalendar.durationMinutes(from: slot.start, to: slot.end)
+        )
+    }
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(ReservationCalendar.occupiedRange(slot.start, slot.end, bufferMinutes: slot.bufferMinutes))
+                        .font(.headline.monospacedDigit())
+                        .foregroundStyle(selected ? Brand.ink : Brand.text(scheme))
+                    HStack(spacing: 8) {
+                        Text(duration)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(selected ? Brand.ink.opacity(0.7) : .secondary)
+                        Text("·")
+                            .foregroundStyle(selected ? Brand.ink.opacity(0.45) : .secondary)
+                        Text(ReservationCalendar.bookingDetail(room: slot.room, price: slot.price(for: guests), currency: slot.currencyCode))
+                            .font(.caption)
+                            .foregroundStyle(selected ? Brand.ink.opacity(0.7) : .secondary)
+                            .lineLimit(1)
+                    }
+                    if overlapping {
+                        Text(L10n.tr("reservations.overlap"))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Brand.danger)
+                    } else if selected {
+                        Text(L10n.tr("reservations.legend.selected"))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Brand.ink.opacity(0.72))
+                    }
+                }
+                Spacer(minLength: 8)
+                Image(systemName: selected ? "checkmark.circle.fill" : overlapping ? "exclamationmark.circle.fill" : "plus.circle")
+                    .font(.title2)
+                    .foregroundStyle(
+                        overlapping ? Brand.danger :
+                            selected ? Brand.ink : Brand.limeDeep
+                    )
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                selected ? Brand.lime : Brand.surface(scheme),
+                in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(
+                        selected ? Brand.ink.opacity(0.18) :
+                            overlapping ? Brand.danger.opacity(0.45) : Brand.text(scheme).opacity(0.08),
+                        lineWidth: selected || overlapping ? 1.5 : 1
+                    )
+            )
+            .opacity(overlapping && !selected ? 0.72 : 1)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityHint(L10n.tr("reservations.reserve"))
+    }
+}
+
+struct MineSlotRow: View {
+    let reservation: Reservation
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(Brand.sky)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(ReservationCalendar.occupiedRange(reservation.start, reservation.end, bufferMinutes: reservation.bufferMinutes))
+                        .font(.headline.monospacedDigit())
+                    Text(L10n.tr("reservations.yours") + reservation.partySuffix)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Brand.sky)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Brand.sky.opacity(0.12), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(Brand.sky.opacity(0.4), lineWidth: 1.25)
+            )
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(L10n.tr("reservations.yours")), \(ReservationCalendar.occupiedRange(reservation.start, reservation.end, bufferMinutes: reservation.bufferMinutes))")
@@ -1015,36 +1238,429 @@ struct MineHourRow: View {
     }
 }
 
-struct SlotRow: View {
-    let slot: AvailableSlot
-    var guests = 1
-    var selected = false
-    var overlapping = false
+struct MineDayBanner: View {
+    let count: Int
     var action: () -> Void
+
     var body: some View {
         Button(action: action) {
-            BrandCard {
-                HStack(spacing: 14) {
-                    Image(systemName: selected ? "checkmark.circle.fill" : overlapping ? "exclamationmark.circle" : "circle")
-                        .font(.title2)
-                        .foregroundStyle(overlapping ? Brand.danger : selected ? Color("AccentColor") : Color.primary.opacity(0.35))
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(ReservationCalendar.occupiedRange(slot.start, slot.end, bufferMinutes: slot.bufferMinutes))
-                            .font(.headline)
-                        Text(ReservationCalendar.bookingDetail(room: slot.room, price: slot.price(for: guests), currency: slot.currencyCode))
-                            .font(.caption).foregroundStyle(.secondary)
-                        if overlapping {
-                            Text(L10n.tr("reservations.overlap")).font(.caption).foregroundStyle(Brand.danger)
-                        }
-                    }
-                    Spacer()
+            HStack(spacing: 12) {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(Brand.sky)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(count == 1 ? L10n.tr("reservations.bookedOnDayOne") : "\(count) \(L10n.tr("reservations.bookedOnDayMany"))")
+                        .font(.subheadline.weight(.semibold))
+                    Text(L10n.tr("reservations.goToMine"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
             }
-            .overlay(RoundedRectangle(cornerRadius: Brand.Radius.card).strokeBorder(selected ? Color("AccentColor") : .clear, lineWidth: 2))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(Brand.sky.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Brand.sky.opacity(0.35), lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .accessibilityHint(L10n.tr("reservations.reserve"))
+    }
+}
+
+struct ReservationTimeline: View {
+    let upcoming: [Reservation]
+    let past: [Reservation]
+    var dayHeading: (Date) -> String
+    var disabled = false
+    var onCancel: (Reservation) -> Void
+
+    private var rows: [(id: String, day: Date, item: Reservation, style: BookedSessionCard.Style, isLast: Bool)] {
+        let future = upcoming.map { (day: $0.start, item: $0, style: BookedSessionCard.Style.upcoming) }
+        let history = past.map { (day: $0.start, item: $0, style: BookedSessionCard.Style.past) }
+        let all = future + history
+        return all.enumerated().map { index, row in
+            (
+                id: row.item.id,
+                day: row.day,
+                item: row.item,
+                style: row.style,
+                isLast: index == all.count - 1
+            )
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(rows, id: \.id) { row in
+                timelineRow(row.day, reservation: row.item, style: row.style, isLast: row.isLast)
+            }
+        }
+    }
+
+    private func timelineRow(_ day: Date, reservation: Reservation, style: BookedSessionCard.Style, isLast: Bool) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            VStack(spacing: 0) {
+                Circle()
+                    .fill(style == .past ? Color.primary.opacity(0.22) : Brand.sky)
+                    .frame(width: 12, height: 12)
+                    .padding(.top, 22)
+                if !isLast {
+                    Rectangle()
+                        .fill(Brand.sky.opacity(style == .past ? 0.18 : 0.35))
+                        .frame(width: 2)
+                        .frame(maxHeight: .infinity)
+                }
+            }
+            .frame(width: 12)
+            VStack(alignment: .leading, spacing: 10) {
+                Text(dayHeading(day))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+                BookedSessionCard(
+                    reservation: reservation,
+                    style: style,
+                    onCancel: style == .upcoming && reservation.canCancel ? { onCancel(reservation) } : nil
+                )
+                .disabled(disabled)
+            }
+            .padding(.bottom, isLast ? 0 : 18)
+        }
+    }
+}
+
+struct DayPickerSheet: View {
+    @Environment(\.colorScheme) private var scheme
+    @Binding var date: Date
+    let slots: [AvailableSlot]
+    let reservations: [Reservation]
+    var selection: [AvailableSlot] = []
+    var canGoBackMonth = true
+    var onDismiss: () -> Void
+
+    private var calendar: Calendar { GymClock.calendar }
+    private var today: Date { ReservationCalendar.clampedDay(Date(), calendar: calendar) }
+    private var tomorrow: Date {
+        ReservationCalendar.clampedDay(
+            calendar.date(byAdding: .day, value: 1, to: Date()) ?? Date(),
+            calendar: calendar
+        )
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        quickPicks
+                        MonthCalendar(
+                            date: $date,
+                            slots: slots,
+                            reservations: reservations,
+                            selection: selection,
+                            canGoBack: canGoBackMonth,
+                            onBack: { shiftMonth(-1) },
+                            onForward: { shiftMonth(1) },
+                            onDayPicked: onDismiss
+                        )
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    .padding(.bottom, 24)
+                }
+
+                Divider().opacity(0.35)
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(selectedHeading)
+                            .font(.headline)
+                        Text(selectedDetail)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 8)
+                    Button(L10n.tr("reservations.pickDayConfirm"), action: onDismiss)
+                        .font(.headline)
+                        .foregroundStyle(Brand.ink)
+                        .padding(.horizontal, 22)
+                        .padding(.vertical, 14)
+                        .background(Brand.lime, in: Capsule())
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+                .background(Brand.surface(scheme))
+            }
+            .brandBackground()
+            .navigationTitle(L10n.tr("reservations.pickDay"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.tr("common.close"), action: onDismiss)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(Color("Background"))
+        .presentationCornerRadius(28)
+    }
+
+    private var quickPicks: some View {
+        HStack(spacing: 10) {
+            quickChip(
+                title: L10n.tr("reservations.today"),
+                selected: calendar.isDate(date, inSameDayAs: today)
+            ) {
+                pick(today)
+            }
+            quickChip(
+                title: L10n.tr("reservations.tomorrow"),
+                selected: calendar.isDate(date, inSameDayAs: tomorrow)
+            ) {
+                pick(tomorrow)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func quickChip(title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(selected ? Brand.ink : Brand.text(scheme))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(
+                    selected ? Brand.lime : Brand.surface(scheme),
+                    in: Capsule()
+                )
+                .overlay(
+                    Capsule().strokeBorder(
+                        selected ? Color.clear : Brand.text(scheme).opacity(0.10),
+                        lineWidth: 1
+                    )
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var selectedHeading: String {
+        if calendar.isDateInToday(date) { return L10n.tr("reservations.today") }
+        if calendar.isDateInTomorrow(date) { return L10n.tr("reservations.tomorrow") }
+        return date.formatted(.dateTime.weekday(.wide).day().month(.wide))
+    }
+
+    private var selectedDetail: String {
+        let open = ReservationCalendar.slots(on: date, from: slots, calendar: calendar).filter { !$0.mine }.count
+        let mine = ReservationCalendar.reservations(on: date, from: reservations, calendar: calendar).count
+        if open == 0 && mine > 0 {
+            return mine == 1 ? L10n.tr("reservations.bookedOnDayOne") : "\(mine) \(L10n.tr("reservations.bookedOnDayMany"))"
+        }
+        switch open {
+        case 0: return L10n.tr("reservations.noSlots")
+        case 1: return L10n.tr("reservations.slotsOne")
+        default: return "\(open) \(L10n.tr("reservations.slotsMany"))"
+        }
+    }
+
+    private func pick(_ day: Date) {
+        withAnimation(.snappy(duration: 0.22)) {
+            date = ReservationCalendar.clampedDay(day, calendar: calendar)
+        }
+        onDismiss()
+    }
+
+    private func shiftMonth(_ value: Int) {
+        withAnimation(.snappy(duration: 0.25)) {
+            let shifted = ReservationCalendar.shiftMonth(date, by: value, calendar: calendar)
+            date = value < 0
+                ? ReservationCalendar.clampedDay(shifted, calendar: calendar)
+                : ReservationCalendar.startOfDay(shifted, calendar: calendar)
+        }
+    }
+}
+
+struct MonthCalendar: View {
+    @Environment(\.colorScheme) private var scheme
+    @Binding var date: Date
+    let slots: [AvailableSlot]
+    let reservations: [Reservation]
+    var selection: [AvailableSlot] = []
+    var canGoBack = true
+    var onBack: () -> Void
+    var onForward: () -> Void
+    var onDayPicked: (() -> Void)? = nil
+    private var calendar: Calendar { GymClock.calendar }
+    private var days: [CalendarDay] { ReservationCalendar.monthGrid(containing: date, calendar: calendar) }
+    private var columns: [GridItem] { Array(repeating: GridItem(.flexible(), spacing: 6), count: 7) }
+
+    var body: some View {
+        VStack(spacing: 18) {
+            HStack(spacing: 12) {
+                monthButton(systemName: "chevron.left", label: L10n.tr("reservations.previousMonth"), enabled: canGoBack, action: onBack)
+                Text(date.formatted(.dateTime.month(.wide).year()))
+                    .font(.title3.weight(.bold))
+                    .frame(maxWidth: .infinity)
+                    .multilineTextAlignment(.center)
+                    .contentTransition(.opacity)
+                monthButton(systemName: "chevron.right", label: L10n.tr("reservations.nextMonth"), enabled: true, action: onForward)
+            }
+
+            HStack(spacing: 0) {
+                ForEach(Array(ReservationCalendar.shortWeekdayLabels(calendar: calendar).enumerated()), id: \.offset) { _, symbol in
+                    Text(symbol)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+
+            LazyVGrid(columns: columns, spacing: 8) {
+                ForEach(days, id: \.date) { day in
+                    dayButton(day)
+                }
+            }
+
+            HStack(spacing: 14) {
+                legendMark(.free, title: L10n.tr("reservations.legend.free"))
+                legendMark(.mine, title: L10n.tr("reservations.legend.mine"))
+                legendMark(.picked, title: L10n.tr("reservations.legend.selected"))
+            }
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 4)
+        }
+        .padding(18)
+        .background(Brand.surface(scheme), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .strokeBorder(Brand.text(scheme).opacity(0.06))
+        )
+        .accessibilityIdentifier("reservations.calendar")
+    }
+
+    private enum DayMark { case free, mine, picked }
+
+    private func monthButton(systemName: String, label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(enabled ? Brand.ink : Color.primary.opacity(0.28))
+                .frame(width: 40, height: 40)
+                .background(enabled ? Brand.lime : Color.primary.opacity(0.08), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .accessibilityLabel(label)
+    }
+
+    private func dayButton(_ day: CalendarDay) -> some View {
+        let focused = calendar.isDate(day.date, inSameDayAs: date)
+        let past = ReservationCalendar.isPastDay(day.date)
+        let today = calendar.isDateInToday(day.date)
+        let mine = ReservationCalendar.hasReservation(reservations, on: day.date)
+        let picked = ReservationCalendar.hasSelection(selection, on: day.date)
+        let free = ReservationCalendar.hasAvailability(slots, on: day.date)
+        return Button {
+            withAnimation(.snappy(duration: 0.2)) {
+                date = ReservationCalendar.clampedDay(day.date, calendar: calendar)
+            }
+            onDayPicked?()
+        } label: {
+            VStack(spacing: 5) {
+                Text(day.date, format: .dateTime.day())
+                    .font(.body.weight(today || focused ? .bold : .medium))
+                    .monospacedDigit()
+                    .frame(width: 42, height: 42)
+                    .foregroundStyle(foreground(focused: focused, past: past, inMonth: day.inMonth))
+                    .background {
+                        if focused {
+                            Circle().fill(Brand.lime)
+                        } else if mine {
+                            Circle().fill(Brand.sky.opacity(0.18))
+                        } else if picked {
+                            Circle().fill(Brand.lime.opacity(0.18))
+                        } else if free && day.inMonth && !past {
+                            Circle().fill(Brand.lime.opacity(0.10))
+                        }
+                    }
+                    .overlay {
+                        if focused {
+                            EmptyView()
+                        } else if mine {
+                            Circle().strokeBorder(Brand.sky, lineWidth: 1.5)
+                        } else if today {
+                            Circle().strokeBorder(Brand.limeDeep.opacity(0.85), lineWidth: 1.4)
+                        }
+                    }
+                dayMarks(mine: mine, picked: picked, free: free && !mine && !picked && !past)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 2)
+        }
+        .buttonStyle(.plain)
+        .disabled(past || !day.inMonth)
+        .opacity(day.inMonth ? (past ? 0.35 : 1) : 0.22)
+        .accessibilityLabel(dayLabel(day, mine: mine, picked: picked, free: free))
+        .accessibilityAddTraits(focused ? .isSelected : [])
+        .accessibilityHidden(!day.inMonth)
+    }
+
+    @ViewBuilder
+    private func dayMarks(mine: Bool, picked: Bool, free: Bool) -> some View {
+        HStack(spacing: 3) {
+            if mine {
+                Capsule().fill(Brand.sky).frame(width: 9, height: 4)
+            }
+            if picked {
+                RoundedRectangle(cornerRadius: 1, style: .continuous)
+                    .fill(Brand.limeDeep)
+                    .frame(width: 7, height: 4)
+            }
+            if free {
+                Circle().fill(Brand.limeDeep).frame(width: 4, height: 4)
+            }
+            if !mine && !picked && !free {
+                Color.clear.frame(width: 4, height: 4)
+            }
+        }
+        .frame(height: 6)
+    }
+
+    private func dayLabel(_ day: CalendarDay, mine: Bool, picked: Bool, free: Bool) -> String {
+        var text = day.date.formatted(.dateTime.weekday(.wide).day().month(.wide))
+        if mine { text += ", \(L10n.tr("reservations.legend.mine"))" }
+        if picked { text += ", \(L10n.tr("reservations.legend.selected"))" }
+        if free { text += ", \(L10n.tr("reservations.legend.free"))" }
+        return text
+    }
+
+    private func foreground(focused: Bool, past: Bool, inMonth: Bool) -> Color {
+        if focused { return Brand.ink }
+        if past || !inMonth { return Color.primary.opacity(0.35) }
+        return Brand.text(scheme)
+    }
+
+    private func legendMark(_ mark: DayMark, title: String) -> some View {
+        HStack(spacing: 6) {
+            switch mark {
+            case .free:
+                Circle().fill(Brand.limeDeep).frame(width: 6, height: 6)
+            case .mine:
+                Capsule().fill(Brand.sky).frame(width: 10, height: 5)
+            case .picked:
+                RoundedRectangle(cornerRadius: 1, style: .continuous)
+                    .fill(Brand.limeDeep)
+                    .frame(width: 7, height: 5)
+            }
+            Text(title)
+        }
     }
 }
 
