@@ -8,7 +8,7 @@ final class ApplePayCheckout: NSObject, PKPaymentAuthorizationControllerDelegate
     static func demoToken() -> ApplePayToken {
         ApplePayToken(transactionIdentifier: "demo-\(UUID().uuidString)", paymentData: Data("demo".utf8), displayName: "Demo", network: "Visa")
     }
-    static func paymentRequest(quote: BookingQuote, merchantID: String, merchantName: String) -> PKPaymentRequest {
+    static func paymentRequest(quote: BookingQuote, merchantID: String, merchantName: String, guests: Int = 1, cart: [AvailableSlot] = []) -> PKPaymentRequest {
         let request = PKPaymentRequest()
         request.merchantIdentifier = merchantID
         request.supportedNetworks = networks
@@ -16,14 +16,26 @@ final class ApplePayCheckout: NSObject, PKPaymentAuthorizationControllerDelegate
         request.countryCode = "CZ"
         request.currencyCode = quote.currencyCode
         request.supportedCountries = ["CZ"]
-        let item = quote.slots.count == 1
+        let lines = QuotePriceLines.make(quote: quote, cart: cart.isEmpty ? quote.slots : cart, guests: guests)
+        var items: [PKPaymentSummaryItem] = []
+        let slotsLabel = quote.slots.count == 1
             ? L10n.tr("reservations.applePay.itemOne")
             : "\(quote.slots.count) \(L10n.tr("reservations.applePay.itemMany"))"
-        let amount = NSDecimalNumber(decimal: quote.total)
-        request.paymentSummaryItems = [
-            PKPaymentSummaryItem(label: item, amount: amount),
-            PKPaymentSummaryItem(label: merchantName, amount: amount, type: .final)
-        ]
+        items.append(PKPaymentSummaryItem(label: slotsLabel, amount: NSDecimalNumber(decimal: lines.baseTotal)))
+        if lines.guestSurchargeTotal > 0 {
+            items.append(PKPaymentSummaryItem(
+                label: L10n.tr("reservations.amountSurchargeOne"),
+                amount: NSDecimalNumber(decimal: lines.guestSurchargeTotal)
+            ))
+        }
+        if lines.paymentFeeTotal > 0 {
+            items.append(PKPaymentSummaryItem(
+                label: L10n.tr("reservations.amountCardFee"),
+                amount: NSDecimalNumber(decimal: lines.paymentFeeTotal)
+            ))
+        }
+        items.append(PKPaymentSummaryItem(label: merchantName, amount: NSDecimalNumber(decimal: quote.total), type: .final))
+        request.paymentSummaryItems = items
         return request
     }
 
@@ -33,6 +45,7 @@ final class ApplePayCheckout: NSObject, PKPaymentAuthorizationControllerDelegate
 
     func pay(
         quote: BookingQuote,
+        guests: Int = 1,
         merchantName: String = "Privofit",
         charge: @escaping (ApplePayToken) async throws -> BookingPayment
     ) async throws -> BookingPayment {
@@ -41,7 +54,13 @@ final class ApplePayCheckout: NSObject, PKPaymentAuthorizationControllerDelegate
             throw AppFailure.notConfigured("Apple Pay merchant ID")
         }
         self.charge = charge
-        let request = Self.paymentRequest(quote: quote, merchantID: merchantID, merchantName: merchantName)
+        let request = Self.paymentRequest(
+            quote: quote,
+            merchantID: merchantID,
+            merchantName: merchantName,
+            guests: guests,
+            cart: quote.slots
+        )
         return try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
             let controller = PKPaymentAuthorizationController(paymentRequest: request)

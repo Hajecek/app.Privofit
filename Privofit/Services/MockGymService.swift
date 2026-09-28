@@ -101,7 +101,15 @@ import Foundation
         try check(); try await delay()
         let chosen = try resolvedSlots(slotIDs)
         let rate: Decimal = guests >= 2 ? 470 : 350
-        return BookingQuote(slots: chosen, pricePerSlot: rate, currencyCode: "CZK", total: rate * Decimal(chosen.count))
+        let subtotal = rate * Decimal(chosen.count)
+        let fee: Decimal = 10
+        return BookingQuote(
+            slots: chosen,
+            pricePerSlot: rate,
+            currencyCode: "CZK",
+            total: subtotal + fee,
+            paymentFee: fee
+        )
     }
     func payAndReserve(slotIDs: [String], requestID: UUID, applePay: ApplePayToken, guests: Int = 1) async throws -> BookingPayment {
         try check(); try await delay()

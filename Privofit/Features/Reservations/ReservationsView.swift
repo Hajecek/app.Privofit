@@ -391,7 +391,7 @@ struct ReservationsView: View {
             let payment: BookingPayment
             if useApplePay {
                 guard let quote else { throw AppFailure.unavailable }
-                payment = try await checkout.pay(quote: quote) { token in
+                payment = try await checkout.pay(quote: quote, guests: guestCount) { token in
                     try await app.service.payAndReserve(slotIDs: slots, requestID: requestID, applePay: token, guests: guestCount)
                 }
             } else {
@@ -750,20 +750,9 @@ struct BookingSummaryView: View {
         }
     }
     @ViewBuilder private var payFooter: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             if let quote {
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(quote.total == 0 ? L10n.tr("reservations.fromMembership") : L10n.tr("reservations.payFooter"))
-                            .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                        if quote.total > 0 {
-                            Text("\(quote.slots.count)× \(quote.formatted(quote.pricePerSlot))").font(.footnote).foregroundStyle(.secondary)
-                        }
-                    }
-                    Spacer()
-                    Text(quote.total == 0 ? entryPhrase(quote.slots.count) : quote.formatted(quote.total))
-                        .font(.title.bold()).monospacedDigit()
-                }
+                amountBreakdown(quote)
             }
             if let quote, quote.total == 0 {
                 PrimaryButton(title: L10n.tr("reservations.confirmAction"), symbol: "checkmark", busy: busy) { demoPay() }
@@ -785,6 +774,90 @@ struct BookingSummaryView: View {
         }
         .padding(16)
         .background(.ultraThinMaterial)
+    }
+
+    @ViewBuilder
+    private func amountBreakdown(_ quote: BookingQuote) -> some View {
+        let guests = app.bookingGuests
+        let lines = QuotePriceLines.make(quote: quote, cart: slots, guests: guests)
+        VStack(alignment: .leading, spacing: 10) {
+            if quote.total == 0 {
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.tr("reservations.fromMembership"))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Text(L10n.tr("reservations.amountMembershipHint"))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 8)
+                    Text(entryPhrase(quote.slots.count))
+                        .font(.title3.bold())
+                        .monospacedDigit()
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    breakdownRow(
+                        title: quote.slots.count == 1
+                            ? L10n.tr("reservations.amountBaseOne")
+                            : "\(quote.slots.count)× \(L10n.tr("reservations.amountBaseMany"))",
+                        value: quote.formatted(lines.baseTotal)
+                    )
+                    if lines.guestSurchargeTotal > 0 {
+                        VStack(alignment: .leading, spacing: 4) {
+                            breakdownRow(
+                                title: quote.slots.count == 1
+                                    ? L10n.tr("reservations.amountSurchargeOne")
+                                    : "\(quote.slots.count)× \(L10n.tr("reservations.amountSurchargeMany"))",
+                                value: quote.formatted(lines.guestSurchargeTotal)
+                            )
+                            Text(L10n.tr("reservations.amountSurchargeHint"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    } else if guests > 1 {
+                        Text(L10n.tr("reservations.amountTwoIncluded"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    if lines.paymentFeeTotal > 0 {
+                        VStack(alignment: .leading, spacing: 4) {
+                            breakdownRow(
+                                title: L10n.tr("reservations.amountCardFee"),
+                                value: quote.formatted(lines.paymentFeeTotal)
+                            )
+                            Text(L10n.tr("reservations.amountCardFeeHint"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    Divider().opacity(0.35)
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(L10n.tr("reservations.payFooter"))
+                            .font(.subheadline.weight(.semibold))
+                        Spacer(minLength: 8)
+                        Text(quote.formatted(quote.total))
+                            .font(.title.bold())
+                            .monospacedDigit()
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func breakdownRow(title: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            Text(value)
+                .font(.subheadline.weight(.semibold).monospacedDigit())
+        }
     }
     private func entryPhrase(_ count: Int) -> String {
         switch count {

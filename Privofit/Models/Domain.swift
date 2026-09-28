@@ -129,7 +129,40 @@ struct BookingQuote: Equatable, Sendable {
     var pricePerSlot: Decimal
     var currencyCode: String
     var total: Decimal
+    /// Explicit card/processing fee from API when provided.
+    var paymentFee: Decimal? = nil
     func formatted(_ value: Decimal) -> String { GymMoney.czk(value, code: currencyCode) }
+}
+
+struct QuotePriceLines: Equatable, Sendable {
+    var baseTotal: Decimal
+    var guestSurchargeTotal: Decimal
+    var paymentFeeTotal: Decimal
+
+    static func make(quote: BookingQuote, cart: [AvailableSlot], guests: Int) -> QuotePriceLines {
+        var baseSum: Decimal = 0
+        var partySum: Decimal = 0
+        for item in quote.slots {
+            let source = cart.first(where: { $0.id == item.id }) ?? item
+            let base = source.price ?? quote.pricePerSlot
+            let party = source.price(for: max(1, guests)) ?? quote.pricePerSlot
+            baseSum += max(0, base)
+            partySum += max(0, party)
+        }
+        let charged = quote.total > 0 ? quote.total : max(partySum, quote.pricePerSlot * Decimal(max(1, quote.slots.count)))
+        if baseSum <= 0 && partySum <= 0 {
+            return QuotePriceLines(baseTotal: charged, guestSurchargeTotal: 0, paymentFeeTotal: 0)
+        }
+        let guestExtra = guests > 1 ? max(0, partySum - baseSum) : 0
+        let sessions = baseSum + guestExtra
+        let residualFee = max(0, charged - sessions)
+        let paymentFee = max(0, quote.paymentFee ?? residualFee)
+        return QuotePriceLines(
+            baseTotal: baseSum > 0 ? baseSum : max(0, charged - guestExtra - paymentFee),
+            guestSurchargeTotal: guestExtra,
+            paymentFeeTotal: paymentFee
+        )
+    }
 }
 struct BookingPayment: Equatable, Sendable {
     enum Status: String, Sendable { case paid, pending, failed }

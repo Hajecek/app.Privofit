@@ -25,6 +25,7 @@ struct OnboardingView: View {
                         .transition(pageTransition)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
                 actions
                     .padding(.horizontal, 28)
                     .padding(.top, 8)
@@ -196,6 +197,11 @@ struct OnboardingView: View {
     }
 }
 
+private enum OnboardingMotion {
+    /// XCTest waits until animations idle. Looping timelines never do.
+    static var plays: Bool { ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil }
+}
+
 private enum OnboardingStep: Int, CaseIterable {
     case welcome, reserve, enter, rhythm, alerts, place, biometrics, ready
 
@@ -260,9 +266,11 @@ private struct OnboardingArtwork: View {
 private struct WelcomeArt: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    private var animate: Bool { !reduceMotion && OnboardingMotion.plays }
+
     var body: some View {
-        TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 30.0)) { timeline in
-            let time = reduceMotion ? 0 : timeline.date.timeIntervalSinceReferenceDate
+        TimelineView(.animation(minimumInterval: animate ? 1.0 / 30.0 : 60, paused: !animate)) { timeline in
+            let time = animate ? timeline.date.timeIntervalSinceReferenceDate : 0
             ZStack {
                 Circle()
                     .stroke(Brand.lime.opacity(0.45), style: StrokeStyle(lineWidth: 1.5, dash: [7, 9]))
@@ -364,9 +372,11 @@ private struct AlertArt: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showCard = false
 
+    private var animate: Bool { !reduceMotion && OnboardingMotion.plays }
+
     var body: some View {
-        TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 30.0)) { timeline in
-            let wobble = reduceMotion ? 0 : sin(timeline.date.timeIntervalSinceReferenceDate * 2.6) * 7
+        TimelineView(.animation(minimumInterval: animate ? 1.0 / 30.0 : 60, paused: !animate)) { timeline in
+            let wobble = animate ? sin(timeline.date.timeIntervalSinceReferenceDate * 2.6) * 7 : 0
             VStack(spacing: 16) {
                 Image(systemName: "bell.badge.fill")
                     .font(.system(size: 56, weight: .light))
@@ -401,7 +411,7 @@ private struct BiometryArt: View {
 
     var body: some View {
         ZStack {
-            LocationRings(active: !verified && !reduceMotion, diameter: 168)
+            LocationRings(active: !verified && !reduceMotion && OnboardingMotion.plays, diameter: 168)
             RoundedRectangle(cornerRadius: 40, style: .continuous)
                 .fill(Brand.lime.opacity(0.12))
                 .frame(width: 148, height: 148)
@@ -409,7 +419,7 @@ private struct BiometryArt: View {
                 .font(.system(size: verified ? 52 : 62, weight: .light))
                 .foregroundStyle(Brand.lime)
                 .contentTransition(.symbolEffect(.replace))
-            if !verified && !reduceMotion {
+            if !verified && !reduceMotion && OnboardingMotion.plays {
                 ScanBeam()
                     .frame(width: 148, height: 148)
                     .mask(RoundedRectangle(cornerRadius: 40, style: .continuous).frame(width: 148, height: 148))
@@ -515,7 +525,7 @@ private struct LocationRadarButton: View {
         Button(action: action) {
             HStack(spacing: 14) {
                 ZStack {
-                    LocationRings(active: !busy && !reduceMotion, diameter: 96)
+                    LocationRings(active: !busy && !reduceMotion && OnboardingMotion.plays, diameter: 96)
                     Circle().fill(Brand.lime).frame(width: 62, height: 62)
                     if busy {
                         ProgressView().tint(Brand.ink)
@@ -607,9 +617,11 @@ private struct OnboardingGlow: View {
     var step: Int
     var reduceMotion: Bool
 
+    private var animate: Bool { !reduceMotion && OnboardingMotion.plays }
+
     var body: some View {
-        TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 30.0)) { timeline in
-            let drift = reduceMotion ? 0 : sin(timeline.date.timeIntervalSinceReferenceDate / 2.8) * 18
+        TimelineView(.animation(minimumInterval: animate ? 1.0 / 30.0 : 60, paused: !animate)) { timeline in
+            let drift = animate ? sin(timeline.date.timeIntervalSinceReferenceDate / 2.8) * 18 : 0
             ZStack {
                 Circle()
                     .fill(Brand.lime.opacity(0.2))

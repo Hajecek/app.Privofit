@@ -47,8 +47,15 @@
     "%lld" : {
 
     },
-    "%lld / 5" : {
-
+    "%lld / %lld" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld / %2$lld"
+          }
+        }
+      }
     },
     "%lld %@" : {
       "localizations" : {
@@ -56,16 +63,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld %2$@"
-          }
-        }
-      }
-    },
-    "%lld× %@" : {
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld× %2$@"
           }
         }
       }
@@ -4638,6 +4635,159 @@
         }
       }
     },
+    "reservations.amountBaseMany" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "základ (1 osoba)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "base (1 person)"
+          }
+        }
+      }
+    },
+    "reservations.amountBaseOne" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Základní cena (1 osoba)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Base price (1 person)"
+          }
+        }
+      }
+    },
+    "reservations.amountCardFee" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poplatek za platbu kartou"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card payment fee"
+          }
+        }
+      }
+    },
+    "reservations.amountCardFeeHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Příplatek za zpracování platby kartou / Apple Pay."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Processing fee for card / Apple Pay payment."
+          }
+        }
+      }
+    },
+    "reservations.amountMembershipHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vstupy se odečtou z aktivního členství."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entries will be taken from your active membership."
+          }
+        }
+      }
+    },
+    "reservations.amountSurchargeHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Příplatek za druhou osobu na každém termínu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Surcharge for a second person on each slot."
+          }
+        }
+      }
+    },
+    "reservations.amountSurchargeMany" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "příplatek za 2. osobu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2nd person surcharge"
+          }
+        }
+      }
+    },
+    "reservations.amountSurchargeOne" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Příplatek za 2. osobu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2nd person surcharge"
+          }
+        }
+      }
+    },
+    "reservations.amountTwoIncluded" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cena už zahrnuje 2 osoby."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price already includes 2 people."
+          }
+        }
+      }
+    },
     "reservations.applePay.itemMany" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5709,57 +5859,6 @@
         }
       }
     },
-    "reservations.persons" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Osoby"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "People"
-          }
-        }
-      }
-    },
-    "reservations.personsHint" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Maximum jsou 2 osoby."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Maximum is 2 people."
-          }
-        }
-      }
-    },
-    "reservations.personsTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Počet osob"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "People"
-          }
-        }
-      }
-    },
     "reservations.personOne" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5777,6 +5876,23 @@
         }
       }
     },
+    "reservations.persons" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osoby"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "People"
+          }
+        }
+      }
+    },
     "reservations.personsFew" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5790,6 +5906,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "people"
+          }
+        }
+      }
+    },
+    "reservations.personsHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Max. 2 osoby. Za druhou osobu je příplatek."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Max. 2 people. A surcharge applies for the second person."
           }
         }
       }
@@ -5841,6 +5974,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "More people"
+          }
+        }
+      }
+    },
+    "reservations.personsTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Počet osob"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "People"
           }
         }
       }
